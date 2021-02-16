@@ -1,4 +1,3 @@
-from collections import namedtuple
 from random import choice, random
 from DataTypes import *
 

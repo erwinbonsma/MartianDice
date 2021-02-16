@@ -17,27 +17,20 @@ Constraints:
 	Len(State.P) + Len(Throw.P) <= 3
 
 Actions:
-	Bust: Cannot avoid zero score
-	Done: Cannot select any new dice
-	Deathray: Select deathray
-	AddPoints(n): Select points
+	-1: No selection (bust or cannot select any dice)
+	0: Select ray
+	n: Select n earthlings
 """
 
-from collections import namedtuple
 from enum import IntEnum
 from functools import reduce
 from itertools import chain, combinations, groupby
-from random import randint, random
 from math import factorial
+from collections import namedtuple
+from DataTypes import *
 
-State = namedtuple('State', ['tanks', 'rays', 'earthlings', 'earthling_types'])
-Throw = namedtuple('Throw', ['tanks', 'rays', 'earthling_choices'])
-
-class ActionType(IntEnum):
-	Bust = 1
-	Done = 2
-	Ray = 3
-	Earthling = 4
+SearchState = namedtuple('State', ['tanks', 'rays', 'earthlings', 'earthling_types'])
+SearchThrow = namedtuple('Throw', ['tanks', 'rays', 'earthling_choices'])
 
 class DieResult(IntEnum):
 	Tank = 1
@@ -45,106 +38,30 @@ class DieResult(IntEnum):
 	SelectableEarthling = 3
 	UnselectableEarthling = 4
 
-class Action:
-	@property
-	def done(self):
-		return self.type == ActionType.Bust or self.type == ActionType.Done
-
-	@property
-	def type(self):
-		return self.__type
-
-	def __init__(self, type):
-		self.__type = type
-
-	def __str__(self):
-		return str(self.type)
-
-class DiceAction(Action):
-
-	@property
-	def num_dice(self):
-		return self.__num_dice
-
-	def __init__(self, type, num_dice):
-		Action.__init__(self, type)
-		self.__num_dice = num_dice
-
-	def __str__(self):
-		return str(self.type) + "x" + str(self.num_dice)
-
-BustAction = Action(ActionType.Bust)
-DoneAction = Action(ActionType.Done)
-
-NDICE = 13
-
-def num_choices(throw):
-	return len(throw.earthling_choices) + (1 if throw.rays > 0 else 0)
-
-def action_for_choice(choice, throw):
-	if choice < len(throw.earthling_choices):
-		return DiceAction(ActionType.Earthling, throw.earthling_choices[choice])
+def actions_for_throw(throw):
+	if throw.rays == 0:
+		return throw.earthling_choices
 	else:
-		return DiceAction(ActionType.Ray, throw.rays)
-
-class ActionSelector:
-
-	def forced_action(self, state, throw):
-		if num_choices(throw) == 0:
-			return DoneAction if score(state) > 0 else BustAction
-
-		tanks = state.tanks + throw.tanks
-		forced_earthling = min(throw.earthling_choices) if throw.rays == 0 else 0
-
-		if tanks > NDICE - state.earthlings - forced_earthling - tanks:
-			return BustAction
-
-	def select_action(self, state, throw):
-		action = self.forced_action(state, throw)
-		if action is not None:
-			return action
-
-		choice = randint(0, num_choices(throw))
-		return action_for_choice(choice, throw)
-
-	def stop(self, state):
-		return score(state) > 0 and random() > 0.5
-
-def generate_throw(state):
-	num_dice = NDICE - state.tanks - state.rays - state.earthlings
-	tanks = 0
-	rays = 0
-	earthling_choices = [0] * (3 - state.earthling_types)
-
-	for die_throw in range(num_dice):
-		die = randint(0, 5)
-		if die < 1:
-			tanks += 1
-		elif die < 3:
-			rays += 1
-		elif die < 3 + len(earthling_choices):
-			earthling_choices[die - 3] += 1
-
-	return Throw(tanks, rays, list(set(x for x in earthling_choices if x > 0)))
+		return list(throw.earthling_choices) + [0]
 
 def update_state(state, throw, action):
 	tanks = state.tanks + throw.tanks
-	if action.type == ActionType.Ray:
-		assert(action.num_dice == throw.rays)
-		state = State(
+	if action == 0:
+		assert(throw.rays > 0)
+		state = SearchState(
 			tanks, state.rays + throw.rays, state.earthlings, state.earthling_types
 		)
-	elif action.type == ActionType.Earthling:
-		assert(action.num_dice in throw.earthling_choices)
-		state = State(
-			tanks, state.rays, state.earthlings + action.num_dice, state.earthling_types + 1
+	elif action > 0:
+		assert(action in throw.earthling_choices)
+		state = SearchState(
+			tanks, state.rays, state.earthlings + action, state.earthling_types + 1
 		)
 	else:
-		state = State(
+		state = SearchState(
 			tanks, state.rays, state.earthlings, state.earthling_types
 		)
 	assert(state.earthling_types <= 3)
-	assert(state.tanks + state.rays + state.earthlings <= NDICE)
+	assert(state.tanks + state.rays + state.earthlings <= NUM_DICE)
 	return state
 
 def score(state):
@@ -237,7 +154,7 @@ def count_throws(num_dice, selected_earthling_types, throws = [], counts = None)
 
 	return counts
 
-class OptimalActionSelector(ActionSelector):
+class OptimalActionSelector:
 
 	def __init__(self):
 		self.lookup = {}
@@ -271,7 +188,7 @@ class OptimalActionSelector(ActionSelector):
 			if len(earthling_choices) < 3 - state.earthling_types:
 				multiplier *= (3 - state.earthling_types)
 
-		return Throw(tanks, rays, reduced_earthling_choices), multiplier
+		return SearchThrow(tanks, rays, reduced_earthling_choices), multiplier
 
 	def expected_score(self, state, depth = 0, trace = False, check_throws = False):
 		current_score = score(state)
@@ -279,7 +196,7 @@ class OptimalActionSelector(ActionSelector):
 			if trace:
 				print("  " * depth, state, current_score, "Cannot improve score")
 			return current_score
-		rem_dice = NDICE - state.tanks - state.rays - state.earthlings
+		rem_dice = NUM_DICE - state.tanks - state.rays - state.earthlings
 		if rem_dice == 0:
 			if trace:
 				print("  " * depth, state, current_score, "No more dice")
@@ -334,64 +251,54 @@ class OptimalActionSelector(ActionSelector):
 			print("  " * depth, state, self.lookup[state], "Weighted score")
 		return self.lookup[state]
 
+	def bust(self, state, throw):
+		tanks = state.tanks + throw.tanks
+		forced_earthling = min(throw.earthling_choices) if throw.rays == 0 else 0
+		return tanks > NUM_DICE - state.earthlings - forced_earthling - tanks
+
 	def maximise_score(self, state, throw, depth = 0):
-		action = self.forced_action(state, throw)
-		if action is not None:
+		possible_actions = actions_for_throw(throw)
+		if len(possible_actions) == 0 or self.bust(state, throw):
+			action = -1
 			final_score = score(update_state(state, throw, action))
 			return action, final_score
 
-		evals = ((choice, self.expected_score(update_state(
-			state, throw, action_for_choice(choice, throw)
-		), depth)) for choice in range(num_choices(throw)))
-		best_choice, expected_score = max(
-			evals,
-			key = lambda x: x[1]
+		evals = ((action, self.expected_score(update_state(
+			state, throw, action
+		), depth)) for action in possible_actions)
+
+		return max(evals, key = lambda x: x[1])
+
+	def select_die(self, state, throw):
+		search_state = SearchState(
+			state.num(DieFace.Tank) - throw.num(DieFace.Tank), state.num(DieFace.Ray),
+			state.num_earthlings(), len(state.collected_earthlings())
 		)
-		return action_for_choice(best_choice, throw), expected_score
+		search_throw = SearchThrow(
+			throw.num(DieFace.Tank), throw.num(DieFace.Ray),
+			tuple(set(throw.num(key) for key in EARTHLINGS if throw.num(key) > 0 and state.num(key) == 0))
+		)
 
-	def select_action(self, state, throw):
-		action, self.__expected_score = self.maximise_score(state, throw)
-		#print("Action:", action, ", Expected score:", self.__expected_score)
-		return action
+		action, self.__expected_score = self.maximise_score(search_state, search_throw)
 
-	def stop(self, state):
-		return score(state) == self.__expected_score
+		if action == 0:
+			return DieFace.Ray
 
-def play_game(action_selector, state = State(0, 0, 0, 0), trace = False):
-	while True:
-		throw = generate_throw(state)
-		if trace:
-			print("Throw:", throw)
+		for key in EARTHLINGS:
+			if throw.num(key) == action and state.num(key) == 0:
+				return key
 
-		action = action_selector.select_action(state, throw)
-		if trace:
-			print("Action:", action)
-
-		state = update_state(state, throw, action)
-		if trace:
-			print("State:", state)
-
-		if action.done:
-			break
-
-		if action_selector.stop(state):
-			if trace:
-				print("Stopping")
-			break
-
-	s = score(state)
-	if trace:
-		print("Score:", s)
-
-	return s
+	def should_stop(self, state):
+		return state.score() == self.__expected_score
 
 if __name__ == '__main__':
 	import doctest
 	doctest.testmod()
 
 	action_selector = OptimalActionSelector()
-	print("Expected average score:", action_selector.expected_score(State(0, 0, 0, 0)))
+	print("Expected average score:", action_selector.expected_score(SearchState(0, 0, 0, 0)))
 
-	num_games = 1000000
-	summed_scores = sum(play_game(action_selector) for _ in range(num_games))
+	from Game import play_game
+	num_games = 100000
+	summed_scores = sum(play_game(action_selector, output = False) for _ in range(num_games))
 	print("Avg score:", summed_scores / num_games)
