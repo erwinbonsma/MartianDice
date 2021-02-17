@@ -70,9 +70,10 @@ class HumanPlayer:
 
 		for score, action in sorted(scores, key = lambda x: x[0], reverse = True):
 			if action > 0:
-				choice = "%d Earthling%s" % (action, "s" if action > 1 else "")
+				die = next(die for die in state.selectable_earthlings(throw) if throw.num(die) == action)
+				choice = "%d [%s] Earthling%s" % (action, die2key[die], "s" if action > 1 else "")
 			else:
-				choice = "%d Ray%s" % (throw.num(DieFace.Ray), "s" if throw.num(DieFace.Ray) > 1 else "")
+				choice = "%d [R] Ray%s" % (throw.num(DieFace.Ray), "s" if throw.num(DieFace.Ray) > 1 else "")
 			print("%.3f %s" % (score, choice))
 
 	def select_die(self, state, throw):
@@ -82,9 +83,10 @@ class HumanPlayer:
 
 		if self.hint_generator is not None:
 			self.show_hint(state, throw)
+		else:
+			self.show_options(options)
 
 		while True:
-			self.show_options(options)
 			key = input("Your choice : ").upper()
 			if key in key2die:
 				return key2die[key]
