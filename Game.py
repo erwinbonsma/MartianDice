@@ -74,7 +74,6 @@ def play_game(action_selector, throw_fun = random_throw, state = None, output = 
 				state.collected_earthlings() == 3 or action_selector.should_stop(state)
 			)
 		):
-			if output: print("Stopping")
 			break
 
 		if output: print()

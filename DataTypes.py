@@ -68,7 +68,7 @@ class GameState:
 
 class DiceThrow:
 
-	def __init__(self, num_dice):
+	def __init__(self, num_dice = 0):
 		self.__counts = {}
 
 		for die_throw in range(num_dice):
@@ -78,8 +78,14 @@ class DiceThrow:
 			die_face = DieFace(die)
 			self.__counts[die_face] = self.__counts.get(die_face, 0) + 1
 
+	def num_dice(self):
+		return sum(self.__counts.values())
+
 	def num(self, die_face):
 		return self.__counts.get(die_face, 0)
+
+	def set_num(self, die_face, count):
+		self.__counts[die_face] = count
 
 	def __str__(self):
 		return str(self.__counts)

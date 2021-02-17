@@ -1,19 +1,45 @@
-from DataTypes import DieFace, EARTHLINGS
-from Game import play_game
+from DataTypes import DiceThrow, DieFace, EARTHLINGS, NUM_DICE
+from Game import play_game, show_throw
 
-die_keys = {
+die2key = {
+	DieFace.Tank: "T",
 	DieFace.Ray: "R",
 	DieFace.Chicken: "C",
 	DieFace.Cow: "M",
 	DieFace.Human: "H"
 }
 
+key2die = { key: die for die, key in die2key.items() }
+
+def enter_throw(state):
+	target_num_dice = NUM_DICE - state.total_collected()
+	throw = DiceThrow()
+
+	while throw.num_dice() != target_num_dice:
+		if throw.num_dice() > 0:
+			show_throw(throw)
+		
+		try:
+			s = input("Add dice to throw (%d/%d): " % (throw.num_dice(), target_num_dice)).upper()
+			if len(s) < 2:
+				raise ValueError("Input too short")
+			if not s[-1] in key2die:
+				raise ValueError("Unknown die result")
+
+			num = int(s[0:-1])
+			throw.set_num(key2die[s[-1]], num)
+		except ValueError:
+			print("Enter number followed by die result (T, R, C, M, or H). E.g. '3T' for three Tanks")
+
+	print()
+	return throw
+
 class HumanPlayer:
 
 	def show_options(self, options):
 		items = []
 		for option in options:
-			items.append("[%s] %s" % (die_keys[option], option.name))
+			items.append("[%s] %s" % (die2key[option], option.name))
 
 		print(" ".join(items))
 
@@ -25,10 +51,8 @@ class HumanPlayer:
 		while True:
 			self.show_options(options)
 			key = input("Your choice : ").upper()
-			print(key)
-			for option in options:
-				if die_keys.get(option) == key:
-					return option
+			if key in key2die:
+				return key2die[key]
 
 	def should_stop(self, state):
 		while True:
@@ -42,4 +66,4 @@ class HumanPlayer:
 if __name__ == '__main__':
 	action_selector = HumanPlayer()
 
-	play_game(action_selector)
+	play_game(action_selector, throw_fun = enter_throw)
