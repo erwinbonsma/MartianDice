@@ -64,17 +64,22 @@ def play_game(action_selector, throw_fun = random_throw, state = None, output = 
 			break
 
 		selected_die = action_selector.select_die(state, throw)
-		if output: print("%s selected" % (selected_die.name))
+		if output:
+			print("%s selected" % (selected_die.name))
+			print()
 
 		state.handle_choice(throw, selected_die)
 		if output: show_state(state)
 
 		if state.total_collected() == NUM_DICE or (
-			state.score() > 0 and (
-				state.collected_earthlings() == 3 or action_selector.should_stop(state)
-			)
+			state.score() > 0 and len(state.collected_earthlings()) == 3
 		):
 			break
+
+		if state.score() > 0:
+			if output: print("Score (sofar):", state.score())
+			if action_selector.should_stop(state):
+				break
 
 		if output: print()
 
