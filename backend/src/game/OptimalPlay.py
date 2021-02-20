@@ -71,15 +71,15 @@ def score(state):
 	return state.earthlings + bonus
 
 def groups_generator(n, max_num_groups = None, max_size = None, l = []):
-    if max_size is None:
-        max_size = n
-    if max_num_groups is None:
-        max_num_groups = n
-    if n == 0:
-        yield l
-        return
-    for size in range(max(0, (n - 1) // max_num_groups) + 1, min(max_size, n) + 1):
-        yield from groups_generator(n - size, max_num_groups - 1, size, l + [size])
+	if max_size is None:
+		max_size = n
+	if max_num_groups is None:
+		max_num_groups = n
+	if n == 0:
+		yield l
+		return
+	for size in range(max(0, (n - 1) // max_num_groups) + 1, min(max_size, n) + 1):
+		yield from groups_generator(n - size, max_num_groups - 1, size, l + [size])
 
 def allocation_generator(group_counts, elems, allocation = []):
 	"""
