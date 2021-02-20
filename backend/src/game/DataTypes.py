@@ -22,29 +22,29 @@ class GameState:
 	def copy(self):
 		return GameState(self.__counts)
 
-	def num(self, die_face):
+	def __getitem__(self, die_face):
 		return self.__counts.get(die_face, 0)
 
 	def num_earthlings(self):
-		return sum(self.num(key) for key in EARTHLINGS)
+		return sum(self[key] for key in EARTHLINGS)
 
 	def add(self, die_face, number):
-		self.__counts[die_face] = self.num(die_face) + number
+		self.__counts[die_face] = self[die_face] + number
 
 	def selectable_earthlings(self, throw):
-		return [key for key in EARTHLINGS if self.num(key) == 0 and throw.num(key) > 0]
+		return [key for key in EARTHLINGS if self[key] == 0 and throw[key] > 0]
 
 	def collected_earthlings(self):
-		return [key for key in EARTHLINGS if self.num(key) > 0]
+		return [key for key in EARTHLINGS if self[key] > 0]
 
 	def is_done(self, throw):
 		selectable_earthlings = self.selectable_earthlings(throw)
-		rays = throw.num(DieFace.Ray)
+		rays = throw[DieFace.Ray]
 		if len(selectable_earthlings) == 0 and rays == 0:
 			return True
 
-		forced_earthlings = 0 if rays > 0 else min(throw.num(x) for x in selectable_earthlings)
-		tanks = self.num(DieFace.Tank)
+		forced_earthlings = 0 if rays > 0 else min(throw[x] for x in selectable_earthlings)
+		tanks = self[DieFace.Tank]
 		max_rays = NUM_DICE - tanks - self.num_earthlings() - forced_earthlings
 
 		return tanks > max_rays
@@ -53,17 +53,17 @@ class GameState:
 		return sum(self.__counts.values())
 
 	def update_tanks(self, throw):
-		self.add(DieFace.Tank, throw.num(DieFace.Tank))
+		self.add(DieFace.Tank, throw[DieFace.Tank])
 
 	def handle_choice(self, throw, selected):
-		assert(throw.num(selected) > 0)
-		assert(selected == DieFace.Ray or self.num(selected) == 0)
-		self.add(selected, throw.num(selected))
+		assert(throw[selected] > 0)
+		assert(selected == DieFace.Ray or self[selected] == 0)
+		self.add(selected, throw[selected])
 
 	def score(self):
-		if self.num(DieFace.Tank) > self.num(DieFace.Ray):
+		if self[DieFace.Tank] > self[DieFace.Ray]:
 			return 0
-		bonus = 3 if sum(1 for key in EARTHLINGS if self.num(key) > 0) == 3 else 0
+		bonus = 3 if sum(1 for key in EARTHLINGS if self[key] > 0) == 3 else 0
 		return self.num_earthlings() + bonus
 
 	def __str__(self):
@@ -84,7 +84,7 @@ class DiceThrow:
 	def num_dice(self):
 		return sum(self.__counts.values())
 
-	def num(self, die_face):
+	def __getitem__(self, die_face):
 		return self.__counts.get(die_face, 0)
 
 	def set_num(self, die_face, count):

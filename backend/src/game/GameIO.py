@@ -52,17 +52,17 @@ class HumanPlayer:
 		scores = [
 			(self.hint_generator.expected_score(
 				SearchState(
-					state.num(DieFace.Tank), state.num(DieFace.Ray),
+					state[DieFace.Tank], state[DieFace.Ray],
 					state.num_earthlings() + action, num_earthling_types + 1
 				)
 			), action)
-			for action in list(set(throw.num(x) for x in state.selectable_earthlings(throw)))
+			for action in list(set(throw[x] for x in state.selectable_earthlings(throw)))
 		]
-		if throw.num(DieFace.Ray) > 0:
+		if throw[DieFace.Ray] > 0:
 			scores.append((
 				self.hint_generator.expected_score(
 					SearchState(
-						state.num(DieFace.Tank), state.num(DieFace.Ray) + throw.num(DieFace.Ray),
+						state[DieFace.Tank], state[DieFace.Ray] + throw[DieFace.Ray],
 						state.num_earthlings(), num_earthling_types
 					)
 				), 0
@@ -70,15 +70,15 @@ class HumanPlayer:
 
 		for score, action in sorted(scores, key = lambda x: x[0], reverse = True):
 			if action > 0:
-				die = next(die for die in state.selectable_earthlings(throw) if throw.num(die) == action)
+				die = next(die for die in state.selectable_earthlings(throw) if throw[die] == action)
 				choice = "%d [%s] Earthling%s" % (action, die2key[die], "s" if action > 1 else "")
 			else:
-				choice = "%d [R] Ray%s" % (throw.num(DieFace.Ray), "s" if throw.num(DieFace.Ray) > 1 else "")
+				choice = "%d [R] Ray%s" % (throw[DieFace.Ray], "s" if throw[DieFace.Ray] > 1 else "")
 			print("%.3f %s" % (score, choice))
 
 	def select_die(self, state, throw):
-		options = [key for key in EARTHLINGS if state.num(key) == 0 and throw.num(key) > 0]
-		if throw.num(DieFace.Ray) > 0:
+		options = [key for key in EARTHLINGS if state[key] == 0 and throw[key] > 0]
+		if throw[DieFace.Ray] > 0:
 			options.append(DieFace.Ray)
 
 		if self.hint_generator is not None:

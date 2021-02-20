@@ -271,12 +271,12 @@ class OptimalActionSelector:
 
 	def select_die(self, state, throw):
 		search_state = SearchState(
-			state.num(DieFace.Tank) - throw.num(DieFace.Tank), state.num(DieFace.Ray),
+			state[DieFace.Tank]- throw[DieFace.Tank], state[DieFace.Ray],
 			state.num_earthlings(), len(state.collected_earthlings())
 		)
 		search_throw = SearchThrow(
-			throw.num(DieFace.Tank), throw.num(DieFace.Ray),
-			tuple(set(throw.num(key) for key in EARTHLINGS if throw.num(key) > 0 and state.num(key) == 0))
+			throw[DieFace.Tank], throw[DieFace.Ray],
+			tuple(set(throw[key] for key in EARTHLINGS if throw[key] > 0 and state[key] == 0))
 		)
 
 		action, self.__expected_score = self.maximise_score(search_state, search_throw)
@@ -285,7 +285,7 @@ class OptimalActionSelector:
 			return DieFace.Ray
 
 		for key in EARTHLINGS:
-			if throw.num(key) == action and state.num(key) == 0:
+			if throw[key] == action and state[key] == 0:
 				return key
 
 	def should_stop(self, state):

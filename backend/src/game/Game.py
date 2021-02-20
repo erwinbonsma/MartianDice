@@ -5,7 +5,7 @@ class RandomPlayer:
 
 	def select_die(self, state, throw):
 		options = state.selectable_earthlings(throw)
-		if throw.num(DieFace.Ray) > 0:
+		if throw[DieFace.Ray] > 0:
 			options.append(DieFace.Ray)
 		return choice(options)
 
@@ -18,13 +18,13 @@ class RandomPlayer:
 class DefensivePlayer:
 
 	def select_die(self, state, throw):
-		if throw.num(DieFace.Ray) > 0 and state.num(DieFace.Tank) > state.num(DieFace.Ray):
+		if throw[DieFace.Ray] > 0 and state[DieFace.Tank] > state[DieFace.Ray]:
 			return DieFace.Ray
 		options = state.selectable_earthlings(throw)
 		return choice(options) if len(options) > 0 else DieFace.Ray
 
 	def should_stop(self, state):
-		buffer = state.num(DieFace.Ray) - state.num(DieFace.Tank)
+		buffer = state[DieFace.Ray] - state[DieFace.Tank]
 		return state.score() > 0 and (buffer < 2 or len(state.collected_earthlings()) == 3)
 
 	def __str__(self):
@@ -39,16 +39,16 @@ def die_string(die_face, number):
 def show_throw(throw):
 	items = []
 	for name, member in DieFace.__members__.items():
-		count = throw.num(member)
+		count = throw[member]
 		if count > 0:
 			items.append(die_string(member, count))
 
 	print("Throw:", ", ".join(items))
 
 def show_state(state):
-	print("%d deathrays vs %d tanks" % (state.num(DieFace.Ray), state.num(DieFace.Tank)))
+	print("%d deathrays vs %d tanks" % (state[DieFace.Ray], state[DieFace.Tank]))
 	if state.num_earthlings() > 0:
-		print("Abducted earthlings:", " ".join(die_string(key, state.num(key)) for key in EARTHLINGS if state.num(key) > 0))
+		print("Abducted earthlings:", " ".join(die_string(key, state[key]) for key in EARTHLINGS if state[key] > 0))
 
 def play_game(action_selector, throw_fun = random_throw, state = None, output = True):
 	if state == None:
