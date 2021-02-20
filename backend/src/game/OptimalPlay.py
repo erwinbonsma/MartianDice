@@ -298,7 +298,7 @@ if __name__ == '__main__':
 	action_selector = OptimalActionSelector()
 	print("Expected average score:", action_selector.expected_score(SearchState(0, 0, 0, 0)))
 
-	from Game import play_game
+	from game.Game import play_game
 	num_games = 100000
 	summed_scores = sum(play_game(action_selector, output = False) for _ in range(num_games))
 	print("Avg score:", summed_scores / num_games)
