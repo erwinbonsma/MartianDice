@@ -8,4 +8,7 @@
 	"terminal.integrated.env.windows": {
 		"PYTHONPATH": "${workspaceFolder}\\backend\\src"
 	},
+	"files.exclude": {
+		"**/__pycache__": true
+	},
 }
