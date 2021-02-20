@@ -1,5 +1,5 @@
 from random import choice, random
-from DataTypes import *
+from game.DataTypes import *
 
 class RandomPlayer:
 

@@ -27,7 +27,7 @@ from functools import reduce
 from itertools import chain, combinations, groupby
 from math import factorial
 from collections import namedtuple
-from DataTypes import *
+from game.DataTypes import *
 
 SearchState = namedtuple('State', ['tanks', 'rays', 'earthlings', 'earthling_types'])
 SearchThrow = namedtuple('Throw', ['tanks', 'rays', 'earthling_choices'])

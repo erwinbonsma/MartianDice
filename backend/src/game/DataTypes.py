@@ -16,8 +16,11 @@ NUM_DIE_FACE_TYPES = 5
 
 class GameState:
 
-	def __init__(self):
-		self.__counts = {}
+	def __init__(self, counts = {}):
+		self.__counts = dict(counts)
+
+	def copy(self):
+		return GameState(self.__counts)
 
 	def num(self, die_face):
 		return self.__counts.get(die_face, 0)
