@@ -1,5 +1,5 @@
 from game.GameIO import enter_throw, HumanPlayer
-from game.Game import play_game, random_throw
+from game.Game import play_round, random_throw
 
 if __name__ == '__main__':
 	import argparse
@@ -12,4 +12,4 @@ if __name__ == '__main__':
 	action_selector = HumanPlayer(show_hint = args.show_hints)
 
 	throw_fun = enter_throw if args.enter_throws else random_throw
-	play_game(action_selector, throw_fun = throw_fun)
+	play_round(action_selector, throw_fun = throw_fun)

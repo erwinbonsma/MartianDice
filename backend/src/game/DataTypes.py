@@ -14,13 +14,13 @@ EARTHLINGS = (DieFace.Chicken, DieFace.Cow, DieFace.Human)
 
 NUM_DIE_FACE_TYPES = 5
 
-class GameState:
+class RoundState:
 
 	def __init__(self, counts = {}):
 		self.__counts = dict(counts)
 
 	def copy(self):
-		return GameState(self.__counts)
+		return RoundState(self.__counts)
 
 	def __getitem__(self, die_face):
 		return self.__counts.get(die_face, 0)

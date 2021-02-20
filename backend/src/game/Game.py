@@ -50,9 +50,9 @@ def show_state(state):
 	if state.num_earthlings() > 0:
 		print("Abducted earthlings:", " ".join(die_string(key, state[key]) for key in EARTHLINGS if state[key] > 0))
 
-def play_game(action_selector, throw_fun = random_throw, state = None, output = True):
+def play_round(action_selector, throw_fun = random_throw, state = None, output = True):
 	if state == None:
-		state = GameState()
+		state = RoundState()
 
 	while True:
 		throw = throw_fun(state)
@@ -92,9 +92,9 @@ def play_game(action_selector, throw_fun = random_throw, state = None, output = 
 if __name__ == '__main__':
 	action_selector = DefensivePlayer()
 
-	play_game(action_selector)
+	play_round(action_selector)
 
 	for player in [RandomPlayer(), DefensivePlayer()]:
 		num_games = 100
-		summed_score = sum(play_game(player, output = False) for _ in range(num_games))
+		summed_score = sum(play_round(player, output = False) for _ in range(num_games))
 		print("Average score of %s" % (player), summed_score / num_games)

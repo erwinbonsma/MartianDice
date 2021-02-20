@@ -1,5 +1,5 @@
-from game.DataTypes import DieFace, GameState
-from game.Game import play_game
+from game.DataTypes import DieFace, RoundState
+from game.Game import play_round
 from game.OptimalPlay import OptimalActionSelector, SearchState
 import unittest
 import itertools
@@ -64,12 +64,12 @@ class TestOptimalActionSelector(unittest.TestCase):
 		state = SearchState(0, 8, 2, 1)
 		expected_score = self.action_selector.expected_score(state)
 
-		state = GameState({DieFace.Ray: 8, DieFace.Cow: 2})
+		state = RoundState({DieFace.Ray: 8, DieFace.Cow: 2})
 		num_runs = 100000
 		scores = [
 			(key, sum(1 for _ in iter))
 			for key, iter in itertools.groupby(
-				sorted(play_game(self.action_selector, state = state.copy(), output = False)
+				sorted(play_round(self.action_selector, state = state.copy(), output = False)
 				for _ in range(num_runs))
 			)
 		]
@@ -81,12 +81,12 @@ class TestOptimalActionSelector(unittest.TestCase):
 		state = SearchState(4, 4, 2, 1)
 		expected_score = self.action_selector.expected_score(state)
 
-		state = GameState({ DieFace.Tank: 4, DieFace.Ray: 4, DieFace.Chicken: 2 })
+		state = RoundState({ DieFace.Tank: 4, DieFace.Ray: 4, DieFace.Chicken: 2 })
 		num_runs = 100000
 		scores = [
 			(key, sum(1 for _ in iter))
 			for key, iter in itertools.groupby(
-				sorted(play_game(self.action_selector, state = state.copy(), output = False)
+				sorted(play_round(self.action_selector, state = state.copy(), output = False)
 				for _ in range(num_runs))
 			)
 		]
@@ -95,12 +95,12 @@ class TestOptimalActionSelector(unittest.TestCase):
 		self.assertAlmostEqual(expected_score, simulated_score, delta = 0.01)
 
 	def testSimulator(self):
-		state = GameState({ DieFace.Ray: 9, DieFace.Cow: 2})
+		state = RoundState({ DieFace.Ray: 9, DieFace.Cow: 2})
 		num_runs = 100000
 		scores = [
 			(key, sum(1 for _ in iter))
 			for key, iter in itertools.groupby(
-				sorted(play_game(self.action_selector, state = state.copy(), output = False)
+				sorted(play_round(self.action_selector, state = state.copy(), output = False)
 				for _ in range(num_runs))
 			)
 		]

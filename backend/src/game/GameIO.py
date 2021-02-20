@@ -1,5 +1,5 @@
 from game.DataTypes import DiceThrow, DieFace, EARTHLINGS, NUM_DICE
-from game.Game import play_game, show_throw, random_throw
+from game.Game import play_round, show_throw, random_throw
 from game.OptimalPlay import OptimalActionSelector, SearchState
 
 die2key = {
