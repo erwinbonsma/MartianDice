@@ -14,13 +14,21 @@ EARTHLINGS = (DieFace.Chicken, DieFace.Cow, DieFace.Human)
 
 NUM_DIE_FACE_TYPES = 5
 
-class RoundState:
+class RoundPhase(IntEnum):
+	Throwing = 0
+	PostThrow = 1
+	PickDice = 2
+	PostPick = 3
+	CheckExit = 4
+	Done = 5
+
+class SideDiceState:
 
 	def __init__(self, counts = {}):
 		self.__counts = dict(counts)
 
 	def copy(self):
-		return RoundState(self.__counts)
+		return SideDiceState(self.__counts)
 
 	def __getitem__(self, die_face):
 		return self.__counts.get(die_face, 0)
@@ -31,23 +39,8 @@ class RoundState:
 	def add(self, die_face, number):
 		self.__counts[die_face] = self[die_face] + number
 
-	def selectable_earthlings(self, throw):
-		return [key for key in EARTHLINGS if self[key] == 0 and throw[key] > 0]
-
 	def collected_earthlings(self):
 		return [key for key in EARTHLINGS if self[key] > 0]
-
-	def is_done(self, throw):
-		selectable_earthlings = self.selectable_earthlings(throw)
-		rays = throw[DieFace.Ray]
-		if len(selectable_earthlings) == 0 and rays == 0:
-			return True
-
-		forced_earthlings = 0 if rays > 0 else min(throw[x] for x in selectable_earthlings)
-		tanks = self[DieFace.Tank]
-		max_rays = NUM_DICE - tanks - self.num_earthlings() - forced_earthlings
-
-		return tanks > max_rays
 
 	def total_collected(self):
 		return sum(self.__counts.values())
@@ -92,3 +85,77 @@ class DiceThrow:
 
 	def __str__(self):
 		return str(self.__counts)
+
+class RoundState:
+
+	def __init__(self, start_side_state = None):
+		self.side_dice = start_side_state.copy() if start_side_state else SideDiceState()
+		self.phase = RoundPhase.Throwing
+		self.throw = None
+
+	def score(self):
+		return self.side_dice.score()
+
+	def selectable_earthlings(self):
+		return [key for key in EARTHLINGS if self.side_dice[key] == 0 and self.throw[key] > 0]
+
+	def set_throw(self, throw):
+		assert(self.phase == RoundPhase.Throwing)
+
+		self.throw = throw
+		self.phase = RoundPhase.PostThrow
+
+	def check_post_throw_exit(self):
+		assert(self.phase == RoundPhase.PostThrow)
+
+		self.side_dice.update_tanks(self.throw)
+
+		selectable_earthlings = self.selectable_earthlings()
+		rays = self.throw[DieFace.Ray]
+		if len(selectable_earthlings) == 0 and rays == 0:
+			self.phase = RoundPhase.Done
+			self.done_reason = "No selectable dice"
+			return True
+
+		forced_earthlings = 0 if rays > 0 else min(self.throw[x] for x in selectable_earthlings)
+		tanks = self.side_dice[DieFace.Tank]
+		max_rays = NUM_DICE - tanks - self.side_dice.num_earthlings() - forced_earthlings
+
+		if tanks > max_rays:
+			self.phase = RoundPhase.Done
+			self.done_reason = "Defeated"
+			return True
+
+		self.phase = RoundPhase.PickDice
+
+	def handle_pick(self, selected_die):
+		assert(self.phase == RoundPhase.PickDice)
+	
+		self.last_pick = selected_die
+		self.side_dice.handle_choice(self.throw, selected_die)
+		self.phase = RoundPhase.PostPick
+
+	def check_post_pick_exit(self):
+		assert(self.phase == RoundPhase.PostPick)
+
+		if self.side_dice.total_collected() == NUM_DICE:
+			self.phase = RoundPhase.Done
+			self.done_reason = "No more dice"
+			return True
+
+		if self.score() > 0 and len(self.side_dice.collected_earthlings()) == 3:
+			self.phase = RoundPhase.Done
+			self.done_reason = "Cannot improve score"
+			return True
+
+		self.phase = RoundPhase.CheckExit if self.score() > 0 else RoundPhase.Throwing
+
+	def check_player_exit(self, stop):
+		assert(self.phase == RoundPhase.CheckExit)
+
+		if stop:
+			self.phase = RoundPhase.Done
+			self.done_reason = "Player choice"
+			return True
+
+		self.phase = RoundPhase.Throwing

@@ -269,14 +269,16 @@ class OptimalActionSelector:
 
 		return max(evals, key = lambda x: x[1])
 
-	def select_die(self, state, throw):
+	def select_die(self, state: RoundState):
 		search_state = SearchState(
-			state[DieFace.Tank]- throw[DieFace.Tank], state[DieFace.Ray],
-			state.num_earthlings(), len(state.collected_earthlings())
+			state.side_dice[DieFace.Tank] - state.throw[DieFace.Tank],
+			state.side_dice[DieFace.Ray],
+			state.side_dice.num_earthlings(),
+			len(state.side_dice.collected_earthlings())
 		)
 		search_throw = SearchThrow(
-			throw[DieFace.Tank], throw[DieFace.Ray],
-			tuple(set(throw[key] for key in EARTHLINGS if throw[key] > 0 and state[key] == 0))
+			state.throw[DieFace.Tank], state.throw[DieFace.Ray],
+			tuple(set(state.throw[key] for key in state.selectable_earthlings()))
 		)
 
 		action, self.__expected_score = self.maximise_score(search_state, search_throw)
@@ -285,7 +287,7 @@ class OptimalActionSelector:
 			return DieFace.Ray
 
 		for key in EARTHLINGS:
-			if throw[key] == action and state[key] == 0:
+			if state.throw[key] == action and state.side_dice[key] == 0:
 				return key
 
 	def should_stop(self, state):
@@ -300,5 +302,5 @@ if __name__ == '__main__':
 
 	from game.Game import play_round
 	num_rounds = 100000
-	summed_scores = sum(play_round(action_selector, output = False) for _ in range(num_rounds))
+	summed_scores = sum(play_round(action_selector) for _ in range(num_rounds))
 	print("Avg score:", summed_scores / num_rounds)

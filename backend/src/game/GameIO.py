@@ -1,4 +1,4 @@
-from game.DataTypes import DiceThrow, DieFace, EARTHLINGS, NUM_DICE
+from game.DataTypes import DiceThrow, DieFace, RoundState, EARTHLINGS, NUM_DICE
 from game.Game import play_round, show_throw, random_throw
 from game.OptimalPlay import OptimalActionSelector, SearchState
 
@@ -47,42 +47,46 @@ class HumanPlayer:
 
 		print(" ".join(items))
 
-	def show_hint(self, state, throw):
-		num_earthling_types = len(state.collected_earthlings())		
+	def show_hint(self, state: RoundState):
+		num_earthling_types = len(state.side_dice.collected_earthlings())		
 		scores = [
 			(self.hint_generator.expected_score(
 				SearchState(
-					state[DieFace.Tank], state[DieFace.Ray],
-					state.num_earthlings() + action, num_earthling_types + 1
+					state.side_dice[DieFace.Tank],
+					state.side_dice[DieFace.Ray],
+					state.side_dice.num_earthlings() + action,
+					num_earthling_types + 1
 				)
 			), action)
-			for action in list(set(throw[x] for x in state.selectable_earthlings(throw)))
+			for action in list(set(state.throw[x] for x in state.selectable_earthlings()))
 		]
-		if throw[DieFace.Ray] > 0:
+		if state.throw[DieFace.Ray] > 0:
 			scores.append((
 				self.hint_generator.expected_score(
 					SearchState(
-						state[DieFace.Tank], state[DieFace.Ray] + throw[DieFace.Ray],
-						state.num_earthlings(), num_earthling_types
+						state.side_dice[DieFace.Tank],
+						state.side_dice[DieFace.Ray] + state.throw[DieFace.Ray],
+						state.side_dice.num_earthlings(),
+						num_earthling_types
 					)
 				), 0
 			))
 
 		for score, action in sorted(scores, key = lambda x: x[0], reverse = True):
 			if action > 0:
-				die = next(die for die in state.selectable_earthlings(throw) if throw[die] == action)
+				die = next(die for die in state.selectable_earthlings() if state.throw[die] == action)
 				choice = "%d [%s] Earthling%s" % (action, die2key[die], "s" if action > 1 else "")
 			else:
-				choice = "%d [R] Ray%s" % (throw[DieFace.Ray], "s" if throw[DieFace.Ray] > 1 else "")
+				choice = "%d [R] Ray%s" % (state.throw[DieFace.Ray], "s" if state.throw[DieFace.Ray] > 1 else "")
 			print("%.3f %s" % (score, choice))
 
-	def select_die(self, state, throw):
-		options = [key for key in EARTHLINGS if state[key] == 0 and throw[key] > 0]
-		if throw[DieFace.Ray] > 0:
+	def select_die(self, state: RoundState):
+		options = state.selectable_earthlings()
+		if state.throw[DieFace.Ray] > 0:
 			options.append(DieFace.Ray)
 
 		if self.hint_generator is not None:
-			self.show_hint(state, throw)
+			self.show_hint(state)
 		else:
 			self.show_options(options)
 
@@ -91,7 +95,7 @@ class HumanPlayer:
 			if key in key2die:
 				return key2die[key]
 
-	def should_stop(self, state):
+	def should_stop(self, state: RoundState):
 		while True:
 			choice = input("Continue (Y/N)? : ").upper()
 			if choice == "Y" or choice == "N":

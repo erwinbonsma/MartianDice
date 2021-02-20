@@ -3,13 +3,13 @@ from game.DataTypes import *
 
 class RandomPlayer:
 
-	def select_die(self, state, throw):
-		options = state.selectable_earthlings(throw)
-		if throw[DieFace.Ray] > 0:
+	def select_die(self, state: RoundState):
+		options = state.selectable_earthlings()
+		if state.throw[DieFace.Ray] > 0:
 			options.append(DieFace.Ray)
 		return choice(options)
 
-	def should_stop(self, state):
+	def should_stop(self, state: RoundState):
 		return state.score() > 0 and random() > 0.5
 
 	def __str__(self):
@@ -17,15 +17,15 @@ class RandomPlayer:
 
 class DefensivePlayer:
 
-	def select_die(self, state, throw):
-		if throw[DieFace.Ray] > 0 and state[DieFace.Tank] > state[DieFace.Ray]:
+	def select_die(self, state: RoundState):
+		if state.throw[DieFace.Ray] > 0 and state.side_dice[DieFace.Tank] > state.side_dice[DieFace.Ray]:
 			return DieFace.Ray
-		options = state.selectable_earthlings(throw)
+		options = state.selectable_earthlings()
 		return choice(options) if len(options) > 0 else DieFace.Ray
 
-	def should_stop(self, state):
-		buffer = state[DieFace.Ray] - state[DieFace.Tank]
-		return state.score() > 0 and (buffer < 2 or len(state.collected_earthlings()) == 3)
+	def should_stop(self, state: RoundState):
+		buffer = state.side_dice[DieFace.Ray] - state.side_dice[DieFace.Tank]
+		return state.score() > 0 and (buffer < 2 or len(state.side_dice.collected_earthlings()) == 3)
 
 	def __str__(self):
 		return "DefensivePlayer"
@@ -45,56 +45,73 @@ def show_throw(throw):
 
 	print("Throw:", ", ".join(items))
 
-def show_state(state):
-	print("%d deathrays vs %d tanks" % (state[DieFace.Ray], state[DieFace.Tank]))
-	if state.num_earthlings() > 0:
-		print("Abducted earthlings:", " ".join(die_string(key, state[key]) for key in EARTHLINGS if state[key] > 0))
+def show_side_dice(side_dice):
+	print("%d deathrays vs %d tanks" % (side_dice[DieFace.Ray], side_dice[DieFace.Tank]))
+	if side_dice.num_earthlings() > 0:
+		print("Abducted earthlings:", " ".join(die_string(key, side_dice[key]) for key in EARTHLINGS if side_dice[key] > 0))
 
-def play_round(action_selector, throw_fun = random_throw, state = None, output = True):
-	if state == None:
-		state = RoundState()
+def show_state(state: RoundState):
+	if state.phase == RoundPhase.PostThrow:
+		show_throw(state.throw)
+		return
+	
+	if state.phase == RoundPhase.PickDice:
+		return
+
+	if state.phase == RoundPhase.PostPick:
+		print("%s selected" % (state.last_pick.name))
+		print()
+		show_side_dice(state.side_dice)
+		return
+
+	if state.phase == RoundPhase.CheckExit:
+		print("Score (sofar):", state.score())
+		return
+
+	if state.phase == RoundPhase.Done:
+		print(state.done_reason)
+		print("Score:", state.score())
+
+def dev_null(state):
+	pass
+
+def play_round(action_selector, throw_fun = random_throw, ini_side_dice = None, state_listener = None):
+	if state_listener is None:
+		state_listener = dev_null
+
+	state = RoundState(ini_side_dice)
 
 	while True:
-		throw = throw_fun(state)
-		if output: show_throw(throw)
+		state.set_throw(throw_fun(state.side_dice))
+		state_listener(state)
 
-		state.update_tanks(throw)
-		if state.is_done(throw):
-			if output: print("Done!" if state.score() > 0 else "Bust!")
+		if state.check_post_throw_exit():
 			break
 
-		selected_die = action_selector.select_die(state, throw)
-		if output:
-			print("%s selected" % (selected_die.name))
-			print()
+		selected_die = action_selector.select_die(state)
+		state.handle_pick(selected_die)
+		state_listener(state)
 
-		state.handle_choice(throw, selected_die)
-		if output: show_state(state)
+		if state.check_post_pick_exit():
+			break
 
-		if state.total_collected() == NUM_DICE or (
-			state.score() > 0 and len(state.collected_earthlings()) == 3
+		state_listener(state)
+		if (
+			state.phase == RoundPhase.CheckExit and 
+			state.check_player_exit(action_selector.should_stop(state))
 		):
 			break
 
-		if state.score() > 0:
-			if output: print("Score (sofar):", state.score())
-			if action_selector.should_stop(state):
-				break
+	state_listener(state)
 
-		if output: print()
-
-	score = state.score()
-	if output:
-		print("Score:", score)
-
-	return score
+	return state.score()
 
 if __name__ == '__main__':
 	action_selector = DefensivePlayer()
 
-	play_round(action_selector)
+	play_round(action_selector, state_listener = show_state)
 
 	for player in [RandomPlayer(), DefensivePlayer()]:
 		num_games = 100
-		summed_score = sum(play_round(player, output = False) for _ in range(num_games))
+		summed_score = sum(play_round(player) for _ in range(num_games))
 		print("Average score of %s" % (player), summed_score / num_games)
