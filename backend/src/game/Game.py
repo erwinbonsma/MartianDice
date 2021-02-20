@@ -98,4 +98,3 @@ if __name__ == '__main__':
 		num_games = 100
 		summed_score = sum(play_game(player, output = False) for _ in range(num_games))
 		print("Average score of %s" % (player), summed_score / num_games)
-
