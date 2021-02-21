@@ -76,7 +76,9 @@ class GameServer:
 	def update_round_state(self, round_state):
 		self.game_state.round_state = round_state
 		if round_state.phase == RoundPhase.Done:
-			self.game_state.end_round(round_state.score())
+			score = round_state.score()
+			logger.info(f"{score} points scored in round")
+			self.game_state.end_round(score)
 
 		asyncio.get_event_loop().create_task(self.broadcast(self.game_state.as_json()))
 
@@ -91,6 +93,7 @@ class GameServer:
 
 	def start_round(self):
 		player_id = self.game_state.active_player
+		logger.info(f"Start round with player {player_id}")
 		if player_id in self.bots:
 			self.move_handler = AsyncBotWrapper(bots[player_id][1])
 		else:

@@ -29,7 +29,6 @@ class RemotePlayer:
 				if not state.can_select(die):
 					self.logger.info(f"Cannot select: {picked}")
 					continue
-				print("Selected:", die)
 				return die
 
 	async def should_stop_async(self, state: RoundState):
