@@ -17,7 +17,7 @@ class RemotePlayer:
 	async def handle_action(self, action):
 		await self.queue.put(action)
 
-	async def select_die(self, state: RoundState):
+	async def select_die_async(self, state: RoundState):
 		while True:
 			action = await self.queue.get()
 			if "pick-die" in action:
@@ -32,7 +32,7 @@ class RemotePlayer:
 				print("Selected:", die)
 				return die
 
-	async def should_stop(self, state: RoundState):
+	async def should_stop_async(self, state: RoundState):
 		while True:
 			action = await self.queue.get()
 			if "throw-again" in action:

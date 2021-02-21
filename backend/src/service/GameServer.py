@@ -43,10 +43,10 @@ class AsyncBotWrapper:
 	def __init__(self, action_selector):
 		self.action_selector = action_selector
 
-	async def select_die(self, state: RoundState):
+	async def select_die_async(self, state: RoundState):
 		return self.action_selector.select_die(state)
 
-	async def should_stop(self, state: RoundState):
+	async def should_stop_async(self, state: RoundState):
 		return self.action_selector.should_stop(state)
 
 class GameServer:

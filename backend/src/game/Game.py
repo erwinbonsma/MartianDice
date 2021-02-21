@@ -119,7 +119,7 @@ async def play_round_async(action_selector, throw_fun = random_throw, ini_side_d
 			break
 
 		state_listener(state)
-		selected_die = await action_selector.select_die(state)
+		selected_die = await action_selector.select_die_async(state)
 		state.handle_pick(selected_die)
 
 		if state.check_post_pick_exit():
@@ -127,7 +127,7 @@ async def play_round_async(action_selector, throw_fun = random_throw, ini_side_d
 
 		state_listener(state)
 		if state.phase == RoundPhase.CheckExit:
-			should_stop = await action_selector.should_stop(state)
+			should_stop = await action_selector.should_stop_async(state)
 			if state.check_player_exit(should_stop):
 				break
 			state_listener(state)
