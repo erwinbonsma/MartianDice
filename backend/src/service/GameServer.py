@@ -108,6 +108,8 @@ class GameServer:
 		del self.players[player_id]
 		self.expected_players.add(player_id)
 		await self.send_players_event()
+		if len(self.players) == 0 and self.game_state.done:
+			asyncio.get_event_loop().stop()
 
 	async def main(self, websocket, path):
 		player_id = int(await websocket.recv())
