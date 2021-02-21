@@ -4,7 +4,8 @@ import websockets
 import logging
 import random
 from game.DataTypes import RoundState, RoundPhase
-from game.Game import play_round_async
+from game.Game import play_round_async, RandomPlayer, DefensivePlayer
+from game.OptimalPlay import OptimalActionSelector
 from service.GameState import GameState
 from service.RemotePlayer import RemotePlayer
 
@@ -17,20 +18,43 @@ players = {
 	200: "Bob"
 }
 
+bots = {
+	300: ("Randy", RandomPlayer()),
+	301: ("Dee", DefensivePlayer()),
+	302: ("Max", OptimalActionSelector())
+}
+
 games = {
 	1000: {
-		"players": [100, 200]
+		"players": [100, 200],
+		"bots": []
 	},
 	2000: {
-		"players": [100]
+		"players": [100],
+		"bots": []
+	},
+	3000: {
+		"players": [100],
+		"bots": [300, 301, 302]
 	}
 }
+
+class AsyncBotWrapper:
+	def __init__(self, action_selector):
+		self.action_selector = action_selector
+
+	async def select_die(self, state: RoundState):
+		return self.action_selector.select_die(state)
+
+	async def should_stop(self, state: RoundState):
+		return self.action_selector.should_stop(state)
 
 class GameServer:
 
 	def __init__(self, game_id = 2000):
 		self.game_id = game_id
 		self.players = {}
+		self.bots = set(games[game_id]["bots"])
 		self.expected_players = set(games[game_id]["players"])
 
 	def players_event(self):
@@ -46,7 +70,7 @@ class GameServer:
 			await asyncio.wait([ws.send(message) for ws in self.players.values()])
 
 	async def start_game(self):
-		self.game_state = GameState([id for id in self.players.keys()])
+		self.game_state = GameState(list(self.players.keys()) + list(self.bots))
 		self.start_round()
 
 	def update_round_state(self, round_state):
@@ -59,12 +83,18 @@ class GameServer:
 		if round_state.phase == RoundPhase.Done:
 			if self.game_state.next_round():
 				self.start_round()
+			else:
+				asyncio.get_event_loop().create_task(self.broadcast(self.game_state.as_json()))
 
 	async def play_new_round(self):
 		await play_round_async(self.move_handler, state_listener = lambda state: self.update_round_state(state))
 
 	def start_round(self):
-		self.move_handler = RemotePlayer(logger)
+		player_id = self.game_state.active_player
+		if player_id in self.bots:
+			self.move_handler = AsyncBotWrapper(bots[player_id][1])
+		else:
+			self.move_handler = RemotePlayer(logger)
 		asyncio.get_event_loop().create_task(self.play_new_round())
 
 	async def register(self, player_id, websocket):
@@ -103,7 +133,7 @@ class GameServer:
 		finally:
 			await self.unregister(player_id)
 
-game_server = GameServer(2000)
+game_server = GameServer(3000)
 start_server = websockets.serve(game_server.main, "localhost", 8765)
 
 asyncio.get_event_loop().run_until_complete(start_server)
