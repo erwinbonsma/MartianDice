@@ -96,11 +96,41 @@ def play_round(action_selector, throw_fun = random_throw, ini_side_dice = None, 
 			break
 
 		state_listener(state)
-		if (
-			state.phase == RoundPhase.CheckExit and 
-			state.check_player_exit(action_selector.should_stop(state))
-		):
+		if state.phase == RoundPhase.CheckExit:
+			should_stop = action_selector.should_stop(state)
+			if state.check_player_exit(should_stop):
+				break
+
+	state_listener(state)
+
+	return state.score()
+
+async def play_round_async(action_selector, throw_fun = random_throw, ini_side_dice = None, state_listener = None):
+	if state_listener is None:
+		state_listener = dev_null
+
+	state = RoundState(ini_side_dice)
+
+	while True:
+		state.set_throw(throw_fun(state.side_dice))
+		state_listener(state)
+
+		if state.check_post_throw_exit():
 			break
+
+		state_listener(state)
+		selected_die = await action_selector.select_die(state)
+		state.handle_pick(selected_die)
+
+		if state.check_post_pick_exit():
+			break
+
+		state_listener(state)
+		if state.phase == RoundPhase.CheckExit:
+			should_stop = await action_selector.should_stop(state)
+			if state.check_player_exit(should_stop):
+				break
+			state_listener(state)
 
 	state_listener(state)
 

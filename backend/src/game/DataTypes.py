@@ -16,7 +16,7 @@ NUM_DIE_FACE_TYPES = 5
 
 class RoundPhase(IntEnum):
 	Throwing = 0
-	PostThrow = 1
+	Thrown = 1
 	PickDice = 2
 	PostPick = 3
 	CheckExit = 4
@@ -62,6 +62,9 @@ class SideDiceState:
 	def __str__(self):
 		return str(self.__counts)
 
+	def __getstate__(self):
+		return dict((die.name, count) for die, count in self.__counts.items())
+
 class DiceThrow:
 
 	def __init__(self, num_dice = 0):
@@ -86,6 +89,9 @@ class DiceThrow:
 	def __str__(self):
 		return str(self.__counts)
 
+	def __getstate__(self):
+		return dict((die.name, count) for die, count in self.__counts.items())
+
 class RoundState:
 
 	def __init__(self, start_side_state = None):
@@ -99,14 +105,19 @@ class RoundState:
 	def selectable_earthlings(self):
 		return [key for key in EARTHLINGS if self.side_dice[key] == 0 and self.throw[key] > 0]
 
+	def can_select(self, die):
+		if die == DieFace.Ray:
+			return self.throw[DieFace.Ray] > 0
+		return die in self.selectable_earthlings()
+
 	def set_throw(self, throw):
 		assert(self.phase == RoundPhase.Throwing)
 
 		self.throw = throw
-		self.phase = RoundPhase.PostThrow
+		self.phase = RoundPhase.Thrown
 
 	def check_post_throw_exit(self):
-		assert(self.phase == RoundPhase.PostThrow)
+		assert(self.phase == RoundPhase.Thrown)
 
 		self.side_dice.update_tanks(self.throw)
 
@@ -134,6 +145,7 @@ class RoundState:
 		self.last_pick = selected_die
 		self.side_dice.handle_choice(self.throw, selected_die)
 		self.phase = RoundPhase.PostPick
+		self.throw = None
 
 	def check_post_pick_exit(self):
 		assert(self.phase == RoundPhase.PostPick)
@@ -159,3 +171,19 @@ class RoundState:
 			return True
 
 		self.phase = RoundPhase.Throwing
+
+	def __str__(self):
+		return f"phase={self.phase.name}, side_dice={self.side_dice}"
+
+	def __getstate__(self):
+		state = {
+			"side_dice": self.side_dice,
+			"phase": self.phase.name,
+		}
+
+		if self.throw:
+			state["throw"] = self.throw
+		if self.phase == RoundPhase.Done:
+			state["score"] = self.score()
+
+		return state
