@@ -1,5 +1,5 @@
-from game.DataTypes import DiceThrow, DieFace, RoundState, EARTHLINGS, NUM_DICE
-from game.Game import play_round, show_throw, random_throw
+from game.DataTypes import DiceThrow, DieFace, TurnState, EARTHLINGS, NUM_DICE
+from game.Game import show_throw, random_throw
 from game.OptimalPlay import OptimalActionSelector, SearchState
 
 die2key = {
@@ -47,7 +47,7 @@ class HumanPlayer:
 
 		print(" ".join(items))
 
-	def show_hint(self, state: RoundState):
+	def show_hint(self, state: TurnState):
 		num_earthling_types = len(state.side_dice.collected_earthlings())		
 		scores = [
 			(self.hint_generator.expected_score(
@@ -80,7 +80,7 @@ class HumanPlayer:
 				choice = "%d [R] Ray%s" % (state.throw[DieFace.Ray], "s" if state.throw[DieFace.Ray] > 1 else "")
 			print("%.3f %s" % (score, choice))
 
-	def select_die(self, state: RoundState):
+	def select_die(self, state: TurnState):
 		options = state.selectable_earthlings()
 		if state.throw[DieFace.Ray] > 0:
 			options.append(DieFace.Ray)
@@ -95,7 +95,7 @@ class HumanPlayer:
 			if key in key2die:
 				return key2die[key]
 
-	def should_stop(self, state: RoundState):
+	def should_stop(self, state: TurnState):
 		while True:
 			choice = input("Continue (Y/N)? : ").upper()
 			if choice == "Y" or choice == "N":

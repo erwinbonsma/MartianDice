@@ -1,5 +1,5 @@
 from game.DataTypes import DieFace, SideDiceState
-from game.Game import play_round
+from game.Game import play_turn
 from game.OptimalPlay import OptimalActionSelector, SearchState
 import unittest
 import itertools
@@ -69,7 +69,7 @@ class TestOptimalActionSelector(unittest.TestCase):
 		scores = [
 			(key, sum(1 for _ in iter))
 			for key, iter in itertools.groupby(
-				sorted(play_round(self.action_selector, ini_side_dice = state)
+				sorted(play_turn(self.action_selector, ini_side_dice = state)
 				for _ in range(num_runs))
 			)
 		]
@@ -86,7 +86,7 @@ class TestOptimalActionSelector(unittest.TestCase):
 		scores = [
 			(key, sum(1 for _ in iter))
 			for key, iter in itertools.groupby(
-				sorted(play_round(self.action_selector, ini_side_dice = state)
+				sorted(play_turn(self.action_selector, ini_side_dice = state)
 				for _ in range(num_runs))
 			)
 		]
@@ -100,7 +100,7 @@ class TestOptimalActionSelector(unittest.TestCase):
 		scores = [
 			(key, sum(1 for _ in iter))
 			for key, iter in itertools.groupby(
-				sorted(play_round(self.action_selector, ini_side_dice = state)
+				sorted(play_turn(self.action_selector, ini_side_dice = state)
 				for _ in range(num_runs))
 			)
 		]

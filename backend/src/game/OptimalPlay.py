@@ -269,7 +269,7 @@ class OptimalActionSelector:
 
 		return max(evals, key = lambda x: x[1])
 
-	def select_die(self, state: RoundState):
+	def select_die(self, state: TurnState):
 		search_state = SearchState(
 			state.side_dice[DieFace.Tank] - state.throw[DieFace.Tank],
 			state.side_dice[DieFace.Ray],
@@ -290,8 +290,8 @@ class OptimalActionSelector:
 			if state.throw[key] == action and state.side_dice[key] == 0:
 				return key
 
-	def should_stop(self, state):
-		return state.score() == self.__expected_score
+	def should_stop(self, state: TurnState):
+		return state.score == self.__expected_score
 
 if __name__ == '__main__':
 	import doctest
@@ -300,7 +300,7 @@ if __name__ == '__main__':
 	action_selector = OptimalActionSelector()
 	print("Expected average score:", action_selector.expected_score(SearchState(0, 0, 0, 0)))
 
-	from game.Game import play_round
-	num_rounds = 100000
-	summed_scores = sum(play_round(action_selector) for _ in range(num_rounds))
-	print("Avg score:", summed_scores / num_rounds)
+	from game.Game import play_turn
+	num_turns = 100000
+	summed_scores = sum(play_turn(action_selector) for _ in range(num_turns))
+	print("Avg score:", summed_scores / num_turns)

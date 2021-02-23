@@ -14,7 +14,7 @@ EARTHLINGS = (DieFace.Chicken, DieFace.Cow, DieFace.Human)
 
 NUM_DIE_FACE_TYPES = 5
 
-class RoundPhase(IntEnum):
+class TurnPhase(IntEnum):
 	Throwing = 0
 	Thrown = 1
 	PickDice = 2
@@ -92,13 +92,15 @@ class DiceThrow:
 	def __getstate__(self):
 		return dict((die.name, count) for die, count in self.__counts.items())
 
-class RoundState:
+class TurnState:
 
 	def __init__(self, start_side_state = None):
 		self.side_dice = start_side_state.copy() if start_side_state else SideDiceState()
-		self.phase = RoundPhase.Throwing
+		self.phase = TurnPhase.Throwing
 		self.throw = None
+		self.throw_count = 0
 
+	@property
 	def score(self):
 		return self.side_dice.score()
 
@@ -111,20 +113,21 @@ class RoundState:
 		return die in self.selectable_earthlings()
 
 	def set_throw(self, throw):
-		assert(self.phase == RoundPhase.Throwing)
+		assert(self.phase == TurnPhase.Throwing)
 
 		self.throw = throw
-		self.phase = RoundPhase.Thrown
+		self.throw_count += 1
+		self.phase = TurnPhase.Thrown
 
 	def check_post_throw_exit(self):
-		assert(self.phase == RoundPhase.Thrown)
+		assert(self.phase == TurnPhase.Thrown)
 
 		self.side_dice.update_tanks(self.throw)
 
 		selectable_earthlings = self.selectable_earthlings()
 		rays = self.throw[DieFace.Ray]
 		if len(selectable_earthlings) == 0 and rays == 0:
-			self.phase = RoundPhase.Done
+			self.phase = TurnPhase.Done
 			self.done_reason = "No selectable dice"
 			return True
 
@@ -133,57 +136,58 @@ class RoundState:
 		max_rays = NUM_DICE - tanks - self.side_dice.num_earthlings() - forced_earthlings
 
 		if tanks > max_rays:
-			self.phase = RoundPhase.Done
+			self.phase = TurnPhase.Done
 			self.done_reason = "Defeated"
 			return True
 
-		self.phase = RoundPhase.PickDice
+		self.phase = TurnPhase.PickDice
 
 	def handle_pick(self, selected_die):
-		assert(self.phase == RoundPhase.PickDice)
+		assert(self.phase == TurnPhase.PickDice)
 	
 		self.last_pick = selected_die
 		self.side_dice.handle_choice(self.throw, selected_die)
-		self.phase = RoundPhase.PostPick
+		self.phase = TurnPhase.PostPick
 		self.throw = None
 
 	def check_post_pick_exit(self):
-		assert(self.phase == RoundPhase.PostPick)
+		assert(self.phase == TurnPhase.PostPick)
 
 		if self.side_dice.total_collected() == NUM_DICE:
-			self.phase = RoundPhase.Done
+			self.phase = TurnPhase.Done
 			self.done_reason = "No more dice"
 			return True
 
-		if self.score() > 0 and len(self.side_dice.collected_earthlings()) == 3:
-			self.phase = RoundPhase.Done
+		if self.score > 0 and len(self.side_dice.collected_earthlings()) == 3:
+			self.phase = TurnPhase.Done
 			self.done_reason = "Cannot improve score"
 			return True
 
-		self.phase = RoundPhase.CheckExit if self.score() > 0 else RoundPhase.Throwing
+		self.phase = TurnPhase.CheckExit if self.score > 0 else TurnPhase.Throwing
 
 	def check_player_exit(self, stop):
-		assert(self.phase == RoundPhase.CheckExit)
+		assert(self.phase == TurnPhase.CheckExit)
 
 		if stop:
-			self.phase = RoundPhase.Done
+			self.phase = TurnPhase.Done
 			self.done_reason = "Player choice"
 			return True
 
-		self.phase = RoundPhase.Throwing
+		self.phase = TurnPhase.Throwing
 
 	def __str__(self):
 		return f"phase={self.phase.name}, side_dice={self.side_dice}"
 
 	def __getstate__(self):
 		state = {
-			"side_dice": self.side_dice,
+			"throw_count": self.throw_count,
 			"phase": self.phase.name,
+			"side_dice": self.side_dice,
 		}
 
 		if self.throw:
 			state["throw"] = self.throw
-		if self.phase == RoundPhase.Done:
-			state["score"] = self.score()
+		if self.phase == TurnPhase.Done:
+			state["score"] = self.score
 
 		return state

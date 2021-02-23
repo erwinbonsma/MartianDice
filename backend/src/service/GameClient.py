@@ -14,17 +14,17 @@ key2die = {
 	"M": DieFace.Cow
 }
 
-def pick_dice(round_state):
+def pick_dice(turn_state):
 	while True:
 		key = input("Your choice : ").upper()
 		if not key in key2die:
 			print("Unrecognized key")
 			continue
 		die = key2die[key]
-		if not die.name in round_state["throw"]:
+		if not die.name in turn_state["throw"]:
 			print("Die not in throw")
 			continue
-		if die != DieFace.Ray and die.name in round_state["side_dice"]:
+		if die != DieFace.Ray and die.name in turn_state["side_dice"]:
 			print("Die already selected")
 			continue
 		return json.dumps({
@@ -41,28 +41,42 @@ def check_exit():
 				"throw-again": choice == "Y"
 			})
 
-async def play_game(player_id):
+async def add_bots(ws, bots):
+	for bot in bots:
+		await ws.send(json.dumps({
+			"action": "add-bot",
+			"bot_behaviour": bot
+		}))
+
+async def play_game(args):
 	uri = "ws://localhost:8765"
 	async with websockets.connect(uri) as websocket:
-		await websocket.send(str(player_id))
+		await websocket.send(args.name)
+
+		await add_bots(websocket, args.bots)
 
 		while True:
 			raw_message = await websocket.recv()
 			print(raw_message)
 			message = json.loads(raw_message)
+			if message["type"] == "clients":
+				if len(message["clients"]) == args.num_clients:
+					await websocket.send(json.dumps({ "action": "start-game"}))
+
 			if message["type"] == "game-state":
 				if message["done"]:
 					break
-				if message["active_player"] != player_id:
+				if message["active_player"] != args.name:
 					continue
-				if message["round_state"]["phase"] == "PickDice":
-					await websocket.send(pick_dice(message["round_state"]))
-				elif message["round_state"]["phase"] == "CheckExit":
+				if message["turn_state"]["phase"] == "PickDice":
+					await websocket.send(pick_dice(message["turn_state"]))
+				elif message["turn_state"]["phase"] == "CheckExit":
 					await websocket.send(check_exit())
 
 parser = argparse.ArgumentParser(description='Basic Martian Dice client')
-parser.add_argument('--game-id', help='Game ID')
-parser.add_argument('--player-id', help='Player ID')
+parser.add_argument('--num-clients', type=int, help='Number of clients (host only)', default=1)
+parser.add_argument('--bots', nargs='*', choices=["smart", "random", "defensive"], help='Adds bot(s) (host only)')
+parser.add_argument('--name', help='Player name')
 args = parser.parse_args()
 
-asyncio.get_event_loop().run_until_complete(play_game(int(args.player_id)))
+asyncio.get_event_loop().run_until_complete(play_game(args))
