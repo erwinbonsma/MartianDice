@@ -24,8 +24,23 @@
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.diceRow {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+}
+.products {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 45%;
+	margin: 0 0 1em 0;
+	padding: 1em;
+	border: 1px solid black;
+}
+  
+.die img {
+	margin: 0.1em 0.2em;
 }
 
 @keyframes App-logo-spin {
