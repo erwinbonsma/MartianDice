@@ -13,34 +13,43 @@
   }
 }
 
-.App-header {
+.App {
   background-color: #282c34;
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: row;
+  align-items: left;
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
 }
 
-.diceRow {
+.GameArea {
+	background-color: #282c34;	
+}
+
+.Player {
+	display: flex;
+	justify-content: space-between;
+	background-color: black;
+}
+
+.PlayerScore {
+	margin: 0em 0em 0em 1em;
+}
+
+.DiceRow {
 	display: flex;
 	flex-wrap: wrap;
-	justify-content: space-between;
-}
-.products {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	width: 45%;
-	margin: 0 0 1em 0;
-	padding: 1em;
-	border: 1px solid black;
+	justify-content: flex-start;
 }
   
-.die img {
+.Die img {
 	margin: 0.1em 0.2em;
+}
+
+.AbductionZone {
+	background-color: #446666;
 }
 
 @keyframes App-logo-spin {
