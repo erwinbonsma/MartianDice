@@ -1,6 +1,6 @@
 import './App.css';
-import Die from './components/Die';
-import DiceRow from './components/DiceRow';
+import { Die } from './components/Die';
+import { DiceRow } from './components/DiceRow';
 
 function App() {
 	const dice = ["tank", "tank", "ray", "human", "chicken", "cow"];
