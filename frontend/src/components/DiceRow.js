@@ -2,10 +2,10 @@ import { Die } from './Die';
 
 export function DiceRow(props) {
 	return (
-		<div class="DiceRow">
+		<div className="DiceRow">
 			{ Object.entries(props.dice).map(([die, number]) =>
-				Array(...Array(number)).map(() => (
-					<Die face={die}></Die>
+				Array.from({length: number}, (_, index) => (
+					<Die key={`${die}#${index}`} face={die}></Die>
 				))
 			)}
 		</div>
