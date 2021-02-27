@@ -9,9 +9,6 @@ import { PlayerList } from './components/PlayerList';
 import { useState, useEffect } from 'react';
 
 function App(props) {
-	const players = ["Alice", "Bob", "Charlie"];
-	const scores = {"Alice": 7, "Bob": 4, "Charlie": 5};
-	
 	const [ws, setWebsocket] = useState();
 	const [game, setGame] = useState();
 	const [clients, setClients] = useState([]);
@@ -129,7 +126,7 @@ function App(props) {
 			</div>
 			<div className="PlayersArea">
 				{ !!game ? 
-					<PlayerList players={players} scores={scores}></PlayerList> :
+					<PlayerList players={game.players} scores={game.score}></PlayerList> :
 					<GameSetup clients={clients} bots={bots} 
 						host={host} isHost={host === props.name}
 						onAddBot={onAddBot} onRemoveBot={onRemoveBot}
