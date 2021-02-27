@@ -157,6 +157,7 @@ class GameServer:
 
 				bot_name = self.next_bot_name()
 				self.bots[bot_name] = bot_behaviours[action["bot_behaviour"]]
+				await self.send_bots_event()
 				logger.info(f"Added bot {bot_name}")
 
 			if action["action"] == "remove-bot":
@@ -165,6 +166,7 @@ class GameServer:
 
 				bot_name = action["bot_name"]
 				del self.bots[bot_name]
+				await self.send_bots_event()
 				logger.info(f"Removed bot {bot_name}")
 
 			if action["action"] == "start-game":

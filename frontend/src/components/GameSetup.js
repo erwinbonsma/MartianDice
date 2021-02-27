@@ -18,9 +18,15 @@ export function GameSetup(props) {
 					{ props.bots.map(bot => (
 						<div className="Row" key={bot}>
 							<div className="Name">{bot}</div>
+							{ props.isHost && (
+								<button onClick={props.onRemoveBot}>Remove</button>
+							)}
 						</div>
 					))}
 				</div>
+			)}
+			{ props.isHost && (
+				<button onClick={props.onAddBot}>Add bot</button>
 			)}
 		</div>
 	)

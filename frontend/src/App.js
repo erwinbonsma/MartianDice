@@ -55,7 +55,17 @@ function App(props) {
 			}
 		}
 	}, [props.name, ws]);
-	
+
+	const onAddBot = () => {
+		ws.send(JSON.stringify({
+			action: "add-bot",
+			bot_behaviour: "random"
+		}))
+	}
+	const onRemoveBot = () => {
+		console.log("Remove bot");
+	}
+
 	return (
     	<div className="App">
   			<div className="GameArea">
@@ -67,7 +77,9 @@ function App(props) {
 			<div className="PlayersArea">
 				{ !!game ? 
 					<PlayerList players={players} scores={scores}></PlayerList> :
-					<GameSetup clients={clients} bots={bots} host={host}></GameSetup>
+					<GameSetup clients={clients} bots={bots} 
+						host={host} isHost={host === props.name}
+						onAddBot={onAddBot} onRemoveBot={onRemoveBot}></GameSetup>
 				}
 			</div>
 		</div>
