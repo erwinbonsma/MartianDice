@@ -3,6 +3,7 @@ import { AbductionZone } from './components/AbductionZone';
 import { BattleZone } from './components/BattleZone';
 import { DiceThrow } from './components/DiceThrow';
 import { GameInfo } from './components/GameInfo';
+import { GameSetup } from './components/GameSetup';
 import { PlayerList } from './components/PlayerList';
 import { useState, useEffect } from 'react';
 
@@ -14,6 +15,10 @@ function App(props) {
 	const scores = {"Alice": 7, "Bob": 4, "Charlie": 5};
 	
 	const [ws, setWebsocket] = useState();
+	const [game, setGame] = useState();
+	const [clients, setClients] = useState([]);
+	const [bots, setBots] = useState([]);
+	const [host, setHost] = useState();
 
 	useEffect(() => {
 		if (!ws) {
@@ -28,7 +33,19 @@ function App(props) {
 
 			// Listen for messages
 			socket.addEventListener('message', function (event) {
-    			console.log('Message from server ', event.data);
+				const msg = JSON.parse(event.data);
+    			console.log('Message from server ', msg);
+				switch (msg.type) {
+					case "clients":
+						setHost(msg.host);
+						setClients(msg.clients);
+						break;
+					case "bots":
+						setBots(msg.bots);
+						break;
+					default:
+						console.log("Unknown message", msg.type);
+				}
 			});
 		}
 
@@ -48,7 +65,10 @@ function App(props) {
 				<AbductionZone earthlings={earthlings}></AbductionZone>
 			</div>
 			<div className="PlayersArea">
-				<PlayerList players={players} scores={scores}></PlayerList>
+				{ !!game ? 
+					<PlayerList players={players} scores={scores}></PlayerList> :
+					<GameSetup clients={clients} bots={bots} host={host}></GameSetup>
+				}
 			</div>
 		</div>
 	);

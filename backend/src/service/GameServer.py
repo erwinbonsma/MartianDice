@@ -44,17 +44,26 @@ class GameServer:
 		self.host = None
 		self.next_bot_id = 1
 
-	def clients_event(self):
-		"""Sends event with all connected clients (human players and observers)"""
-		return json.dumps({
-			"type": "clients",
-			"clients": list(self.clients.keys()),
-			"host": self.host
-		})
-
 	async def send_clients_event(self):
+		"""Sends event with all connected clients (human players and observers)"""
 		if self.clients:
-			message = self.clients_event()
+			message = json.dumps({
+				"type": "clients",
+				"clients": list(self.clients.keys()),
+				"host": self.host
+			})
+			await asyncio.wait([ws.send(message) for ws in self.clients.values()])
+
+	def bots_message(self):
+		return json.dumps({
+				"type": "bots",
+				"bots": list(self.bots.keys()),
+			})
+
+	async def send_bots_event(self):
+		"""Sends event with all bots"""
+		if self.clients:
+			message = self.bots_message()
 			await asyncio.wait([ws.send(message) for ws in self.clients.values()])
 
 	async def broadcast(self, message):
@@ -179,6 +188,7 @@ class GameServer:
 			await websocket.send("Cannot join game. Name already taken")
 			await websocket.close()
 			return
+		await websocket.send(self.bots_message())
 
 		try:
 			async for message in websocket:

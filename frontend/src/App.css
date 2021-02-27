@@ -38,6 +38,19 @@
 	margin: 0em 0em 0em 1em;
 }
 
+.GameSetup {
+	font-size: 0.8em;
+}
+
+.Row {
+	display: flex;
+	justify-content: space-between;
+}
+
+.Name {
+	margin: 0em 1em 0em 0em;
+}
+
 .DiceRow {
 	display: flex;
 	flex-wrap: wrap;
