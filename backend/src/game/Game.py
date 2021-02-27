@@ -113,12 +113,12 @@ async def play_turn_async(action_selector, throw_fun = random_throw, ini_side_di
 
 	while True:
 		state.set_throw(throw_fun(state.side_dice))
-		state_listener(state)
+		await state_listener(state)
 
 		if state.check_post_throw_exit():
 			break
 
-		state_listener(state)
+		await state_listener(state)
 		selected_die = await action_selector.select_die_async(state)
 		state.handle_pick(selected_die)
 
@@ -130,9 +130,9 @@ async def play_turn_async(action_selector, throw_fun = random_throw, ini_side_di
 			should_stop = await action_selector.should_stop_async(state)
 			if state.check_player_exit(should_stop):
 				break
-			state_listener(state)
+			await state_listener(state)
 
-	state_listener(state)
+	await state_listener(state)
 
 	return state.score
 

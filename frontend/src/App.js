@@ -8,9 +8,6 @@ import { PlayerList } from './components/PlayerList';
 import { useState, useEffect } from 'react';
 
 function App(props) {
-	const diceThrow = {"tank": 2, "ray": 3, "human": 1, "chicken": 1, "cow": 0};
-	const earthlings = { "human": 2, "cow": 4 };
-	const combatants = { tank: 3, ray: 2 };
 	const players = ["Alice", "Bob", "Charlie"];
 	const scores = {"Alice": 7, "Bob": 4, "Charlie": 5};
 	
@@ -77,13 +74,35 @@ function App(props) {
 		}));
 	}
 
+	let gameZone;
+	if (game) {
+		const diceThrow = game.turn_state.throw || {};
+		const earthlings = {}
+		const combatants = {}
+		Object.entries(game.turn_state.side_dice).forEach(([die, number]) => {
+			if (die === "Tank" || die === "Ray") {
+				combatants[die] = number;
+			} else {
+				earthlings[die] = number;
+			}
+		});
+		console.log("diceThrow", diceThrow);
+		console.log("earthlings", earthlings);
+		console.log("combatants", combatants);
+		gameZone = (
+			<div>
+				<DiceThrow throw={diceThrow}></DiceThrow>
+				<BattleZone combatants={combatants}></BattleZone>
+				<AbductionZone earthlings={earthlings}></AbductionZone>
+			</div>
+		)
+	}
+
 	return (
     	<div className="App">
   			<div className="GameArea">
 				<GameHeader game={game}></GameHeader>
-				<DiceThrow throw={diceThrow}></DiceThrow>
-				<BattleZone combatants={combatants}></BattleZone>
-				<AbductionZone earthlings={earthlings}></AbductionZone>
+				{ gameZone }
 			</div>
 			<div className="PlayersArea">
 				{ !!game ? 

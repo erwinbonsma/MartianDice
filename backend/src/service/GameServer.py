@@ -74,7 +74,7 @@ class GameServer:
 		self.game_state.start_game(itertools.chain(self.clients.keys(), self.bots.keys()))
 		self.start_turn()
 
-	def update_turn_state(self, turn_state):
+	async def update_turn_state(self, turn_state):
 		if self.game_state.turn_state is None:
 			self.game_state.start_turn(turn_state)
 
@@ -83,6 +83,7 @@ class GameServer:
 			self.game_state.end_turn()
 
 		asyncio.get_event_loop().create_task(self.broadcast(self.game_state.as_json()))
+		await asyncio.sleep(2)
 
 		if turn_state.phase == TurnPhase.Done:
 			if self.game_state.next_turn():
