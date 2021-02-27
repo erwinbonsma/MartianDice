@@ -60,10 +60,13 @@ function App(props) {
 		ws.send(JSON.stringify({
 			action: "add-bot",
 			bot_behaviour: "random"
-		}))
+		}));
 	}
-	const onRemoveBot = () => {
-		console.log("Remove bot");
+	const onRemoveBot = (e) => {
+		ws.send(JSON.stringify({
+			action: "remove-bot",
+			bot_name: e.target.id
+		}));
 	}
 
 	return (

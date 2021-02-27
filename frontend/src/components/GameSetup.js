@@ -19,7 +19,7 @@ export function GameSetup(props) {
 						<div className="Row" key={bot}>
 							<div className="Name">{bot}</div>
 							{ props.isHost && (
-								<button onClick={props.onRemoveBot}>Remove</button>
+								<button onClick={props.onRemoveBot} id={bot}>Remove</button>
 							)}
 						</div>
 					))}
