@@ -13,6 +13,7 @@ from service.RemotePlayer import RemotePlayer
 logger = logging.getLogger('websockets.server')
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
+logging.setLogRecordFactory(logging.LogRecord)
 
 bot_behaviours = {
 	"random": RandomPlayer(),
@@ -181,7 +182,7 @@ class GameServer:
 
 		try:
 			async for message in websocket:
-				logger.info("Message received:", message)
+				logger.info(f"Message received: {message}")
 				action = json.loads(message)
 				if action["action"] == "leave_game": break
 				await self.handle_action(client_id, action)
