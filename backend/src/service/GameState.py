@@ -23,7 +23,7 @@ class GameState:
 	def start_game(self, players):
 		assert(self.phase == GamePhase.Recruiting)
 
-		self.round = 0
+		self.round = 1
 		self.players = list(players)
 		random.shuffle(self.players)
 		self.active_player_index = 0

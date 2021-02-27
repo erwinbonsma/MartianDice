@@ -2,7 +2,7 @@ import './App.css';
 import { AbductionZone } from './components/AbductionZone';
 import { BattleZone } from './components/BattleZone';
 import { DiceThrow } from './components/DiceThrow';
-import { GameInfo } from './components/GameInfo';
+import { GameHeader } from './components/GameHeader';
 import { GameSetup } from './components/GameSetup';
 import { PlayerList } from './components/PlayerList';
 import { useState, useEffect } from 'react';
@@ -43,6 +43,9 @@ function App(props) {
 					case "bots":
 						setBots(msg.bots);
 						break;
+					case "game-state":
+						setGame(msg);
+						break;
 					default:
 						console.log("Unknown message", msg.type);
 				}
@@ -68,11 +71,16 @@ function App(props) {
 			bot_name: e.target.id
 		}));
 	}
+	const onStartGame = () => {
+		ws.send(JSON.stringify({
+			action: "start-game"
+		}));
+	}
 
 	return (
     	<div className="App">
   			<div className="GameArea">
-				<GameInfo round={2} turn="Bob" throw={4}></GameInfo>
+				<GameHeader game={game}></GameHeader>
 				<DiceThrow throw={diceThrow}></DiceThrow>
 				<BattleZone combatants={combatants}></BattleZone>
 				<AbductionZone earthlings={earthlings}></AbductionZone>
@@ -82,7 +90,8 @@ function App(props) {
 					<PlayerList players={players} scores={scores}></PlayerList> :
 					<GameSetup clients={clients} bots={bots} 
 						host={host} isHost={host === props.name}
-						onAddBot={onAddBot} onRemoveBot={onRemoveBot}></GameSetup>
+						onAddBot={onAddBot} onRemoveBot={onRemoveBot}
+						onStartGame={onStartGame}></GameSetup>
 				}
 			</div>
 		</div>

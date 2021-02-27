@@ -28,6 +28,9 @@ export function GameSetup(props) {
 			{ props.isHost && (
 				<button onClick={props.onAddBot}>Add bot</button>
 			)}
+			{ props.isHost && (
+				<button onClick={props.onStartGame}>Start game</button>
+			)}
 		</div>
 	)
 }
