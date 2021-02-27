@@ -119,31 +119,31 @@ class TurnState:
 		self.throw_count += 1
 		self.phase = TurnPhase.Thrown
 
-	def check_post_throw_exit(self):
-		assert(self.phase == TurnPhase.Thrown)
-
-		selectable_earthlings = self.selectable_earthlings()
 		rays = self.throw[DieFace.Ray]
-		if len(selectable_earthlings) == 0 and rays == 0:
-			self.phase = TurnPhase.Done
+		selectable_earthlings = self.selectable_earthlings()
+		if rays > 0 or len(selectable_earthlings) == 0:
+			forced_earthlings = 0
+		else:
+			forced_earthlings = min(self.throw[x] for x in selectable_earthlings)
+		tanks = self.side_dice[DieFace.Tank] + self.throw[DieFace.Tank]
+		max_rays = NUM_DICE - tanks - self.side_dice.num_earthlings() - forced_earthlings
+
+		if tanks > max_rays:
+			self.done_reason = "Defeated"
+		elif len(selectable_earthlings) == 0 and rays == 0:
 			self.done_reason = "No selectable dice"
-			return True
+		else:
+			self.done_reason = None
+
+	def move_tanks(self):
+		assert(self.phase == TurnPhase.Thrown)
 
 		new_tanks = self.throw[DieFace.Tank]
 		if new_tanks > 0:
 			self.side_dice.update_tanks(new_tanks)
 			self.throw.set_num(DieFace.Tank, 0)
 
-		forced_earthlings = 0 if rays > 0 else min(self.throw[x] for x in selectable_earthlings)
-		tanks = self.side_dice[DieFace.Tank]
-		max_rays = NUM_DICE - tanks - self.side_dice.num_earthlings() - forced_earthlings
-
-		if tanks > max_rays:
-			self.phase = TurnPhase.Done
-			self.done_reason = "Defeated"
-			return True
-
-		self.phase = TurnPhase.PickDice
+		self.phase = TurnPhase.Done if self.done_reason else TurnPhase.PickDice
 
 	def handle_pick(self, selected_die):
 		assert(self.phase == TurnPhase.PickDice)
@@ -192,5 +192,6 @@ class TurnState:
 			state["throw"] = self.throw
 		if self.phase == TurnPhase.Done:
 			state["score"] = self.score
+			state["end_cause"] = self.done_reason
 
 		return state

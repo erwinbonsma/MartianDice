@@ -83,8 +83,12 @@ class GameServer:
 			self.game_state.end_turn()
 
 		asyncio.get_event_loop().create_task(self.broadcast(self.game_state.as_json()))
-		if turn_state.phase != TurnPhase.Thrown or turn_state.throw[DieFace.Tank] > 0:
-			await asyncio.sleep(2)
+		if (
+			turn_state.phase != TurnPhase.Thrown or
+			turn_state.throw[DieFace.Tank] > 0 or
+			turn_state.done_reason
+		):
+			await asyncio.sleep(2 if turn_state.phase != TurnPhase.Done else 4)
 
 		if turn_state.phase == TurnPhase.Done:
 			if self.game_state.next_turn():

@@ -85,7 +85,8 @@ def play_turn(action_selector, throw_fun = random_throw, ini_side_dice = None, s
 		state.set_throw(throw_fun(state.side_dice))
 		state_listener(state)
 
-		if state.check_post_throw_exit():
+		state.move_tanks()
+		if state.phase == TurnPhase.Done:
 			break
 
 		selected_die = action_selector.select_die(state)
@@ -115,7 +116,8 @@ async def play_turn_async(action_selector, throw_fun = random_throw, ini_side_di
 		state.set_throw(throw_fun(state.side_dice))
 		await state_listener(state)
 
-		if state.check_post_throw_exit():
+		state.move_tanks()
+		if state.phase == TurnPhase.Done:
 			break
 
 		await state_listener(state)
