@@ -123,6 +123,7 @@ class TurnState:
 		assert(self.phase == TurnPhase.Thrown)
 
 		self.side_dice.update_tanks(self.throw)
+		self.throw.set_num(DieFace.Tank, 0)
 
 		selectable_earthlings = self.selectable_earthlings()
 		rays = self.throw[DieFace.Ray]

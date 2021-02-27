@@ -271,7 +271,7 @@ class OptimalActionSelector:
 
 	def select_die(self, state: TurnState):
 		search_state = SearchState(
-			state.side_dice[DieFace.Tank] - state.throw[DieFace.Tank],
+			state.side_dice[DieFace.Tank],
 			state.side_dice[DieFace.Ray],
 			state.side_dice.num_earthlings(),
 			len(state.side_dice.collected_earthlings())
