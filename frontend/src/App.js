@@ -74,7 +74,7 @@ function App(props) {
 
 	let gameZone;
 
-	if (game) {
+	if (game?.turn_state) {
 		const diceThrow = game.turn_state.throw || {};
 		const earthlings = new Map();
 		const combatants = new Map();
