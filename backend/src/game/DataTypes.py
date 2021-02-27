@@ -45,8 +45,8 @@ class SideDiceState:
 	def total_collected(self):
 		return sum(self.__counts.values())
 
-	def update_tanks(self, throw):
-		self.add(DieFace.Tank, throw[DieFace.Tank])
+	def update_tanks(self, num_tanks):
+		self.add(DieFace.Tank, num_tanks)
 
 	def handle_choice(self, throw, selected):
 		assert(throw[selected] > 0)
@@ -122,15 +122,17 @@ class TurnState:
 	def check_post_throw_exit(self):
 		assert(self.phase == TurnPhase.Thrown)
 
-		self.side_dice.update_tanks(self.throw)
-		self.throw.set_num(DieFace.Tank, 0)
-
 		selectable_earthlings = self.selectable_earthlings()
 		rays = self.throw[DieFace.Ray]
 		if len(selectable_earthlings) == 0 and rays == 0:
 			self.phase = TurnPhase.Done
 			self.done_reason = "No selectable dice"
 			return True
+
+		new_tanks = self.throw[DieFace.Tank]
+		if new_tanks > 0:
+			self.side_dice.update_tanks(new_tanks)
+			self.throw.set_num(DieFace.Tank, 0)
 
 		forced_earthlings = 0 if rays > 0 else min(self.throw[x] for x in selectable_earthlings)
 		tanks = self.side_dice[DieFace.Tank]

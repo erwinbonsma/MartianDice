@@ -4,7 +4,7 @@ import json
 import websockets
 import logging
 import random
-from game.DataTypes import TurnState, TurnPhase
+from game.DataTypes import TurnState, TurnPhase, DieFace
 from game.Game import play_turn_async, RandomPlayer, DefensivePlayer
 from game.OptimalPlay import OptimalActionSelector
 from service.GameState import GameState, GamePhase
@@ -83,7 +83,8 @@ class GameServer:
 			self.game_state.end_turn()
 
 		asyncio.get_event_loop().create_task(self.broadcast(self.game_state.as_json()))
-		await asyncio.sleep(2)
+		if turn_state.phase != TurnPhase.Thrown or turn_state.throw[DieFace.Tank] > 0:
+			await asyncio.sleep(2)
 
 		if turn_state.phase == TurnPhase.Done:
 			if self.game_state.next_turn():
