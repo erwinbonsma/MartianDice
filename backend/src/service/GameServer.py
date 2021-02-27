@@ -188,8 +188,9 @@ class GameServer:
 		finally:
 			await self.unregister(client_id)
 
-game_server = GameServer()
-start_server = websockets.serve(game_server.main, "localhost", 8765)
+if __name__ == '__main__':
+	game_server = GameServer()
+	start_server = websockets.serve(game_server.main, "localhost", 8765)
 
-asyncio.get_event_loop().run_until_complete(start_server)
-asyncio.get_event_loop().run_forever()
+	asyncio.get_event_loop().run_until_complete(start_server)
+	asyncio.get_event_loop().run_forever()

@@ -1,0 +1,13 @@
+version: "3.7"
+
+services:
+  game-service:
+    image: martiandice-game-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./src:/usr/backend/src
+    tty: true
+    ports:
+      - 8765:8765
