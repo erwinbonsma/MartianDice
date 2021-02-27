@@ -49,11 +49,11 @@ async def add_bots(ws, bots):
 		}))
 
 async def play_game(args):
-	uri = "ws://localhost:8765"
-	async with websockets.connect(uri) as websocket:
+	async with websockets.connect(args.url) as websocket:
 		await websocket.send(args.name)
 
-		await add_bots(websocket, args.bots)
+		if args.bots is not None:
+			await add_bots(websocket, args.bots)
 
 		while True:
 			raw_message = await websocket.recv()
@@ -77,6 +77,4 @@ parser = argparse.ArgumentParser(description='Basic Martian Dice client')
 parser.add_argument('--num-clients', type=int, help='Number of clients (host only)', default=1)
 parser.add_argument('--bots', nargs='*', choices=["smart", "random", "defensive"], help='Adds bot(s) (host only)')
 parser.add_argument('--name', help='Player name')
-args = parser.parse_args()
-
-asyncio.get_event_loop().run_until_complete(play_game(args))
+parser.add_argument('--url', help='Game service endpoint', default='ws://127.0.0.1:8765')
