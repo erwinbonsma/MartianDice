@@ -6,6 +6,7 @@ import { DiceThrow } from './components/DiceThrow';
 import { GameHeader } from './components/GameHeader';
 import { GameSetup } from './components/GameSetup';
 import { PlayerList } from './components/PlayerList';
+import { TurnResult } from './components/TurnResult';
 import { useState, useEffect } from 'react';
 
 function App(props) {
@@ -57,7 +58,7 @@ function App(props) {
 	const onAddBot = () => {
 		ws.send(JSON.stringify({
 			action: "add-bot",
-			bot_behaviour: "random"
+			bot_behaviour: "smart"
 		}));
 	}
 	const onRemoveBot = (e) => {
@@ -106,11 +107,22 @@ function App(props) {
 				}));
 			}
 		}
+
+		let turnResult;
+		if (game.turn_state.phase === "Done") {
+			turnResult = (
+				<TurnResult score={game.turn_state.score} end_cause={game.turn_state.end_cause}></TurnResult>
+			);
+			console.log("Turn done!");
+		}
+
 		gameZone = (
 			<div>
 				{ onCheckContinue
 					? <ContinueTurnCheck onAnswer={onCheckContinue}></ContinueTurnCheck>
-					: <DiceThrow throw={diceThrow} onDiceClick={onDiceClick}></DiceThrow>
+					: turnResult
+						? turnResult 
+						: <DiceThrow throw={diceThrow} onDiceClick={onDiceClick}></DiceThrow>
 				}
 				<BattleZone combatants={combatants}></BattleZone>
 				<AbductionZone earthlings={earthlings}></AbductionZone>
