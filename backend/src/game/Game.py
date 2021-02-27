@@ -64,7 +64,7 @@ def show_state(state: TurnState):
 		show_side_dice(state.side_dice)
 		return
 
-	if state.phase == TurnPhase.CheckExit:
+	if state.phase == TurnPhase.CheckEndTurn:
 		print("Score (sofar):", state.score())
 		return
 
@@ -96,7 +96,7 @@ def play_turn(action_selector, throw_fun = random_throw, ini_side_dice = None, s
 			break
 
 		state_listener(state)
-		if state.phase == TurnPhase.CheckExit:
+		if state.phase == TurnPhase.CheckEndTurn:
 			should_stop = action_selector.should_stop(state)
 			if state.check_player_exit(should_stop):
 				break
@@ -125,8 +125,8 @@ async def play_turn_async(action_selector, throw_fun = random_throw, ini_side_di
 		if state.check_post_pick_exit():
 			break
 
-		state_listener(state)
-		if state.phase == TurnPhase.CheckExit:
+		await state_listener(state)
+		if state.phase == TurnPhase.CheckEndTurn:
 			should_stop = await action_selector.should_stop_async(state)
 			if state.check_player_exit(should_stop):
 				break

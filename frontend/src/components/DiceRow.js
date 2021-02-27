@@ -5,7 +5,7 @@ export function DiceRow(props) {
 		<div className="DiceRow">
 			{ Object.entries(props.dice).map(([die, number]) =>
 				Array.from({length: number}, (_, index) => (
-					<Die key={`${die}#${index}`} face={die}></Die>
+					<Die key={`${die}#${index}`} face={die} onClick={props.onDiceClick}></Die>
 				))
 			)}
 		</div>

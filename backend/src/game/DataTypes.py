@@ -19,7 +19,7 @@ class TurnPhase(IntEnum):
 	Thrown = 1
 	PickDice = 2
 	PostPick = 3
-	CheckExit = 4
+	CheckEndTurn = 4
 	Done = 5
 
 class SideDiceState:
@@ -163,10 +163,10 @@ class TurnState:
 			self.done_reason = "Cannot improve score"
 			return True
 
-		self.phase = TurnPhase.CheckExit if self.score > 0 else TurnPhase.Throwing
+		self.phase = TurnPhase.CheckEndTurn if self.score > 0 else TurnPhase.Throwing
 
 	def check_player_exit(self, stop):
-		assert(self.phase == TurnPhase.CheckExit)
+		assert(self.phase == TurnPhase.CheckEndTurn)
 
 		if stop:
 			self.phase = TurnPhase.Done

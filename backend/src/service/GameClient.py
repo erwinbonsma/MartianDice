@@ -70,7 +70,7 @@ async def play_game(args):
 					continue
 				if message["turn_state"]["phase"] == "PickDice":
 					await websocket.send(pick_dice(message["turn_state"]))
-				elif message["turn_state"]["phase"] == "CheckExit":
+				elif message["turn_state"]["phase"] == "CheckEndTurn":
 					await websocket.send(check_exit())
 
 parser = argparse.ArgumentParser(description='Basic Martian Dice client')

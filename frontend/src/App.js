@@ -1,6 +1,7 @@
 import './App.css';
 import { AbductionZone } from './components/AbductionZone';
 import { BattleZone } from './components/BattleZone';
+import { ContinueTurnCheck } from './components/ContinueTurnCheck';
 import { DiceThrow } from './components/DiceThrow';
 import { GameHeader } from './components/GameHeader';
 import { GameSetup } from './components/GameSetup';
@@ -75,23 +76,45 @@ function App(props) {
 	}
 
 	let gameZone;
+
 	if (game) {
 		const diceThrow = game.turn_state.throw || {};
-		const earthlings = {}
-		const combatants = {}
+		const earthlings = new Map();
+		const combatants = new Map();
+
 		Object.entries(game.turn_state.side_dice).forEach(([die, number]) => {
 			if (die === "Tank" || die === "Ray") {
-				combatants[die] = number;
+				combatants.set(die, number);
 			} else {
-				earthlings[die] = number;
+				earthlings.set(die, number);
 			}
 		});
-		console.log("diceThrow", diceThrow);
-		console.log("earthlings", earthlings);
-		console.log("combatants", combatants);
+
+		let onDiceClick;
+		if (game.active_player === props.name && game.turn_state.phase === "PickDice") {
+			onDiceClick = (e) => {
+				ws.send(JSON.stringify({
+					action: "move",
+					"pick-die": e.target.id
+				}));
+			};
+		};
+
+		let onCheckContinue;
+		if (game.active_player === props.name && game.turn_state.phase === "CheckEndTurn") {
+			onCheckContinue = (e) => {
+				ws.send(JSON.stringify({
+					action: "move",
+					"throw-again": e.target.id === "yes"
+				}));
+			}
+		}
 		gameZone = (
 			<div>
-				<DiceThrow throw={diceThrow}></DiceThrow>
+				{ onCheckContinue
+					? <ContinueTurnCheck onAnswer={onCheckContinue}></ContinueTurnCheck>
+					: <DiceThrow throw={diceThrow} onDiceClick={onDiceClick}></DiceThrow>
+				}
 				<BattleZone combatants={combatants}></BattleZone>
 				<AbductionZone earthlings={earthlings}></AbductionZone>
 			</div>
