@@ -9,10 +9,12 @@ TODO:
 -	Improve play animations:
 	-	Animate die addition/removal
 -	Fix size of top row in game area (via adaptive max size retention)
--	Improve button colors
+-	Refactor service:
+	-	Add database API
 -	Create new game
 	-	Create game service on demand
 	-	Add web UI
 -	End game visualisation
 -	Chat API
 -	Host at AWS
+-	Improve button colors
