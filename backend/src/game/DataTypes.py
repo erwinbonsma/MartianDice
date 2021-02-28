@@ -48,11 +48,6 @@ class SideDiceState:
 	def update_tanks(self, num_tanks):
 		self.add(DieFace.Tank, num_tanks)
 
-	def handle_choice(self, throw, selected):
-		assert(throw[selected] > 0)
-		assert(selected == DieFace.Ray or self[selected] == 0)
-		self.add(selected, throw[selected])
-
 	def score(self):
 		if self[DieFace.Tank] > self[DieFace.Ray]:
 			return 0
@@ -147,14 +142,17 @@ class TurnState:
 
 	def handle_pick(self, selected_die):
 		assert(self.phase == TurnPhase.PickDice)
-	
-		self.last_pick = selected_die
-		self.side_dice.handle_choice(self.throw, selected_die)
+		assert(self.throw[selected_die] > 0)
+		assert(selected_die == DieFace.Ray or self.side_dice[selected_die] == 0)
+
+		self.side_dice.add(selected_die, self.throw[selected_die])
+		self.throw.set_num(selected_die, 0)
 		self.phase = TurnPhase.PostPick
-		self.throw = None
 
 	def check_post_pick_exit(self):
 		assert(self.phase == TurnPhase.PostPick)
+
+		self.throw = None
 
 		if self.side_dice.total_collected() == NUM_DICE:
 			self.phase = TurnPhase.Done

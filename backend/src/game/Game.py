@@ -89,6 +89,7 @@ def play_turn(action_selector, throw_fun = random_throw, ini_side_dice = None, s
 		if state.phase == TurnPhase.Done:
 			break
 
+		state_listener(state)
 		selected_die = action_selector.select_die(state)
 		state.handle_pick(selected_die)
 		state_listener(state)
@@ -123,6 +124,7 @@ async def play_turn_async(action_selector, throw_fun = random_throw, ini_side_di
 		await state_listener(state)
 		selected_die = await action_selector.select_die_async(state)
 		state.handle_pick(selected_die)
+		await state_listener(state)
 
 		if state.check_post_pick_exit():
 			break
