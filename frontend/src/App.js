@@ -8,6 +8,9 @@ import { GameSetup } from './components/GameSetup';
 import { PlayerList } from './components/PlayerList';
 import { TurnResult } from './components/TurnResult';
 import { useState, useEffect } from 'react';
+import Col from 'react-bootstrap/Col';
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
 
 function App(props) {
 	const [ws, setWebsocket] = useState();
@@ -17,7 +20,7 @@ function App(props) {
 	const [host, setHost] = useState();
 
 	useEffect(() => {
-		if (!ws) {
+		if (false || !ws) {
 			// Create WebSocket connection.
 			const socket = new WebSocket('ws://127.0.0.1:8765');
 
@@ -47,13 +50,31 @@ function App(props) {
 				}
 			});
 		}
-
+    
 		return function cleanup() {
 			if (ws) {
 				ws.close();
 			}
 		}
 	}, [props.name, ws]);
+
+	useEffect(() => {
+		const testGame = {
+			active_player: "Bob",
+			players: ["Alice", "Bob", props.name],
+			round: 1, 
+			score: { "Alice": 3, "Bob": 5, [props.name]: 2},
+			done: false,
+			turn_state: {
+				phase: "Thrown",
+				throw: { Ray: 4, Tank: 3, Chicken: 2, Human: 1},
+				throw_count: 2,
+				side_dice: { Tank: 1, Cow: 2},
+			}
+		}
+
+		setGame(testGame);
+	}, [props.name]);
 
 	const onAddBot = () => {
 		ws.send(JSON.stringify({
@@ -131,21 +152,24 @@ function App(props) {
 	}
 
 	return (
-    	<div className="App">
-  			<div className="GameArea">
-				<GameHeader game={game}></GameHeader>
-				{ gameZone }
-			</div>
-			<div className="PlayersArea">
-				{ !!game ? 
-					<PlayerList players={game.players} scores={game.score}></PlayerList> :
-					<GameSetup clients={clients} bots={bots} 
-						host={host} isHost={host === props.name}
-						onAddBot={onAddBot} onRemoveBot={onRemoveBot}
-						onStartGame={onStartGame}></GameSetup>
-				}
-			</div>
-		</div>
+    	<Container>
+			<Row><h1>Martian Dice</h1></Row>
+			<Row>
+  				<Col className="GameArea" sm={8}>
+					<GameHeader game={game}></GameHeader>
+					{ gameZone }
+				</Col>
+				<Col className="PlayersArea" sm={4}>
+					{ !!game ? 
+						<PlayerList players={game.players} scores={game.score}></PlayerList> :
+						<GameSetup clients={clients} bots={bots} 
+							host={host} isHost={host === props.name}
+							onAddBot={onAddBot} onRemoveBot={onRemoveBot}
+							onStartGame={onStartGame}></GameSetup>
+					}
+				</Col>
+			</Row>
+		</Container>
 	);
 }
 

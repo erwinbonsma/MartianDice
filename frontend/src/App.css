@@ -14,7 +14,7 @@
 }
 
 .App {
-  background-color: #282c34;
+  background-color: #d0d0d0;
   min-height: 100vh;
   display: flex;
   flex-direction: row;
@@ -25,13 +25,12 @@
 }
 
 .GameArea {
-	background-color: #282c34;	
+	background-color: #d0d0d0;	
 }
 
 .Player {
 	display: flex;
 	justify-content: space-between;
-	background-color: black;
 }
 
 .PlayerScore {
