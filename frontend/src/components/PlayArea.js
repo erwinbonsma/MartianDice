@@ -3,12 +3,16 @@ import { BattleZone } from './BattleZone';
 import { ContinueTurnCheck } from './ContinueTurnCheck';
 import { DiceThrow } from './DiceThrow';
 import { TurnResult } from './TurnResult';
+import Measure from 'react-measure';
+import { useState } from 'react';
 
 export function PlayArea(props) {
 	const game = props.game;
 	const diceThrow = game.turn_state.throw || {};
 	const earthlings = {};
 	const combatants = {};
+
+	const [ throwAreaHeight, setThrowAreaHeight ] = useState(0);
 
 	Object.entries(game.turn_state.side_dice).forEach(([die, number]) => {
 		if (die === "Tank" || die === "Ray") {
@@ -38,21 +42,32 @@ export function PlayArea(props) {
 		}
 	}
 
-	let turnResult;
-	if (game.turn_state.phase === "Done") {
-		turnResult = (
-			<TurnResult score={game.turn_state.score} end_cause={game.turn_state.end_cause}></TurnResult>
-		);
+	const onDiceThrowResize = (contentRect) => {
+		if (contentRect?.bounds) {
+			const height = contentRect.bounds.bottom - contentRect.bounds.top;
+			if (height > throwAreaHeight) {
+				setThrowAreaHeight(height);
+			}
+		}
 	}
 
 	return (
 		<div>
 			<div className="GameZoneTopRow">
 			{ onCheckContinue
-				? <ContinueTurnCheck onAnswer={onCheckContinue}></ContinueTurnCheck>
-				: turnResult
-					? turnResult 
-					: <DiceThrow throw={diceThrow} onDiceClick={onDiceClick}></DiceThrow>
+				? (<div style={{ minHeight: throwAreaHeight }}>
+					<ContinueTurnCheck onAnswer={onCheckContinue}></ContinueTurnCheck>
+				</div>)
+				: (game.turn_state.phase === "Done")
+					? (<div style={{ minHeight: throwAreaHeight }}>
+						<TurnResult score={game.turn_state.score} end_cause={game.turn_state.end_cause}></TurnResult>
+					</div>)
+					: (<Measure bounds onResize={onDiceThrowResize}>
+						{({ measureRef }) => (
+						  <div ref={measureRef}>
+							<DiceThrow throw={diceThrow} onDiceClick={onDiceClick}></DiceThrow>
+						  </div>
+					)}</Measure>)
 			}
 			</div>
 			<BattleZone combatants={combatants}></BattleZone>
