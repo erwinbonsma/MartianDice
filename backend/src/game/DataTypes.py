@@ -126,7 +126,10 @@ class TurnState:
 		if tanks > max_rays:
 			self.done_reason = "Defeated"
 		elif len(selectable_earthlings) == 0 and rays == 0:
-			self.done_reason = "No selectable dice"
+			if tanks > rays:
+				self.done_reason = "Defeated"
+			else:
+				self.done_reason = "No selectable dice"
 		else:
 			self.done_reason = None
 

@@ -7,8 +7,10 @@ const reasons ={
 };
 
 export function TurnResult(props) {
-	return (<div>
-		{reasons[props.end_cause] || props.end_cause}<br></br>
-		Score: {props.score}
-	</div>);
+	return (<center>
+		<p>{ reasons[props.end_cause] || props.end_cause}</p>
+		{ props.score > 0 && (
+			<p>Score: {props.score}</p>
+		)}
+	</center>);
 }
