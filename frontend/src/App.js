@@ -67,7 +67,8 @@ function App(props) {
 			done: false,
 			turn_state: {
 				phase: "Thrown",
-				throw: { Ray: 4, Tank: 3, Chicken: 2, Human: 1},
+				//throw: { Ray: 4, Tank: 3, Chicken: 2, Human: 1},
+				throw: { Ray: 3, Chicken: 2},
 				throw_count: 2,
 				side_dice: { Tank: 1, Cow: 2},
 			}

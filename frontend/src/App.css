@@ -64,6 +64,18 @@
 	background-color: #446666;
 }
 
+.BattleZone {
+	background-color: #446666;
+}
+
+.DiceThrow {
+	background-color: #446666;
+}
+
+.GameHeader {
+	background-color: #446666;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
