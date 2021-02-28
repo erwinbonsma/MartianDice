@@ -1,7 +1,7 @@
 const reasons ={
 	"No selectable dice": "Cannot select a die",
 	"Defeated": "Defeated!",
-	"No more dice": "No more dice remaiing",
+	"No more dice": "No more dice remain",
 	"Cannot improve score": "Cannot improve score",
 	"Player choice": "Player ended turn"
 };
