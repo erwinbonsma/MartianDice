@@ -16,7 +16,6 @@ h1 {
 
 h4 {
 	text-align: center;
-	color: #ffd0d0;
 }
 
 .AppX {
@@ -35,10 +34,15 @@ h4 {
   text-align: left;
 }
 
+.Button {
+	margin: 0.2em;
+}
+
 .GameArea {
 	background-color: yellow;
 	margin: 0;
 	padding: 0;
+	color: #ffd0d0;
 }
 
 .GameSetup {
@@ -65,7 +69,12 @@ h4 {
 	padding: 0.5em;
 }
 
-.DiceThrow {
+.GameZoneTopRow {
+	background-color: #503030;
+	padding: 0.5em;
+}
+
+.DiceThrowXXX {
 	background-color: #503030;
 	padding: 0.5em;
 }

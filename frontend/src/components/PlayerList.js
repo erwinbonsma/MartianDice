@@ -8,8 +8,8 @@ export function PlayerList(props) {
 			<Row><Col as="h4">Players</Col></Row>
 			{ props.players.map(player => (
 				<Row key={player}>
-					<Col sm={10}>{player}</Col>
-					<Col style={{textAlign:"right"}}>{props.scores[player]}</Col>
+					<Col sm={9} style={{backgroundColor: "blue"}}>{player}</Col>
+					<Col sm={3} style={{textAlign:"right", backgroundColor: "red"}}>{props.scores[player]}</Col>
 				</Row>
 			))}
 		</Container>

@@ -140,12 +140,14 @@ function App(props) {
 
 		gameZone = (
 			<div>
+				<div className="GameZoneTopRow">
 				{ onCheckContinue
 					? <ContinueTurnCheck onAnswer={onCheckContinue}></ContinueTurnCheck>
 					: turnResult
 						? turnResult 
 						: <DiceThrow throw={diceThrow} onDiceClick={onDiceClick}></DiceThrow>
 				}
+				</div>
 				<BattleZone combatants={combatants}></BattleZone>
 				<AbductionZone earthlings={earthlings}></AbductionZone>
 			</div>
