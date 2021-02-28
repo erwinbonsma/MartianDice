@@ -1,20 +1,29 @@
+import Col from 'react-bootstrap/Col';
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
+
 export function GameHeader(props) {
-	let header;
+	let left, right, header;
 	if (props.game) {
 		const game = props.game;
 		if (game.done) {
 			header = "Game completed";
 		} else {
-			header = `Round ${game.round} - ${game.active_player}'s Turn`;
-			if (game.turn_state) {
-				header += ` - Throw ${game.turn_state.throw_count}`;
-			}
+			header = `${game.active_player}'s Turn`;
+			left = `Round ${game.round}`;
+			right = `Throw ${game.turn_state.throw_count}`;
 		}
 	} else {
 		header = "Waiting for game to start";
 	}
 
 	return (
-		<h4 className="GameHeader">{header}</h4>
+		<Container className="GameHeader">
+			<Row>
+				<Col as="h4">{left}</Col>
+				<Col as="h4" sm={6} style={{textAlign: "center"}}>{header}</Col>
+				<Col as="h4" style={{textAlign:"right"}}>{right}</Col>
+			</Row>
+		</Container>
 	)
 }

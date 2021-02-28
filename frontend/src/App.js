@@ -153,8 +153,9 @@ function App(props) {
 	}
 
 	return (
-    	<Container>
-			<Row><h1>Martian Dice</h1></Row>
+		<center>
+    	<Container className="App">
+			<Row><Col as="h1">Martian Dice</Col></Row>
 			<Row>
   				<Col className="GameArea" sm={8}>
 					<GameHeader game={game}></GameHeader>
@@ -171,6 +172,7 @@ function App(props) {
 				</Col>
 			</Row>
 		</Container>
+		</center>
 	);
 }
 

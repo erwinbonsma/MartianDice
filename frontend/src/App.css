@@ -1,7 +1,3 @@
-.App {
-  text-align: center;
-}
-
 .App-logo {
   height: 40vmin;
   pointer-events: none;
@@ -13,41 +9,40 @@
   }
 }
 
+h1 {
+	text-align: center;
+	color: #ffd0d0;
+}
+
+h4 {
+	text-align: center;
+	color: #ffd0d0;
+}
+
+.AppX {
+	display: flex;
+	flex-direction: row;
+	align-items: left;
+	justify-content: center;  
+}
+
 .App {
-  background-color: #d0d0d0;
+  background-color: black;
   min-height: 100vh;
-  display: flex;
-  flex-direction: row;
-  align-items: left;
-  justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+  margin: 0;
+  text-align: left;
 }
 
 .GameArea {
-	background-color: #d0d0d0;	
-}
-
-.Player {
-	display: flex;
-	justify-content: space-between;
-}
-
-.PlayerScore {
-	margin: 0em 0em 0em 1em;
+	background-color: yellow;
+	margin: 0;
+	padding: 0;
 }
 
 .GameSetup {
 	font-size: 0.8em;
-}
-
-.Row {
-	display: flex;
-	justify-content: space-between;
-}
-
-.Name {
-	margin: 0em 1em 0em 0em;
 }
 
 .DiceRow {
@@ -57,23 +52,26 @@
 }
   
 .Die img {
-	margin: 0.1em 0.2em;
+	margin: 0.1em 0em 0.1em 0.4em;
 }
 
 .AbductionZone {
-	background-color: #446666;
+	background-color: #503030;
+	padding: 0.5em;
 }
 
 .BattleZone {
-	background-color: #446666;
+	background-color: #604040;
+	padding: 0.5em;
 }
 
 .DiceThrow {
-	background-color: #446666;
+	background-color: #503030;
+	padding: 0.5em;
 }
 
 .GameHeader {
-	background-color: #446666;
+	background-color: #604040;
 }
 
 @keyframes App-logo-spin {
