@@ -1,26 +1,22 @@
 import './App.css';
-import { AbductionZone } from './components/AbductionZone';
-import { BattleZone } from './components/BattleZone';
-import { ContinueTurnCheck } from './components/ContinueTurnCheck';
-import { DiceThrow } from './components/DiceThrow';
 import { GameHeader } from './components/GameHeader';
 import { GameSetup } from './components/GameSetup';
+import { PlayArea } from './components/PlayArea';
 import { PlayerList } from './components/PlayerList';
-import { TurnResult } from './components/TurnResult';
 import { useState, useEffect } from 'react';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 
 function App(props) {
-	const [ws, setWebsocket] = useState();
+	const [websocket, setWebsocket] = useState();
 	const [game, setGame] = useState();
 	const [clients, setClients] = useState([]);
 	const [bots, setBots] = useState([]);
 	const [host, setHost] = useState();
 
 	useEffect(() => {
-		if (!ws) {
+		if (!websocket) {
 			// Create WebSocket connection.
 			const socket = new WebSocket('ws://127.0.0.1:8765');
 
@@ -52,11 +48,11 @@ function App(props) {
 		}
     
 		return function cleanup() {
-			if (ws) {
-				ws.close();
+			if (websocket) {
+				websocket.close();
 			}
 		}
-	}, [props.name, ws]);
+	}, [props.name, websocket]);
 
 	useEffect(() => {
 		const testGame = {
@@ -78,80 +74,21 @@ function App(props) {
 	}, [props.name]);
 
 	const onAddBot = () => {
-		ws.send(JSON.stringify({
+		websocket.send(JSON.stringify({
 			action: "add-bot",
 			bot_behaviour: "smart"
 		}));
 	}
 	const onRemoveBot = (e) => {
-		ws.send(JSON.stringify({
+		websocket.send(JSON.stringify({
 			action: "remove-bot",
 			bot_name: e.target.id
 		}));
 	}
 	const onStartGame = () => {
-		ws.send(JSON.stringify({
+		websocket.send(JSON.stringify({
 			action: "start-game"
 		}));
-	}
-
-	let gameZone;
-
-	if (game?.turn_state) {
-		const diceThrow = game.turn_state.throw || {};
-		const earthlings = {};
-		const combatants = {};
-
-		Object.entries(game.turn_state.side_dice).forEach(([die, number]) => {
-			if (die === "Tank" || die === "Ray") {
-				combatants[die] = number;
-			} else {
-				earthlings[die] = number;
-			}
-		});
-
-		let onDiceClick;
-		if (game.active_player === props.name && game.turn_state.phase === "PickDice") {
-			onDiceClick = (e) => {
-				ws.send(JSON.stringify({
-					action: "move",
-					"pick-die": e.target.id
-				}));
-			};
-		};
-
-		let onCheckContinue;
-		if (game.active_player === props.name && game.turn_state.phase === "CheckEndTurn") {
-			onCheckContinue = (e) => {
-				ws.send(JSON.stringify({
-					action: "move",
-					"throw-again": e.target.id === "yes"
-				}));
-			}
-		}
-
-		let turnResult;
-		if (game.turn_state.phase === "Done") {
-			turnResult = (
-				<TurnResult score={game.turn_state.score} end_cause={game.turn_state.end_cause}></TurnResult>
-			);
-			console.log("Turn done!");
-		}
-
-		gameZone = (
-			<div>
-				<div className="GameZoneTopRow">
-				{ onCheckContinue
-					? <ContinueTurnCheck onAnswer={onCheckContinue}></ContinueTurnCheck>
-					: turnResult
-						? turnResult 
-						: <DiceThrow throw={diceThrow} onDiceClick={onDiceClick}></DiceThrow>
-				}
-				</div>
-				<BattleZone combatants={combatants}></BattleZone>
-				<AbductionZone earthlings={earthlings}></AbductionZone>
-			</div>
-		)
 	}
 
 	return (
@@ -161,7 +98,10 @@ function App(props) {
 			<Row>
   				<Col className="GameArea" sm={8}>
 					<GameHeader game={game}></GameHeader>
-					{ gameZone }
+					{ game?.turn_state &&
+						<PlayArea game={game} websocket={websocket}
+							my_turn={props.name === game.active_player}></PlayArea>
+					}
 				</Col>
 				<Col className="PlayersArea" sm={4}>
 					{ !!game ? 
