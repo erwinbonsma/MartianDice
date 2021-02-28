@@ -20,7 +20,7 @@ function App(props) {
 	const [host, setHost] = useState();
 
 	useEffect(() => {
-		if (false || !ws) {
+		if (!ws) {
 			// Create WebSocket connection.
 			const socket = new WebSocket('ws://127.0.0.1:8765');
 
@@ -74,7 +74,7 @@ function App(props) {
 			}
 		}
 
-		setGame(testGame);
+		//setGame(testGame);
 	}, [props.name]);
 
 	const onAddBot = () => {
@@ -99,14 +99,14 @@ function App(props) {
 
 	if (game?.turn_state) {
 		const diceThrow = game.turn_state.throw || {};
-		const earthlings = new Map();
-		const combatants = new Map();
+		const earthlings = {};
+		const combatants = {};
 
 		Object.entries(game.turn_state.side_dice).forEach(([die, number]) => {
 			if (die === "Tank" || die === "Ray") {
-				combatants.set(die, number);
+				combatants[die] = number;
 			} else {
-				earthlings.set(die, number);
+				earthlings[die] = number;
 			}
 		});
 
