@@ -64,13 +64,13 @@ def show_state(state: TurnState):
 		show_side_dice(state.side_dice)
 		return
 
-	if state.phase == TurnPhase.CheckEndTurn:
-		print("Score (sofar):", state.score())
+	if state.phase == TurnPhase.ThrowAgain:
+		print("Score (sofar):", state.score)
 		return
 
 	if state.phase == TurnPhase.Done:
 		print(state.done_reason)
-		print("Score:", state.score())
+		print("Score:", state.score)
 
 def dev_null(state):
 	pass
@@ -79,64 +79,22 @@ def play_turn(action_selector, throw_fun = random_throw, ini_side_dice = None, s
 	if state_listener is None:
 		state_listener = dev_null
 
-	state = TurnState(ini_side_dice)
-
-	while True:
-		state.set_throw(throw_fun(state.side_dice))
-		state_listener(state)
-
-		state.move_tanks()
-		if state.phase == TurnPhase.Done:
-			break
-
-		state_listener(state)
-		selected_die = action_selector.select_die(state)
-		state.handle_pick(selected_die)
-		state_listener(state)
-
-		if state.check_post_pick_exit():
-			break
-
-		state_listener(state)
-		if state.phase == TurnPhase.CheckEndTurn:
-			should_stop = action_selector.should_stop(state)
-			if state.check_player_exit(should_stop):
-				break
-
+	state = TurnState(start_side_state = ini_side_dice, throw_fun = throw_fun)
 	state_listener(state)
 
-	return state.score()
-
-async def play_turn_async(action_selector, throw_fun = random_throw, ini_side_dice = None, state_listener = None):
-	if state_listener is None:
-		state_listener = dev_null
-
-	state = TurnState(ini_side_dice)
-
-	while True:
-		state.set_throw(throw_fun(state.side_dice))
-		await state_listener(state)
-
-		state.move_tanks()
-		if state.phase == TurnPhase.Done:
-			break
-
-		await state_listener(state)
-		selected_die = await action_selector.select_die_async(state)
-		state.handle_pick(selected_die)
-		await state_listener(state)
-
-		if state.check_post_pick_exit():
-			break
-
-		await state_listener(state)
-		if state.phase == TurnPhase.CheckEndTurn:
-			should_stop = await action_selector.should_stop_async(state)
-			if state.check_player_exit(should_stop):
-				break
-			await state_listener(state)
-
-	await state_listener(state)
+	while not state.done:
+		if state.awaitsInput:
+			if state.phase == TurnPhase.PickDice:
+				selected_die = action_selector.select_die(state)
+				state.next(selected_die)
+			elif state.phase == TurnPhase.ThrowAgain:
+				should_stop = action_selector.should_stop(state)
+				state.next(should_stop)
+			else:
+				assert(False)
+		else:
+			state.next()
+		state_listener(state)
 
 	return state.score
 

@@ -1,72 +1,72 @@
 from enum import IntEnum
 import jsonpickle
 import random
-from game.DataTypes import TurnState
+from game.DataTypes import TurnState, TurnPhase
+from game.Game import random_throw
 
 TARGET_SCORE = 25
 
-class GamePhase(IntEnum):
-	Recruiting = 0,
-	Playing = 1,
-	Done = 2
-
 class GameState:
 
-	def __init__(self):
-		self.phase = GamePhase.Recruiting
+	def __init__(self, players):
+		self.players = list(players)
+		random.shuffle(self.players)
+
+		self.round = 1
+		self.active_player_index = 0
+		self.scores = dict((id, 0) for id in self.players)
+		self._start_turn()
+
+	@property
+	def done(self):
+		return self.turn_state is None
 
 	@property
 	def active_player(self):
-		assert(self.phase == GamePhase.Playing)
+		assert(not self.done)
 		return self.players[self.active_player_index]
 
-	def start_game(self, players):
-		assert(self.phase == GamePhase.Recruiting)
+	@property
+	def awaitsInput(self):
+		assert(not self.done)
+		return (not self.turn_state.done) and self.turn_state.awaitsInput
 
-		self.round = 1
-		self.players = list(players)
-		random.shuffle(self.players)
-		self.active_player_index = 0
-		self.score = dict((id, 0) for id in self.players)
-		self.phase = GamePhase.Playing
-		self.turn_state = None
+	def next(self, input = None):
+		assert(not self.done)
 
-	def start_turn(self, turn_state):
-		assert(self.turn_state is None)
-		self.turn_state = turn_state
+		if not self.turn_state.done:
+			self.turn_state.next(input)
+		else:
+			self._end_turn()
 
-	def end_turn(self):
-		assert(self.phase == GamePhase.Playing)
+	def _start_turn(self):
+		self.turn_state = TurnState(throw_fun = random_throw)
 
-		self.score[self.active_player] += self.turn_state.score
+	def _end_turn(self):
+		assert(not self.done)
+		assert(self.turn_state.done)
 
-	def next_turn(self):
-		assert(self.phase == GamePhase.Playing)
-
-		self.turn_state = None
-
-		if self.score[self.active_player] >= TARGET_SCORE:
-			self.phase = GamePhase.Done
+		self.scores[self.active_player] += self.turn_state.score
+		if self.scores[self.active_player] >= TARGET_SCORE:
+			self.turn_state = None
 			self.active_player_index = None
-			return False
+			return
 
 		self.active_player_index += 1
 		if self.active_player_index == len(self.players):
 			self.active_player_index = 0
 			self.round += 1
-
-		return True
+		self._start_turn()
 
 	def __getstate__(self):
 		state = {
-			"type": "game-state",
 			"players": self.players,
-			"score": self.score,
 			"round": self.round,
-			"turn_state": self.turn_state,
-			"done": self.phase == GamePhase.Done
+			"scores": self.scores,
+			"done": self.done
 		}
-		if self.phase == GamePhase.Playing:
+		if not self.done:
+			state["turn_state"] = self.turn_state
 			state["active_player"] = self.active_player
 
 		return state

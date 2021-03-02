@@ -19,7 +19,7 @@ class TurnPhase(IntEnum):
 	Thrown = 1
 	PickDice = 2
 	PostPick = 3
-	CheckEndTurn = 4
+	ThrowAgain = 4
 	Done = 5
 
 class SideDiceState:
@@ -89,7 +89,8 @@ class DiceThrow:
 
 class TurnState:
 
-	def __init__(self, start_side_state = None):
+	def __init__(self, throw_fun = None, start_side_state = None):
+		self.throw_fun = throw_fun
 		self.side_dice = start_side_state.copy() if start_side_state else SideDiceState()
 		self.phase = TurnPhase.Throwing
 		self.throw = None
@@ -99,6 +100,31 @@ class TurnState:
 	def score(self):
 		return self.side_dice.score()
 
+	@property
+	def done(self):
+		return self.phase == TurnPhase.Done
+
+	@property
+	def awaitsInput(self):
+		assert(not self.done)
+		return self.phase == TurnPhase.PickDice or self.phase == TurnPhase.ThrowAgain
+
+	def next(self, input_value = None):
+		assert(self.awaitsInput != (input_value is None))
+
+		if self.phase == TurnPhase.Throwing:
+			self._set_throw(self.throw_fun(self.side_dice))
+		elif self.phase == TurnPhase.Thrown:
+			self._move_tanks()
+		elif self.phase == TurnPhase.PickDice:
+			self._handle_pick(input_value)
+		elif self.phase == TurnPhase.PostPick:
+			self._check_post_pick_exit()
+		elif self.phase == TurnPhase.ThrowAgain:
+			self._check_player_exit(input_value)
+		else:
+			assert(False)
+
 	def selectable_earthlings(self):
 		return [key for key in EARTHLINGS if self.side_dice[key] == 0 and self.throw[key] > 0]
 
@@ -107,7 +133,7 @@ class TurnState:
 			return self.throw[DieFace.Ray] > 0
 		return die in self.selectable_earthlings()
 
-	def set_throw(self, throw):
+	def _set_throw(self, throw):
 		assert(self.phase == TurnPhase.Throwing)
 
 		self.throw = throw
@@ -133,7 +159,7 @@ class TurnState:
 		else:
 			self.done_reason = None
 
-	def move_tanks(self):
+	def _move_tanks(self):
 		assert(self.phase == TurnPhase.Thrown)
 
 		new_tanks = self.throw[DieFace.Tank]
@@ -143,16 +169,17 @@ class TurnState:
 
 		self.phase = TurnPhase.Done if self.done_reason else TurnPhase.PickDice
 
-	def handle_pick(self, selected_die):
+	def _handle_pick(self, selected_die):
 		assert(self.phase == TurnPhase.PickDice)
 		assert(self.throw[selected_die] > 0)
 		assert(selected_die == DieFace.Ray or self.side_dice[selected_die] == 0)
 
 		self.side_dice.add(selected_die, self.throw[selected_die])
 		self.throw.set_num(selected_die, 0)
+		self.last_pick = selected_die
 		self.phase = TurnPhase.PostPick
 
-	def check_post_pick_exit(self):
+	def _check_post_pick_exit(self):
 		assert(self.phase == TurnPhase.PostPick)
 
 		self.throw = None
@@ -160,22 +187,22 @@ class TurnState:
 		if self.side_dice.total_collected() == NUM_DICE:
 			self.phase = TurnPhase.Done
 			self.done_reason = "No more dice"
-			return True
+			return
 
 		if self.score > 0 and len(self.side_dice.collected_earthlings()) == 3:
 			self.phase = TurnPhase.Done
 			self.done_reason = "Cannot improve score"
-			return True
+			return
 
-		self.phase = TurnPhase.CheckEndTurn if self.score > 0 else TurnPhase.Throwing
+		self.phase = TurnPhase.ThrowAgain if self.score > 0 else TurnPhase.Throwing
 
-	def check_player_exit(self, stop):
-		assert(self.phase == TurnPhase.CheckEndTurn)
+	def _check_player_exit(self, stop):
+		assert(self.phase == TurnPhase.ThrowAgain)
 
 		if stop:
 			self.phase = TurnPhase.Done
 			self.done_reason = "Player choice"
-			return True
+			return
 
 		self.phase = TurnPhase.Throwing
 

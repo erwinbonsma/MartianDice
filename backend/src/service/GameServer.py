@@ -5,10 +5,9 @@ import websockets
 import logging
 import random
 from game.DataTypes import TurnState, TurnPhase, DieFace
-from game.Game import play_turn_async, RandomPlayer, DefensivePlayer
+from game.Game import RandomPlayer, DefensivePlayer
 from game.OptimalPlay import OptimalActionSelector
-from service.GameState import GameState, GamePhase
-from service.RemotePlayer import RemotePlayer
+from service.GameState import GameState
 
 logger = logging.getLogger('websockets.server')
 logger.setLevel(logging.INFO)
@@ -21,26 +20,29 @@ bot_behaviours = {
 	"smart": OptimalActionSelector()
 }
 
+str2die = {
+	"ray": DieFace.Ray,
+	"chicken": DieFace.Chicken,
+	"cow": DieFace.Cow,
+	"human": DieFace.Human
+}
+
 class ClientException(Exception):
 	def __init__(self, message):
 		self.message = message
 
-class AsyncBotWrapper:
-	def __init__(self, action_selector):
-		self.action_selector = action_selector
-
-	async def select_die_async(self, state: TurnState):
-		return self.action_selector.select_die(state)
-
-	async def should_stop_async(self, state: TurnState):
-		return self.action_selector.should_stop(state)
+def copy_state(game_state: GameState):
+	# TODO: Do not copy here but make states immutable and switch to Redux
+	as_json = game_state.as_json()
+	# TODO: Calculate and add MD5
+	return json.loads(as_json)
 
 class GameServer:
 
 	def __init__(self):
 		self.clients = {} # Contains players as well as observers
 		self.bots = {}
-		self.game_state = GameState()
+		self.game_state = None
 		self.host = None
 		self.next_bot_id = 1
 
@@ -56,9 +58,15 @@ class GameServer:
 
 	def bots_message(self):
 		return json.dumps({
-				"type": "bots",
-				"bots": list(self.bots.keys()),
-			})
+			"type": "bots",
+			"bots": list(self.bots.keys()),
+		})
+
+	def states_message(self, states):
+		return json.dumps({
+			"type": "game-states",
+			"states": states
+		})
 
 	async def send_bots_event(self):
 		"""Sends event with all bots"""
@@ -70,44 +78,53 @@ class GameServer:
 		if self.clients:
 			await asyncio.wait([ws.send(message) for ws in self.clients.values()])
 
-	def start_game(self):
-		self.game_state.start_game(itertools.chain(self.clients.keys(), self.bots.keys()))
-		self.start_turn()
+	async def update_state_until_blocked(self):
+		states = [copy_state(self.game_state)]
+		while not (self.game_state.done or self.game_state.awaitsInput):
+			self.game_state.next()
+			states.append(copy_state(self.game_state))
 
-	async def update_turn_state(self, turn_state):
-		if self.game_state.turn_state is None:
-			self.game_state.start_turn(turn_state)
+		await self.broadcast(self.states_message(states))
 
-		if turn_state.phase == TurnPhase.Done:
-			logger.info(f"{turn_state.score} points scored in round")
-			self.game_state.end_turn()
+	async def start_game(self):
+		self.game_state = GameState(itertools.chain(self.clients.keys(), self.bots.keys()))
 
-		asyncio.get_event_loop().create_task(self.broadcast(self.game_state.as_json()))
-		if (
-			turn_state.phase != TurnPhase.Thrown or
-			turn_state.throw[DieFace.Tank] > 0 or
-			turn_state.done_reason
-		):
-			await asyncio.sleep(2 if turn_state.phase != TurnPhase.Done else 4)
+		await self.update_state_until_blocked()
 
-		if turn_state.phase == TurnPhase.Done:
-			if self.game_state.next_turn():
-				self.start_turn()
-			else:
-				asyncio.get_event_loop().create_task(self.broadcast(self.game_state.as_json()))
+	async def handle_move(self, input_value):
+		self.game_state.next(input_value)
 
-	async def play_turn(self):
-		await play_turn_async(self.move_handler, state_listener = self.update_turn_state)
+		await self.update_state_until_blocked()
 
-	def start_turn(self):
-		player_id = self.game_state.active_player
-		logger.info(f"Player {player_id} starts turn")
-		if player_id in self.bots:
-			self.move_handler = AsyncBotWrapper(self.bots[player_id])
+	async def execute_player_move(self, action):
+		if "pick-die" in action:
+			picked = action["pick-die"].lower()
+			if not picked in str2die:
+				logger.info(f"Unknown die: {picked}")
+				return
+			die = str2die[picked]
+			if not self.game_state.turn_state.can_select(die):
+				logger.info(f"Cannot select: {picked}")
+				return
+			player_move = die
+		elif "throw-again" in action:
+			player_move = not action["throw-again"]
 		else:
-			self.move_handler = RemotePlayer(logger)
-		# Execute turn in background. It should not block the current client's event loop
-		asyncio.get_event_loop().create_task(self.play_turn())
+			logger.info("Unknown move")
+			return
+
+		await self.handle_move(player_move)
+
+	async def execute_bot_move(self):
+		action_selector = self.bots[self.game_state.active_player]
+
+		state = self.game_state.turn_state
+		if state.phase == TurnPhase.PickDice:
+			bot_move = action_selector.select_die(state)
+		else:
+			bot_move = action_selector.should_stop(state)
+
+		await self.handle_move(bot_move)
 
 	async def register(self, client_id, websocket):
 		if client_id in self.clients or client_id in self.bots:
@@ -144,14 +161,25 @@ class GameServer:
 			raise ClientException(f"{client_id} tried to {action}, but is not the host")
 
 	def check_is_recruiting(self, action):
-		if self.game_state.phase != GamePhase.Recruiting:
-			raise ClientException(f"Can only {action} when recruiting")
+		if not self.game_state is None:
+			raise ClientException(f"Can only {action} when game did not yet start")
 
-	def check_is_active_player(self, client_id):
+	def check_expect_move(self):
+		if self.game_state is None or not self.game_state.awaitsInput:
+			raise ClientException(f"Not awaiting a move")
+
+	def check_expect_move_from(self, client_id):
+		self.check_expect_move()
 		if self.game_state.active_player != client_id:
 			raise ClientException(f"{client_id} tried to move while it's not their turn")
 
+	def check_expect_move_from_bot(self):
+		self.check_expect_move()
+		if not self.game_state.active_player in self.bots:
+			raise ClientException("Bot move initiated while it's not a bot's turn")
+
 	async def handle_action(self, client_id, action):
+		print("handle_action", action, self.game_state.as_json() if self.game_state else None)
 		try:
 			if action["action"] == "chat":
 				# TODO
@@ -179,12 +207,20 @@ class GameServer:
 				self.check_is_host(client_id, "start game")
 				self.check_is_recruiting("start game")
 
-				self.start_game()
+				await self.start_game()
+				logger.info("Started game")
 	
 			if action["action"] == "move":
-				self.check_is_active_player(client_id)
+				self.check_expect_move_from(client_id)
 
-				await self.move_handler.handle_action(action)
+				await self.execute_player_move(action)
+
+			if action["action"] == "bot-move":
+				self.check_is_host(client_id, "initiate bot move")
+				self.check_expect_move_from_bot()
+
+				await self.execute_bot_move()
+
 		except ClientException as e:
 			logger.warn(e.message)
 

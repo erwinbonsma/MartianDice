@@ -41,6 +41,11 @@ def check_exit():
 				"throw-again": choice == "Y"
 			})
 
+def bot_move():
+	return json.dumps({
+		"action": "bot-move"
+	})
+
 async def add_bots(ws, bots):
 	for bot in bots:
 		await ws.send(json.dumps({
@@ -52,6 +57,9 @@ async def play_game(args):
 	async with websockets.connect(args.url) as websocket:
 		await websocket.send(args.name)
 
+		bots = set()
+		is_host = False
+
 		if args.bots is not None:
 			await add_bots(websocket, args.bots)
 
@@ -59,19 +67,29 @@ async def play_game(args):
 			raw_message = await websocket.recv()
 			print(raw_message)
 			message = json.loads(raw_message)
+
 			if message["type"] == "clients":
+				is_host = message["host"] == args.name
+
 				if len(message["clients"]) == args.num_clients:
 					await websocket.send(json.dumps({ "action": "start-game"}))
 
-			if message["type"] == "game-state":
-				if message["done"]:
+			if message["type"] == "bots":
+				bots = set(message["bots"])
+
+			if message["type"] == "game-states":
+				for state in message["states"]:
+					print(state)
+					await asyncio.sleep(1)
+				if state["done"]:
 					break
-				if message["active_player"] != args.name:
-					continue
-				if message["turn_state"]["phase"] == "PickDice":
-					await websocket.send(pick_dice(message["turn_state"]))
-				elif message["turn_state"]["phase"] == "CheckEndTurn":
-					await websocket.send(check_exit())
+				if state["active_player"] == args.name:
+					if state["turn_state"]["phase"] == "PickDice":
+						await websocket.send(pick_dice(state["turn_state"]))
+					elif state["turn_state"]["phase"] == "ThrowAgain":
+						await websocket.send(check_exit())
+				if is_host and state["active_player"] in bots:
+					await websocket.send(bot_move())
 
 parser = argparse.ArgumentParser(description='Basic Martian Dice client')
 parser.add_argument('--num-clients', type=int, help='Number of clients (host only)', default=1)
