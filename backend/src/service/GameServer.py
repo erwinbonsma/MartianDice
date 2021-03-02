@@ -1,6 +1,7 @@
 import asyncio
 import itertools
 import json
+import jsonpickle
 import websockets
 import logging
 import random
@@ -31,12 +32,6 @@ class ClientException(Exception):
 	def __init__(self, message):
 		self.message = message
 
-def copy_state(game_state: GameState):
-	# TODO: Do not copy here but make states immutable and switch to Redux
-	as_json = game_state.as_json()
-	# TODO: Calculate and add MD5
-	return json.loads(as_json)
-
 class GameServer:
 
 	def __init__(self):
@@ -62,11 +57,12 @@ class GameServer:
 			"bots": list(self.bots.keys()),
 		})
 
-	def states_message(self, states):
-		return json.dumps({
-			"type": "game-states",
-			"states": states
-		})
+	def game_state_message(self, turn_state_transitions):
+		return jsonpickle.encode({
+			"type": "game-state",
+			"state": self.game_state,
+			"turn_state_transitions": turn_state_transitions
+		}, unpicklable = False)
 
 	async def send_bots_event(self):
 		"""Sends event with all bots"""
@@ -79,12 +75,12 @@ class GameServer:
 			await asyncio.wait([ws.send(message) for ws in self.clients.values()])
 
 	async def update_state_until_blocked(self):
-		states = [copy_state(self.game_state)]
+		turn_state_transitions = [self.game_state.turn_state]
 		while not (self.game_state.done or self.game_state.awaitsInput):
 			self.game_state.next()
-			states.append(copy_state(self.game_state))
+			turn_state_transitions.append(self.game_state.turn_state)
 
-		await self.broadcast(self.states_message(states))
+		await self.broadcast(self.game_state_message(turn_state_transitions))
 
 	async def start_game(self):
 		self.game_state = GameState(itertools.chain(self.clients.keys(), self.bots.keys()))

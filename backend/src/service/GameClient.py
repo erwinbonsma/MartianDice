@@ -77,10 +77,11 @@ async def play_game(args):
 			if message["type"] == "bots":
 				bots = set(message["bots"])
 
-			if message["type"] == "game-states":
-				for state in message["states"]:
-					print(state)
+			if message["type"] == "game-state":
+				for turn_state in message["turn_state_transitions"]:
+					print(turn_state)
 					await asyncio.sleep(1)
+				state = message["state"]
 				if state["done"]:
 					break
 				if state["active_player"] == args.name:

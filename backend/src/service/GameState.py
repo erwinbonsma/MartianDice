@@ -2,7 +2,6 @@ from enum import IntEnum
 import jsonpickle
 import random
 from game.DataTypes import TurnState, TurnPhase
-from game.Game import random_throw
 
 TARGET_SCORE = 25
 
@@ -15,7 +14,7 @@ class GameState:
 		self.round = 1
 		self.active_player_index = 0
 		self.scores = dict((id, 0) for id in self.players)
-		self._start_turn()
+		self.turn_state = TurnState()
 
 	@property
 	def done(self):
@@ -35,12 +34,9 @@ class GameState:
 		assert(not self.done)
 
 		if not self.turn_state.done:
-			self.turn_state.next(input)
+			self.turn_state = self.turn_state.next(input)
 		else:
 			self._end_turn()
-
-	def _start_turn(self):
-		self.turn_state = TurnState(throw_fun = random_throw)
 
 	def _end_turn(self):
 		assert(not self.done)
@@ -56,7 +52,7 @@ class GameState:
 		if self.active_player_index == len(self.players):
 			self.active_player_index = 0
 			self.round += 1
-		self._start_turn()
+		self.turn_state = TurnState()
 
 	def __getstate__(self):
 		state = {

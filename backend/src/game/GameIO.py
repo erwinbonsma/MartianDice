@@ -1,5 +1,5 @@
 from game.DataTypes import DiceThrow, DieFace, TurnState, EARTHLINGS, NUM_DICE
-from game.Game import show_throw, random_throw
+from game.Game import show_throw
 from game.OptimalPlay import OptimalActionSelector, SearchState
 
 die2key = {
@@ -13,22 +13,22 @@ die2key = {
 key2die = { key: die for die, key in die2key.items() }
 
 def enter_throw(state):
-	target_num_dice = NUM_DICE - state.total_collected()
+	target_num_dice = NUM_DICE - state.total_collected
 	throw = DiceThrow()
 
-	while throw.num_dice() != target_num_dice:
-		if throw.num_dice() > 0:
+	while throw.num_dice != target_num_dice:
+		if throw.num_dice > 0:
 			show_throw(throw)
 		
 		try:
-			s = input("Add dice to throw (%d/%d): " % (throw.num_dice(), target_num_dice)).upper()
+			s = input("Add dice to throw (%d/%d): " % (throw.num_dice, target_num_dice)).upper()
 			if len(s) < 2:
 				raise ValueError("Input too short")
 			if not s[-1] in key2die:
 				raise ValueError("Unknown die result")
 
 			num = int(s[0:-1])
-			throw.set_num(key2die[s[-1]], num)
+			throw = throw.set_num(key2die[s[-1]], num)
 		except ValueError:
 			print("Enter number followed by die result (T, R, C, M, or H). E.g. '3T' for three Tanks")
 
@@ -48,17 +48,17 @@ class HumanPlayer:
 		print(" ".join(items))
 
 	def show_hint(self, state: TurnState):
-		num_earthling_types = len(state.side_dice.collected_earthlings())		
+		num_earthling_types = len(state.side_dice.collected_earthlings)
 		scores = [
 			(self.hint_generator.expected_score(
 				SearchState(
 					state.side_dice[DieFace.Tank],
 					state.side_dice[DieFace.Ray],
-					state.side_dice.num_earthlings() + action,
+					state.side_dice.num_earthlings + action,
 					num_earthling_types + 1
 				)
 			), action)
-			for action in list(set(state.throw[x] for x in state.selectable_earthlings()))
+			for action in list(set(state.throw[x] for x in state.selectable_earthlings))
 		]
 		if state.throw[DieFace.Ray] > 0:
 			scores.append((
@@ -66,7 +66,7 @@ class HumanPlayer:
 					SearchState(
 						state.side_dice[DieFace.Tank],
 						state.side_dice[DieFace.Ray] + state.throw[DieFace.Ray],
-						state.side_dice.num_earthlings(),
+						state.side_dice.num_earthlings,
 						num_earthling_types
 					)
 				), 0
@@ -74,14 +74,14 @@ class HumanPlayer:
 
 		for score, action in sorted(scores, key = lambda x: x[0], reverse = True):
 			if action > 0:
-				die = next(die for die in state.selectable_earthlings() if state.throw[die] == action)
+				die = next(die for die in state.selectable_earthlings if state.throw[die] == action)
 				choice = "%d [%s] Earthling%s" % (action, die2key[die], "s" if action > 1 else "")
 			else:
 				choice = "%d [R] Ray%s" % (state.throw[DieFace.Ray], "s" if state.throw[DieFace.Ray] > 1 else "")
 			print("%.3f %s" % (score, choice))
 
 	def select_die(self, state: TurnState):
-		options = state.selectable_earthlings()
+		options = state.selectable_earthlings
 		if state.throw[DieFace.Ray] > 0:
 			options.append(DieFace.Ray)
 

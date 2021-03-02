@@ -273,12 +273,12 @@ class OptimalActionSelector:
 		search_state = SearchState(
 			state.side_dice[DieFace.Tank],
 			state.side_dice[DieFace.Ray],
-			state.side_dice.num_earthlings(),
-			len(state.side_dice.collected_earthlings())
+			state.side_dice.num_earthlings,
+			len(state.side_dice.collected_earthlings)
 		)
 		search_throw = SearchThrow(
 			state.throw[DieFace.Tank], state.throw[DieFace.Ray],
-			tuple(set(state.throw[key] for key in state.selectable_earthlings()))
+			tuple(set(state.throw[key] for key in state.selectable_earthlings))
 		)
 
 		action, self.__expected_score = self.maximise_score(search_state, search_throw)

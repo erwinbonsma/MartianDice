@@ -1,5 +1,6 @@
+from game.DataTypes import random_throw
 from game.GameIO import enter_throw, HumanPlayer
-from game.Game import play_round, random_throw, show_state
+from game.Game import play_round, show_state
 
 if __name__ == '__main__':
 	import argparse
