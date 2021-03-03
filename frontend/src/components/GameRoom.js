@@ -116,7 +116,7 @@ export function GameRoom(props) {
 		) {
 			setGame(futureGame);
 		}
-	}, [turnState, futureGame]);
+	}, [turnState, futureGame, transitionTurns.length]);
 
 	return (
 		<Container>
