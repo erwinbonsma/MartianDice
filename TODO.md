@@ -10,20 +10,23 @@ Done:
 -	Add game creation
 -	Re-introduced animation delays
 -	Removed "needless" delays
+	-	Add delays when no tanks in throw, but turn ends
 -	Add GameRoom component
+-	Let player header reflect turnState
 
 TODO:
--	Add delays when no tanks in throw, but turn ends
--	Let player header reflect turnState
 -	UI:
 	-	Add top-level Connection React component
-	-	Add ability to join game
+	-	Add ability to enter name
+	-	Add ability to join/create game
 	-	End game visualisation (ranking + Exit Game button)
-	-	Avoid die overflows. Show only seven tanks/rays at most, with overflow indication.
+	-	Avoid die overflows. Show only seven tanks/rays at most, with overflow indication
+	-	Enable bot-type selection
 -	Host at AWS
 	-	DynamoDb implementation
 -	Make Room IDs random four characters
 -	Chat API
 -	Improve play animations:
 	-	Animate die addition/removal
--	Improve button colors
+-	Improve UI styling:
+	-	Improve button colors
