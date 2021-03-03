@@ -181,7 +181,9 @@ class TurnState:
 			side_dice = self.side_dice,
 			phase = TurnPhase.Thrown
 		)
-		if throw[DieFace.Tank] == 0:
+		if throw[DieFace.Tank] == 0 and new_state._check_post_throw_exit() == new_state:
+			# When there are no tank dice to be moved and the turn does not immediately end, skip
+			# this turn when animating, to avoid needless delays
 			new_state.skip_when_animating = True
 
 		return new_state
