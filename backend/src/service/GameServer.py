@@ -189,11 +189,11 @@ class GameActionHandler:
 			raise ClientException("Bot move initiated while it's not a bot's turn")
 
 	async def update_state_until_blocked(self, game_state):
-		turn_state_transitions = [game_state.turn_state]
+		turn_state_transitions = []
 		while not (game_state.done or game_state.awaitsInput):
-			game_state.next()
 			if not hasattr(game_state.turn_state, "skip_when_animating"):
 				turn_state_transitions.append(game_state.turn_state)
+			game_state.next()
 
 		await self.game.set_state(game_state)
 		await self.broadcast(self.game_state_message(game_state, turn_state_transitions))
