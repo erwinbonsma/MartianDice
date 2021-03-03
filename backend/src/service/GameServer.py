@@ -118,16 +118,18 @@ class GameActionHandler:
 		self.client_connection = client_connection
 		self.clients = clients
 
+	def clients_message(self, host):
+		return json.dumps({
+			"game_id": self.game.game_id,
+			"type": "clients",
+			"clients": list(self.clients.keys()),
+			"host": host
+		})
+
 	async def send_clients_event(self, host):
 		"""Sends event with all connected clients (human players and observers)"""
-		if self.clients:
-			message = json.dumps({
-				"game_id": self.game.game_id,
-				"type": "clients",
-				"clients": list(self.clients.keys()),
-				"host": host
-			})
-			await asyncio.wait([ws.send(message) for ws in self.clients.values()])
+		message = self.clients_message(host)
+		await self.broadcast(message)
 
 	def bots_message(self, bots):
 		return json.dumps({
@@ -138,10 +140,9 @@ class GameActionHandler:
 
 	async def send_bots_event(self):
 		"""Sends event with all bots"""
-		if self.clients:
-			bots = await self.game.bots()
-			message = self.bots_message(bots)
-			await asyncio.wait([ws.send(message) for ws in self.clients.values()])
+		bots = await self.game.bots()
+		message = self.bots_message(bots)
+		await self.broadcast(message)
 
 	def game_state_message(self, game_state, turn_state_transitions):
 		return jsonpickle.encode({
@@ -150,6 +151,17 @@ class GameActionHandler:
 			"state": game_state,
 			"turn_state_transitions": turn_state_transitions
 		}, unpicklable = False)
+
+	async def send_status(self):
+		host = await self.game.host()
+		await self.client_connection.send(self.clients_message(host))
+
+		bots = await self.game.bots()
+		await self.client_connection.send(self.bots_message(bots))
+
+		game_state = await self.game.state()
+		if game_state:
+			await self.client_connection.send(self.game_state_message(game_state, []))
 
 	async def broadcast(self, message):
 		if self.clients:
@@ -309,7 +321,10 @@ class GameActionHandler:
 				# TODO
 				return
 
-			if cmd == "create-game" or action ["action"] == "join-game":
+			if cmd == "send-status":
+				return await self.send_status()
+
+			if cmd == "create-game" or cmd == "join-game":
 				return await self.register(self.client_id, self.client_connection)
 
 			if cmd == "leave-game":
