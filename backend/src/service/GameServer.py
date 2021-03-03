@@ -35,12 +35,14 @@ class ClientException(Exception):
 
 def error_message(details):
 	return json.dumps({
+		"type": "response",
 		"status": "error",
 		"details": details
 	})
 
 def ok_message(info = {}):
 	return json.dumps({
+		"type": "response",
 		"status": "ok",
 		**info
 	})
@@ -213,8 +215,8 @@ class GameActionHandler:
 		game_state = await self.game.state()
 		self.check_my_move(game_state)
 
-		if "pick-die" in action:
-			picked = action["pick-die"].lower()
+		if "pick_die" in action:
+			picked = action["pick_die"].lower()
 			if not picked in str2die:
 				raise ClientException(f"Unknown die: {picked}")
 
@@ -223,8 +225,8 @@ class GameActionHandler:
 				raise ClientException(f"Cannot select: {picked}")
 
 			player_move = die
-		elif "throw-again" in action:
-			player_move = not action["throw-again"]
+		elif "throw_again" in action:
+			player_move = not action["throw_again"]
 		else:
 			raise ClientException("Unknown move")
 

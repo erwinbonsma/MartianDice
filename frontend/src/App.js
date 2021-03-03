@@ -10,6 +10,7 @@ import Row from 'react-bootstrap/Row';
 
 function App(props) {
 	const [websocket, setWebsocket] = useState();
+	const [gameId, setGameId] = useState();
 	const [game, setGame] = useState();
 	const [clients, setClients] = useState([]);
 	const [bots, setBots] = useState([]);
@@ -24,6 +25,9 @@ function App(props) {
 			socket.addEventListener('open', function (event) {
 				setWebsocket(socket);
     			socket.send(props.name);
+				socket.send(JSON.stringify({
+					action: "create-game"
+				}));
 			});
 
 			// Listen for messages
@@ -38,11 +42,18 @@ function App(props) {
 					case "bots":
 						setBots(msg.bots);
 						break;
+					case "response":
+						if (msg.status !== "ok") {
+							console.log("Error:", msg);
+						} else if (msg.game_id) {
+							setGameId(msg.game_id);
+						}
+						break;
 					case "game-state":
-						setGame(msg);
+						setGame(msg.state);
 						break;
 					default:
-						console.log("Unknown message", msg.type);
+						console.log("Unknown message", msg);
 				}
 			});
 		}
@@ -73,39 +84,56 @@ function App(props) {
 		//setGame(testGame);
 	}, [props.name]);
 
+	// Let host initiate bot moves
+	useEffect(() => {
+		if (host !== props.name || !game) {
+			return;
+		}
+
+		if (bots.includes(game.active_player)) {
+			websocket.send(JSON.stringify({
+				action: "bot-move",
+				game_id: gameId
+			}));
+		}
+	}, [bots, game, gameId, host]);
+
 	const onAddBot = () => {
 		websocket.send(JSON.stringify({
 			action: "add-bot",
+			game_id: gameId,
 			bot_behaviour: "smart"
 		}));
 	}
 	const onRemoveBot = (e) => {
 		websocket.send(JSON.stringify({
 			action: "remove-bot",
+			game_id: gameId,
 			bot_name: e.target.id
 		}));
 	}
 	const onStartGame = () => {
 		websocket.send(JSON.stringify({
-			action: "start-game"
+			action: "start-game",
+			game_id: gameId
 		}));
 	}
 
 	return (
 		<center>
     	<Container className="App">
-			<Row><Col as="h1">Martian Dice</Col></Row>
+			<Row><Col as="h1">Martian Dice{gameId && ` - Room ${gameId}`}</Col></Row>
 			<Row>
   				<Col className="GameArea" sm={8}>
 					<GameHeader game={game}></GameHeader>
 					{ game?.turn_state &&
-						<PlayArea game={game} websocket={websocket}
+						<PlayArea gameState={game} gameId={gameId} websocket={websocket}
 							my_turn={props.name === game.active_player}></PlayArea>
 					}
 				</Col>
 				<Col className="PlayersArea" sm={4}>
 					{ !!game ? 
-						<PlayerList players={game.players} scores={game.score}></PlayerList> :
+						<PlayerList players={game.players} scores={game.scores}></PlayerList> :
 						<GameSetup clients={clients} bots={bots} 
 							host={host} isHost={host === props.name}
 							onAddBot={onAddBot} onRemoveBot={onRemoveBot}

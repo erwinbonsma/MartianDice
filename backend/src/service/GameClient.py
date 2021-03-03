@@ -30,7 +30,7 @@ def pick_dice(game_id, turn_state):
 		return json.dumps({
 			"action": "move",
 			"game_id": game_id,
-			"pick-die": die.name
+			"pick_die": die.name
 		})
 
 def check_exit(game_id):
@@ -40,7 +40,7 @@ def check_exit(game_id):
 			return json.dumps({
 				"action": "move",
 				"game_id": game_id,
-				"throw-again": choice == "Y"
+				"throw_again": choice == "Y"
 			})
 
 def bot_move(game_id):

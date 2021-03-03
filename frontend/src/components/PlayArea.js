@@ -7,7 +7,7 @@ import Measure from 'react-measure';
 import { useState } from 'react';
 
 export function PlayArea(props) {
-	const game = props.game;
+	const game = props.gameState;
 	const diceThrow = game.turn_state.throw || {};
 	const earthlings = {};
 	const combatants = {};
@@ -27,17 +27,19 @@ export function PlayArea(props) {
 		onDiceClick = (e) => {
 			props.websocket.send(JSON.stringify({
 				action: "move",
-				"pick-die": e.target.id
+				game_id: props.gameId,
+				pick_die: e.target.id
 			}));
 		};
 	};
 
 	let onCheckContinue;
-	if (props.my_turn && game.turn_state.phase === "CheckEndTurn") {
+	if (props.my_turn && game.turn_state.phase === "ThrowAgain") {
 		onCheckContinue = (e) => {
 			props.websocket.send(JSON.stringify({
 				action: "move",
-				"throw-again": e.target.id === "yes"
+				game_id: props.gameId,
+				throw_again: e.target.id === "yes"
 			}));
 		}
 	}
