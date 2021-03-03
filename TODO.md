@@ -8,12 +8,15 @@ Done:
 -	Add database API
 	-	InMemoryDb implementation
 -	Add game creation
+-	Re-introduced animation delays
+-	Removed "needless" delays
 
 TODO:
 -	UI:
 	-	Add top-level Connection React component
 	-	Add ability to join game
 	-	End game visualisation (ranking + Exit Game button)
+	-	Avoid die overflows. Show only seven tanks/rays at most, with overflow indication.
 -	Host at AWS
 	-	DynamoDb implementation
 -	Chat API
