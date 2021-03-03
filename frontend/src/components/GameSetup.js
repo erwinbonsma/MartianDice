@@ -6,10 +6,10 @@ import Row from 'react-bootstrap/Row';
 export function GameSetup(props) {
 	return (
 		<div className="GameSetup">
-			<h4>Clients</h4>
-			<Container className="Clients">
+			<Container className="ClientTable">
+				<Row className="TableHeader"><Col as="h4">Humans</Col></Row>
 				{ props.clients.map(client => (
-					<Row key={client}>
+					<Row key={client} className="TableRow">
 						<Col sm={6}>{client}</Col>
 						<Col style={{textAlign: "center"}}>{ (client === props.host) && "Host"}</Col>
 					</Row>
@@ -17,10 +17,10 @@ export function GameSetup(props) {
 			</Container>
 			{ props.bots?.length > 0 && (
 				<>
-					<h4>Bots</h4>
-					<Container className="Bots">
+					<Container className="BotsTable">
+						<Row className="TableHeader"><Col as="h4">Bots</Col></Row>
 						{ props.bots.map(bot => (
-							<Row key={bot}>
+							<Row key={bot} className="TableRow">
 								<Col sm={6}>{bot}</Col>
 								<Col style={{textAlign: "center"}}>{ props.isHost && (
 									<Button className="Button" variant="secondary" size="sm" onClick={props.onRemoveBot} id={bot}>Remove</Button>
