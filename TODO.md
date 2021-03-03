@@ -5,16 +5,18 @@ Done:
 - 	Show turn result => Bust, Scored: X
 -	After player picked dice, show throw without selected dice
 -	Fix size of top row in game area (via adaptive max size retention)
+-	Add database API
+	-	InMemoryDb implementation
+-	Add game creation
 
 TODO:
+-	UI:
+	-	Add top-level Connection React component
+	-	Add ability to join game
+	-	End game visualisation (ranking + Exit Game button)
+-	Host at AWS
+	-	DynamoDb implementation
+-	Chat API
 -	Improve play animations:
 	-	Animate die addition/removal
--	Refactor service:
-	-	Add database API
--	Create new game
-	-	Create game service on demand
-	-	Add web UI
--	End game visualisation
--	Chat API
--	Host at AWS
 -	Improve button colors

@@ -14,7 +14,7 @@ key2die = {
 	"M": DieFace.Cow
 }
 
-def pick_dice(turn_state):
+def pick_dice(game_id, turn_state):
 	while True:
 		key = input("Your choice : ").upper()
 		if not key in key2die:
@@ -29,40 +29,54 @@ def pick_dice(turn_state):
 			continue
 		return json.dumps({
 			"action": "move",
+			"game_id": game_id,
 			"pick-die": die.name
 		})
 
-def check_exit():
+def check_exit(game_id):
 	while True:
 		choice = input("Continue (Y/N)? : ").upper()
 		if choice == "Y" or choice == "N":
 			return json.dumps({
 				"action": "move",
+				"game_id": game_id,
 				"throw-again": choice == "Y"
 			})
 
-def bot_move():
+def bot_move(game_id):
 	return json.dumps({
-		"action": "bot-move"
+		"action": "bot-move",
+		"game_id": game_id
 	})
 
-async def add_bots(ws, bots):
+async def add_bots(ws, game_id, bots):
 	for bot in bots:
 		await ws.send(json.dumps({
 			"action": "add-bot",
+			"game_id": game_id,
 			"bot_behaviour": bot
 		}))
 
 async def play_game(args):
 	async with websockets.connect(args.url) as websocket:
 		await websocket.send(args.name)
+		response = json.loads(await websocket.recv())
+		if not response["status"] == "ok":
+			print("Error:", response["details"])
+			return
+
+		if args.game_id:
+			await websocket.send(json.dumps({ "action": "join-game", "game_id": args.game_id }))
+			game_id = args.game_id
+		else:
+			await websocket.send(json.dumps({ "action": "create-game" }))
+			response = json.loads(await websocket.recv())
+			game_id = response["game_id"]
 
 		bots = set()
 		is_host = False
-
-		if args.bots is not None:
-			await add_bots(websocket, args.bots)
-
+		await add_bots(websocket, game_id, args.bots)
+		
 		while True:
 			raw_message = await websocket.recv()
 			print(raw_message)
@@ -72,7 +86,7 @@ async def play_game(args):
 				is_host = message["host"] == args.name
 
 				if len(message["clients"]) == args.num_clients:
-					await websocket.send(json.dumps({ "action": "start-game"}))
+					await websocket.send(json.dumps({ "action": "start-game", "game_id": game_id }))
 
 			if message["type"] == "bots":
 				bots = set(message["bots"])
@@ -86,14 +100,15 @@ async def play_game(args):
 					break
 				if state["active_player"] == args.name:
 					if state["turn_state"]["phase"] == "PickDice":
-						await websocket.send(pick_dice(state["turn_state"]))
+						await websocket.send(pick_dice(game_id, state["turn_state"]))
 					elif state["turn_state"]["phase"] == "ThrowAgain":
-						await websocket.send(check_exit())
+						await websocket.send(check_exit(game_id))
 				if is_host and state["active_player"] in bots:
-					await websocket.send(bot_move())
+					await websocket.send(bot_move(game_id))
 
 parser = argparse.ArgumentParser(description='Basic Martian Dice client')
 parser.add_argument('--num-clients', type=int, help='Number of clients (host only)', default=1)
 parser.add_argument('--bots', nargs='*', choices=["smart", "random", "defensive"], help='Adds bot(s) (host only)')
 parser.add_argument('--name', help='Player name')
 parser.add_argument('--url', help='Game service endpoint', default='ws://127.0.0.1:8765')
+parser.add_argument('--join-game', dest="game_id", metavar="Game ID", help="Join existing game")
