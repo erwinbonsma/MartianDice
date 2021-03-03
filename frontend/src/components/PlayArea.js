@@ -7,14 +7,14 @@ import Measure from 'react-measure';
 import { useState } from 'react';
 
 export function PlayArea(props) {
-	const game = props.gameState;
-	const diceThrow = game.turn_state.throw || {};
+	const turnState = props.turnState;
+	const diceThrow = turnState.throw || {};
 	const earthlings = {};
 	const combatants = {};
 
 	const [ throwAreaHeight, setThrowAreaHeight ] = useState(0);
 
-	Object.entries(game.turn_state.side_dice).forEach(([die, number]) => {
+	Object.entries(turnState.side_dice).forEach(([die, number]) => {
 		if (die === "Tank" || die === "Ray") {
 			combatants[die] = number;
 		} else {
@@ -23,7 +23,7 @@ export function PlayArea(props) {
 	});
 
 	let onDiceClick;
-	if (props.my_turn && game.turn_state.phase === "PickDice") {
+	if (props.myTurn && turnState.phase === "PickDice") {
 		onDiceClick = (e) => {
 			props.websocket.send(JSON.stringify({
 				action: "move",
@@ -34,7 +34,7 @@ export function PlayArea(props) {
 	};
 
 	let onCheckContinue;
-	if (props.my_turn && game.turn_state.phase === "ThrowAgain") {
+	if (props.myTurn && turnState.phase === "ThrowAgain") {
 		onCheckContinue = (e) => {
 			props.websocket.send(JSON.stringify({
 				action: "move",
@@ -60,9 +60,9 @@ export function PlayArea(props) {
 				? (<div style={{ minHeight: throwAreaHeight }}>
 					<ContinueTurnCheck onAnswer={onCheckContinue}></ContinueTurnCheck>
 				</div>)
-				: (game.turn_state.phase === "Done")
+				: (turnState.phase === "Done")
 					? (<div style={{ minHeight: throwAreaHeight }}>
-						<TurnResult score={game.turn_state.score} end_cause={game.turn_state.end_cause}></TurnResult>
+						<TurnResult score={turnState.score} end_cause={turnState.end_cause}></TurnResult>
 					</div>)
 					: (<Measure bounds onResize={onDiceThrowResize}>
 						{({ measureRef }) => (

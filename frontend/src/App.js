@@ -12,9 +12,11 @@ function App(props) {
 	const [websocket, setWebsocket] = useState();
 	const [gameId, setGameId] = useState();
 	const [game, setGame] = useState();
+	const [host, setHost] = useState();
 	const [clients, setClients] = useState([]);
 	const [bots, setBots] = useState([]);
-	const [host, setHost] = useState();
+	const [transitionTurns, setTransitionTurns] = useState([]);
+	const [turnAnimation, setTurnAnimation] = useState();
 
 	useEffect(() => {
 		if (!websocket) {
@@ -50,6 +52,7 @@ function App(props) {
 						}
 						break;
 					case "game-state":
+						setTransitionTurns(msg.turn_state_transitions);
 						setGame(msg.state);
 						break;
 					default:
@@ -84,19 +87,39 @@ function App(props) {
 		//setGame(testGame);
 	}, [props.name]);
 
+	const turnState = transitionTurns.length > 0 ? transitionTurns[0] : game?.turn_state;
+	const isAnimating = turnAnimation || transitionTurns.length > 0;
+	const myTurn = !isAnimating && (props.name === game?.active_player);
+	const botMove = !isAnimating && (props.name === host) && bots.includes(game?.active_player);
+
 	// Let host initiate bot moves
 	useEffect(() => {
-		if (host !== props.name || !game) {
-			return;
-		}
-
-		if (bots.includes(game.active_player)) {
+		if (botMove) {
 			websocket.send(JSON.stringify({
 				action: "bot-move",
 				game_id: gameId
 			}));
 		}
-	}, [bots, game, gameId, host, props.name]);
+	}, [botMove, gameId]);
+
+	// Turn animations
+	useEffect(() => {
+		if (transitionTurns.length > 0 && !turnAnimation) {
+			console.log("scheduleTimeout");
+			setTurnAnimation(
+				setTimeout(() => {
+					setTransitionTurns(transitionTurns.slice(1));
+				}, 2000)
+			);
+		}
+
+		return function cleanup() {
+			if (turnAnimation) {
+				clearTimeout(turnAnimation);
+				setTurnAnimation(undefined);
+			}
+		}
+	}, [turnAnimation, transitionTurns]);
 
 	const onAddBot = () => {
 		websocket.send(JSON.stringify({
@@ -126,9 +149,9 @@ function App(props) {
 			<Row>
   				<Col className="GameArea" sm={8}>
 					<GameHeader game={game}></GameHeader>
-					{ game?.turn_state &&
-						<PlayArea gameState={game} gameId={gameId} websocket={websocket}
-							my_turn={props.name === game.active_player}></PlayArea>
+					{ turnState &&
+						<PlayArea gameId={gameId} turnState={turnState} websocket={websocket}
+							myTurn={myTurn}></PlayArea>
 					}
 				</Col>
 				<Col className="PlayersArea" sm={4}>
