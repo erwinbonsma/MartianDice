@@ -192,7 +192,8 @@ class GameActionHandler:
 		turn_state_transitions = [game_state.turn_state]
 		while not (game_state.done or game_state.awaitsInput):
 			game_state.next()
-			turn_state_transitions.append(game_state.turn_state)
+			if not hasattr(game_state.turn_state, "skip_when_animating"):
+				turn_state_transitions.append(game_state.turn_state)
 
 		await self.game.set_state(game_state)
 		await self.broadcast(self.game_state_message(game_state, turn_state_transitions))

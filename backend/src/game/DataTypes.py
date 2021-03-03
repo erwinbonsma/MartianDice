@@ -175,12 +175,16 @@ class TurnState:
 	def _set_throw(self, throw):
 		assert(self.phase == TurnPhase.Throwing)
 
-		return TurnState(
+		new_state = TurnState(
 			throw = throw,
 			throw_count = self.throw_count + 1,
 			side_dice = self.side_dice,
 			phase = TurnPhase.Thrown
 		)
+		if throw[DieFace.Tank] == 0:
+			new_state.skip_when_animating = True
+
+		return new_state
 
 	def _move_tanks(self):
 		assert(self.phase == TurnPhase.Thrown)
