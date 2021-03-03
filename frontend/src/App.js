@@ -96,7 +96,7 @@ function App(props) {
 				game_id: gameId
 			}));
 		}
-	}, [bots, game, gameId, host]);
+	}, [bots, game, gameId, host, props.name]);
 
 	const onAddBot = () => {
 		websocket.send(JSON.stringify({
