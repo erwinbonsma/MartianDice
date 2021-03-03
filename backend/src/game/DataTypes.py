@@ -161,9 +161,9 @@ class TurnState:
 		else:
 			assert(False)
 
-	def _end_turn(self, end_cause):
+	def _end_turn(self, end_cause, clear_throw = True):
 		new_state = TurnState(
-			throw = None,
+			throw = None if clear_throw else self.throw,
 			throw_count = self.throw_count,
 			side_dice = self.side_dice,
 			phase = TurnPhase.Done
@@ -217,12 +217,12 @@ class TurnState:
 		max_rays = NUM_DICE - tanks - self.side_dice.num_earthlings - forced_earthlings
 
 		if tanks > max_rays:
-			return self._end_turn("Defeated")
+			return self._end_turn("Defeated", clear_throw = False)
 		elif len(selectable_earthlings) == 0 and rays == 0:
 			if tanks > self.side_dice[DieFace.Ray]:
-				return self._end_turn("Defeated")
+				return self._end_turn("Defeated", clear_throw = False)
 			else:
-				return self._end_turn("No selectable dice")
+				return self._end_turn("No selectable dice", clear_throw = False)
 
 		return self
 
