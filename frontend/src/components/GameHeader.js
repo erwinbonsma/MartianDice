@@ -11,7 +11,9 @@ export function GameHeader(props) {
 		} else {
 			header = `${game.active_player}'s Turn`;
 			left = `Round ${game.round}`;
-			right = `Throw ${game.turn_state.throw_count}`;
+			if (props.turnState.throw_count > 0) {
+				right = `Throw ${props.turnState.throw_count}`;
+			}
 		}
 	} else {
 		header = "Waiting for game to start";

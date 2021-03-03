@@ -148,7 +148,7 @@ function App(props) {
 			<Row><Col as="h1">Martian Dice{gameId && ` - Room ${gameId}`}</Col></Row>
 			<Row>
   				<Col className="GameArea" sm={8}>
-					<GameHeader game={game}></GameHeader>
+					<GameHeader game={game} turnState={turnState}></GameHeader>
 					{ turnState &&
 						<PlayArea gameId={gameId} turnState={turnState} websocket={websocket}
 							myTurn={myTurn}></PlayArea>
