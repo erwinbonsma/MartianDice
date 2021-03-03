@@ -8,6 +8,9 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 
 export function GameRoom(props) {
+	// The future game is the latest game from the service. However, due to client-side animation
+	// delays, it takes some time before this becomes the game state that is displayed.
+	const [futureGame, setFutureGame] = useState();
 	const [game, setGame] = useState();
 	const [hostName, setHostName] = useState();
 	const [clients, setClients] = useState([]);
@@ -29,7 +32,7 @@ export function GameRoom(props) {
 					break;
 				case "game-state":
 					setTransitionTurns(msg.turn_state_transitions);
-					setGame(msg.state);
+					setFutureGame(msg.state);
 					break;
 				default:
 					console.log("Unknown message", msg);
@@ -71,11 +74,11 @@ export function GameRoom(props) {
 		}));
 	}
 
-	const turnState = transitionTurns.length > 0 ? transitionTurns[0] : game?.turn_state;
+	const turnState = transitionTurns.length > 0 ? transitionTurns[0] : futureGame?.turn_state;
 	const isAnimating = transitionTurns.length > 0;
 	const isHost = (props.playerName === hostName);
-	const myTurn = !isAnimating && (props.playerName === game?.active_player);
-	const triggerBotMove = !isAnimating && isHost && bots.includes(game?.active_player);
+	const myTurn = !isAnimating && (props.playerName === futureGame?.active_player);
+	const triggerBotMove = !isAnimating && isHost && bots.includes(futureGame?.active_player);
 
 	// Let host initiate bot moves
 	useEffect(() => {
@@ -105,6 +108,15 @@ export function GameRoom(props) {
 			}
 		}
 	}, [transitionTurns]);
+
+	useEffect(() => {
+		if (
+			(turnState?.throw_count === 0 && turnState?.phase === "Throwing") ||
+			transitionTurns.length === 0
+		) {
+			setGame(futureGame);
+		}
+	}, [turnState, futureGame]);
 
 	return (
 		<Container>

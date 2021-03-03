@@ -11,7 +11,7 @@ export function GameHeader(props) {
 		} else {
 			header = `${game.active_player}'s Turn`;
 			left = `Round ${game.round}`;
-			if (props.turnState.throw_count > 0) {
+			if (props.turnState?.throw_count > 0) {
 				right = `Throw ${props.turnState.throw_count}`;
 			}
 		}
