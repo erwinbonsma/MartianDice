@@ -44,33 +44,33 @@ export function GameRoom(props) {
 
 		props.websocket.send(JSON.stringify({
 			action: "send-status",
-			game_id: props.gameId
+			game_id: props.roomId
 		}));
     
 		return function cleanup() {
 			console.log("removeListener");
 			props.websocket.removeEventListener('message', onMessage);
 		}
-	}, [props.websocket, props.gameId]);
+	}, [props.websocket, props.roomId]);
 
 	const onAddBot = () => {
 		props.websocket.send(JSON.stringify({
 			action: "add-bot",
-			game_id: props.gameId,
+			game_id: props.roomId,
 			bot_behaviour: "smart"
 		}));
 	}
 	const onRemoveBot = (e) => {
 		props.websocket.send(JSON.stringify({
 			action: "remove-bot",
-			game_id: props.gameId,
+			game_id: props.roomId,
 			bot_name: e.target.id
 		}));
 	}
 	const onStartGame = () => {
 		props.websocket.send(JSON.stringify({
 			action: "start-game",
-			game_id: props.gameId
+			game_id: props.roomId
 		}));
 	}
 
@@ -86,7 +86,7 @@ export function GameRoom(props) {
 			const delayedBotMove = setTimeout(() => {
 				props.websocket.send(JSON.stringify({
 					action: "bot-move",
-					game_id: props.gameId
+					game_id: props.roomId
 				}));
 			}, 2000);
 
@@ -94,7 +94,7 @@ export function GameRoom(props) {
 				clearTimeout(delayedBotMove);
 			}
 		}
-	}, [triggerBotMove, props.gameId, props.websocket]);
+	}, [triggerBotMove, props.roomId, props.websocket]);
 
 	// Turn animations
 	useEffect(() => {
@@ -120,12 +120,12 @@ export function GameRoom(props) {
 
 	return (
 		<Container>
-			<Row><Col as="h5">Room {props.gameId}</Col></Row>
+			<Row><Col as="h5">Room {props.roomId}</Col></Row>
 			<Row>
 				<Col className="GameArea" sm={8}>
 					<GameHeader game={game} turnState={turnState}></GameHeader>
 					{ turnState &&
-						<PlayArea gameId={props.gameId} turnState={turnState} websocket={props.websocket}
+						<PlayArea gameId={props.roomId} turnState={turnState} websocket={props.websocket}
 							myTurn={myTurn}></PlayArea>
 					}
 				</Col>

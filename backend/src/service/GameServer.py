@@ -64,7 +64,7 @@ class GameServer:
 
 	async def next_game_id(self):
 		game_id = await self.db.next_game_id()
-		await self.db.set_next_game_id(game_id + 1)
+		await self.db.set_next_game_id(str(int(game_id) + 1))
 		return game_id
 
 	async def main(self, websocket, path):
@@ -98,7 +98,11 @@ class GameServer:
 					game = self.db.game(game_id)
 
 				action_handler = await GameActionHandler.create(game, client_id, websocket)
-				await action_handler.handle_action(action)
+				if action_handler:
+					await action_handler.handle_action(action)
+				else:
+					msg = error_message(f"Game {game_id} does not exist")
+					await websocket.send(msg)
 		finally:
 			await self.unregister(client_id)
 
@@ -109,8 +113,8 @@ class GameActionHandler:
 	async def create(game, client_id, client_connection):
 		# Fetch it already, as it is definitely needed, and sometimes more than once
 		clients = await game.clients()
-
-		return GameActionHandler(game, client_id, client_connection, clients)
+		if not clients is None:
+			return GameActionHandler(game, client_id, client_connection, clients)
 
 	def __init__(self, game, client_id, client_connection, clients):
 		self.game = game

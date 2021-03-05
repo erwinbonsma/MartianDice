@@ -1,3 +1,8 @@
+class NonExistantGame:
+	async def clients(self):
+		return None
+
+NON_EXISTANT_GAME = NonExistantGame()
 
 class InMemoryGame:
 	def __init__(self, game_id):
@@ -52,10 +57,10 @@ class InMemoryDb:
 	def __init__(self):
 		self.__clients = {}
 		self.__games = {}
-		self.__next_game_id = 1
+		self.__next_game_id = "1"
 
 	def game(self, game_id):
-		return self.__games[game_id]
+		return self.__games.get(game_id, NON_EXISTANT_GAME)
 
 	async def has_client(self, client_id):
 		return client_id in self.__clients

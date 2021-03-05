@@ -1,40 +1,24 @@
 import './App.css';
-import { GameRoom } from './components/GameRoom';
+import { JoinRoom } from './components/JoinRoom';
 import { useState, useEffect } from 'react';
 
 function App(props) {
 	const [websocket, setWebsocket] = useState();
-	const [gameId, setGameId] = useState();
 
 	useEffect(() => {
 		if (!websocket) {
 			// Create WebSocket connection.
 			const socket = new WebSocket('ws://127.0.0.1:8765');
 
-			const onMessage = (event) => {
-				const msg = JSON.parse(event.data);
-				console.log('Message from server ', msg);
-				if (msg.type === "response") {
-					if (msg.status !== "ok") {
-						console.log("Error:", msg);
-					} else if (msg.game_id) {
-						setGameId(msg.game_id);
-						socket.removeEventListener('message', onMessage);
-					}
-				}
-			};
-
-			// Listen for messages
-			socket.addEventListener('message', onMessage); 
-
 			// Connection opened
 			socket.addEventListener('open', function (event) {
 				setWebsocket(socket);
-    			socket.send(props.name);
-				socket.send(JSON.stringify({
-					action: "create-game"
-				}));
+				socket.send(props.name);
 			});
+
+			const unsetSocket = () => { setWebsocket(undefined); }
+			socket.addEventListener('close', unsetSocket);
+			socket.addEventListener('error', unsetSocket);
 		}
     
 		return function cleanup() {
@@ -48,9 +32,7 @@ function App(props) {
 		<center>
     	<div className="App">
 			<h1>Martian Dice</h1>
-			{gameId && 
-				<GameRoom gameId={gameId} playerName={props.name} websocket={websocket}></GameRoom>
-			}
+			{ websocket && <JoinRoom websocket={websocket} playerName={props.name} /> }
 		</div>
 		</center>
 	);
