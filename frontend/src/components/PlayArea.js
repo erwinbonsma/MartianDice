@@ -50,7 +50,7 @@ export function PlayArea(props) {
 			const height = contentRect.bounds.bottom - contentRect.bounds.top;
 			const width = contentRect.bounds.right - contentRect.bounds.left;
 
-			if (width != throwAreaWidth) {
+			if (width !== throwAreaWidth) {
 				// When width changes, clear previous maximum height
 				setThrowAreaWidth(width);
 				setThrowAreaHeight(height);
