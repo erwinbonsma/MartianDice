@@ -78,13 +78,13 @@ class GameServer:
 
 			# Avoid possible bot name clash here, as this check is cheap
 			if client_id.startswith("Bot-"):
-				await websocket.send(error_message("Cannot join server. Name reserved for bots"))
+				await websocket.send(error_message("Sorry, but that is restricted to non-sentients"))
 			else:
 				if await self.register(client_id, websocket):
 					await websocket.send(ok_message({ "client_id": client_id }))
 					registered = True
 				else:
-					await websocket.send(error_message("Cannot join server. Name already in use"))
+					await websocket.send(error_message("Sorry, that name has been claimed already"))
 
 		try:
 			async for message in websocket:
@@ -104,7 +104,7 @@ class GameServer:
 				if action_handler:
 					await action_handler.handle_action(action)
 				else:
-					msg = error_message(f"Game {game_id} does not exist")
+					msg = error_message(f"Room {game_id} does not exist")
 					await websocket.send(msg)
 		finally:
 			await self.unregister(client_id)
