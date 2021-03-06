@@ -12,7 +12,8 @@ export function Chat(props) {
 		setMessageInput(event.target.value);
 	};
 
-	const onSendMessage = () => {
+	const onSendMessage = (e) => {
+		e.preventDefault();
 		props.websocket.send(JSON.stringify({
 			action: "chat",
 			game_id: props.roomId,
@@ -56,10 +57,11 @@ export function Chat(props) {
 					)}
 				</ul>
 			</div>
-			<div className="TableRow">
-				<input type="text" value={messageInput} onChange={handleInputChange} style={{fontSize: "small"}}/>
-				<Button onClick={onSendMessage} disabled={messageInput === ''} sz="sm">Send</Button>
-			</div>
+			<form className="TableRow" style={{display: "flex"}} onSubmit={onSendMessage}>
+				<input type="text" value={messageInput} onChange={handleInputChange}
+					style={{fontSize: "small", flex: "1 1 0" }}/>
+				<Button type="submit" disabled={messageInput === ''} sz="sm">Send</Button>
+			</form>
 		</div>
 	)
 }
