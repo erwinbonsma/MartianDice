@@ -131,7 +131,7 @@ export function GameRoom(props) {
 				</Col>
 				<Col className="PlayersArea" sm={4}>
 					{ !!game ? 
-						<PlayerList players={game.players} scores={game.scores}></PlayerList> :
+						<PlayerList players={game.players} scores={game.scores} activePlayer={game.active_player}></PlayerList> :
 						<GameSetup clients={clients} bots={bots} 
 							host={hostName} isHost={isHost}
 							onAddBot={onAddBot} onRemoveBot={onRemoveBot}
