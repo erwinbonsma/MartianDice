@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Button from 'react-bootstrap/Button';
 
 export function Chat(props) {
@@ -6,6 +6,9 @@ export function Chat(props) {
 	const [chatLog, setChatLog] = useState(Array.from({length: 20}, (_, index) =>
 		[index, "Bob", `Message ${index}`]
 	));
+
+	const lastKey = chatLog[chatLog.length - 1][0];
+	const lastChatEntryRef = useRef(null);
 
 	const handleInputChange = (event) => {
 		setMessageInput(event.target.value);
@@ -22,13 +25,16 @@ export function Chat(props) {
 	}
 
 	useEffect(() => {
+		lastChatEntryRef.current?.scrollIntoView({ behavior: "smooth" })
+	}, [chatLog]);
+
+	useEffect(() => {
 		const onMessage = (event) => {
 			const msg = JSON.parse(event.data);
 
 			if (msg.type === "chat") {
 				const chatEntry = [new Date(), msg.client_id, msg.message];
 				setChatLog([...chatLog, chatEntry]);
-				console.log("chatLog", chatLog);
 			}
 		};
 
@@ -46,7 +52,9 @@ export function Chat(props) {
 			<div className="ChatMessageArea" style={{flex: "1 1 0"}}>
 				<ul className="ChatMessages">
 					{ chatLog.map(([key, player, msg]) =>
-						<li key={key}>{player}: {msg}</li>
+						key === lastKey
+						? <li key={key} ref={lastChatEntryRef}>{player}: {msg}</li>
+						: <li key={key}>{player}: {msg}</li>
 					)}
 				</ul>
 			</div>
