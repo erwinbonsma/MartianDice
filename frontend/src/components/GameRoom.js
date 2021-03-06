@@ -55,11 +55,11 @@ export function GameRoom(props) {
 		}
 	}, [props.websocket, props.roomId]);
 
-	const onAddBot = () => {
+	const onAddBot = (event) => {
 		props.websocket.send(JSON.stringify({
 			action: "add-bot",
 			game_id: props.roomId,
-			bot_behaviour: "smart"
+			bot_behaviour: event
 		}));
 	}
 	const onRemoveBot = (e) => {

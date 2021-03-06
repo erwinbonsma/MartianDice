@@ -1,5 +1,7 @@
 import { Separator } from './Separator';
 import Button from 'react-bootstrap/Button';
+import DropdownButton from 'react-bootstrap/DropdownButton';
+import Dropdown from 'react-bootstrap/Dropdown';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
@@ -33,8 +35,11 @@ export function GameSetup(props) {
 					))}
 					{ props.isHost && (
 						<Row>
-							<Col><Button variant="secondary" onClick={props.onAddBot}
-								style={{margin: "0 0 0.5em"}}>Add bot</Button></Col>
+							<Col><DropdownButton variant="secondary" title="Add bot" onSelect={props.onAddBot} style={{margin: "0 0 0.5em"}}>
+								<Dropdown.Item eventKey="random">Random</Dropdown.Item>
+								<Dropdown.Item eventKey="defensive">Defensive</Dropdown.Item>
+								<Dropdown.Item eventKey="smart">Smart</Dropdown.Item>
+							</DropdownButton></Col>
 						</Row>
 					)}
 					</Container>
