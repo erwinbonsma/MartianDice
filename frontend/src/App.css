@@ -12,10 +12,12 @@
 h1 {
 	text-align: center;
 	color: #ffd0d0;
+	font-size: calc(20px + 2vmin);
 }
 
 h4 {
 	text-align: center;
+	font-size: calc(12px + 1.5vmin);
 }
 
 h5 {
@@ -68,7 +70,7 @@ h5 {
 .App {
   background-color: black;
   min-height: 100vh;
-  font-size: calc(10px + 2vmin);
+  font-size: calc(10px + 1.5vmin);
   color: #ffd0d0;
   margin: 0;
   text-align: left;
@@ -98,6 +100,8 @@ h5 {
   
 .Die img {
 	margin: 0.1em 0em 0.1em 0.4em;
+	height: calc(8px + 8vmin);
+	width: calc(8px + 8vmin)
 }
 
 .AbductionZone {

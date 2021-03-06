@@ -4,7 +4,7 @@ export function AbductionZone(props) {
 	return (
 		<div className="AbductionZone">
 			<h4>Abduction Zone</h4>
-			<DiceRow dice={props.earthlings} padLength={13}></DiceRow>
+			<DiceRow dice={props.earthlings} padLength={7}></DiceRow>
 		</div>		
 	)
 }
