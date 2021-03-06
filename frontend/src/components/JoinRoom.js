@@ -8,11 +8,11 @@ import Row from 'react-bootstrap/Row';
 export function JoinRoom(props) {
 	const [roomId, setRoomId] = useState();
 	const [roomInput, setRoomInput] = useState('');
-	const [joinError, setJoinError] = useState();
+	const [errorMessage, setErrorMessage] = useState();
 
 	const handleInputChange = (event) => {
 		setRoomInput(event.target.value);
-		setJoinError('');
+		setErrorMessage('');
 	};
 
 	const onCreateRoom = (event) => {
@@ -44,7 +44,7 @@ export function JoinRoom(props) {
 				setRoomId(msg.game_id);
 			}
 			if (msg.type === "response" && msg.status === "error") {
-				setJoinError(msg.details);
+				setErrorMessage(msg.details);
 			}
 
 			props.websocket.removeEventListener('message', onMessage);
@@ -60,15 +60,25 @@ export function JoinRoom(props) {
 	return (
 		roomId ? (
 			<GameRoom roomId={roomId} playerName={props.playerName} websocket={props.websocket} />
-		) : (<Container>
-			<Row>
-				<Col><Button onClick={onJoinRoom}>Join Room</Button></Col>
-				<Col><input type="text" value={roomInput} onChange={handleInputChange} /></Col>
-			</Row>
-			{joinError && (
-				<Row><Col as="p">Error: {joinError}</Col></Row>
-			)}
-			<Row><Col><Button onClick={onCreateRoom}>Create Room</Button></Col></Row>
-		</Container>)
-	)
+		) : (
+			<Container><Row>
+			<Col xl={3} lg={2} md={1} />
+			<Col>
+				<p>Welcome {props.playerName}!</p>
+				<p>Please proceed to join an existing room:</p>
+				<Container><Row>
+					<Col xs="auto">Room:</Col>
+					<Col><input type="text" value={roomInput} onChange={handleInputChange} /></Col>
+					<Col xs={2}><Button style={{width: "100%"}} disabled={roomInput === ''} onClick={onJoinRoom}>OK</Button></Col>
+				</Row></Container>
+				{ errorMessage &&
+					<p className="Error">{errorMessage}</p>
+				}
+				<br />
+				<p>Or create a new one:</p>
+				<center><Button onClick={onCreateRoom}>Create Room</Button></center>
+			</Col>
+			<Col xl={3} lg={2} md={1} />
+		</Row></Container>
+	));
 }

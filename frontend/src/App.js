@@ -1,6 +1,9 @@
 import './App.css';
 import { JoinRoom } from './components/JoinRoom';
 import { useState, useEffect } from 'react';
+import Col from 'react-bootstrap/Col';
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
 
 function App(props) {
@@ -66,11 +69,21 @@ function App(props) {
 			<h1>Martian Dice</h1>
 			{ playerName ?
 				<JoinRoom websocket={websocket} playerName={playerName} /> :
-				<p>Player name:
-					<input type="text" value={nameInput} onChange={handleInputChange} />
-					{ errorMessage && `Error: ${errorMessage}` }
-					<Button disabled={nameInput === ''} onClick={onEnterName}>OK</Button>
-				</p>
+				<Container><Row>
+					<Col xl={3} lg={2} md={1} />
+					<Col>
+						<p>What name would you like to use today?</p>
+						<Container><Row>
+							<Col xs="auto">Name:</Col>
+							<Col><input type="text" value={nameInput} onChange={handleInputChange} /></Col>
+							<Col xs="auto"><Button disabled={nameInput === ''} onClick={onEnterName}>OK</Button></Col>
+						</Row></Container>
+						{ errorMessage &&
+							<p className="Error">{errorMessage}</p>
+						}
+					</Col>
+					<Col xl={3} lg={2} md={1} />
+				</Row></Container>
 			}
 		</div>
 		</center>

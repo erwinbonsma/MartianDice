@@ -23,6 +23,10 @@ h5 {
 	text-align: center;
 }
 
+.Error {
+	color: #802020
+}
+
 .AppX {
 	display: flex;
 	flex-direction: row;
@@ -34,7 +38,7 @@ h5 {
   background-color: black;
   min-height: 100vh;
   font-size: calc(10px + 2vmin);
-  color: white;
+  color: #ffd0d0;
   margin: 0;
   text-align: left;
 }
