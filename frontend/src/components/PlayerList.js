@@ -1,3 +1,4 @@
+import { Separator } from './Separator';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
@@ -12,12 +13,12 @@ export function PlayerList(props) {
 	return (
 		<div className="PlayersList">
 			<h4 className="TableHeader">Players</h4>
-			<Container>
+			<Container className="TableBody">
 			{ props.players.map(player => {
 				const isActivePlayer = player === props.activePlayer;
 				const isOffline = props.offlinePlayers.includes(player);
 				return (
-					<Row key={player} className="TableRow">
+					<Row key={player}>
 						<Col sm={9}>{formatText(player, isActivePlayer, isOffline)}</Col>
 						<Col sm={3} style={{textAlign: "right"}}
 							>{formatText(props.scores[player], isActivePlayer, isOffline)}</Col>
@@ -25,6 +26,7 @@ export function PlayerList(props) {
 				)
 			})}
 			</Container>
+			<Separator />
 		</div>
 	)
 }

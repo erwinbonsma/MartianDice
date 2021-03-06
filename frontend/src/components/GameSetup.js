@@ -1,3 +1,4 @@
+import { Separator } from './Separator';
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
@@ -8,35 +9,37 @@ export function GameSetup(props) {
 		<div className="GameSetup">
 			<div className="ClientTable">
 				<h4 className="TableHeader">Humans</h4>
-				<Container>
+				<Container className="TableBody">
 				{ props.clients.map(client => (
-					<Row key={client} className="TableRow">
+					<Row key={client}>
 						<Col sm={6}>{client}</Col>
-						<Col style={{textAlign: "center"}}>{ (client === props.host) && "Host"}</Col>
+						<Col style={{textAlign: "right"}}>{ (client === props.host) && "Host"}</Col>
 					</Row>
 				))}
 				</Container>
+				<Separator />
 			</div>
-			{ props.bots?.length > 0 && (
+			{ (props.bots?.length > 0 || props.isHost) && (
 				<div className="BotsTable">
 					<h4 className="TableHeader">Bots</h4>
-					<Container>
+					<Container className="TableBody">
 					{ props.bots.map(bot => (
-						<Row key={bot} className="TableRow">
+						<Row key={bot}>
 							<Col sm={6}>{bot}</Col>
-							<Col style={{textAlign: "center"}}>{ props.isHost && (
+							<Col style={{textAlign: "right"}}>{ props.isHost && (
 								<Button className="Button" variant="secondary" size="sm" onClick={props.onRemoveBot} id={bot}>Remove</Button>
 							)}</Col>
 						</Row>
 					))}
+					{ props.isHost && (
+						<Row>
+							<Col><Button variant="secondary" onClick={props.onAddBot}
+								style={{margin: "0 0 0.5em"}}>Add bot</Button></Col>
+						</Row>
+					)}
 					</Container>
+					<Separator />
 				</div>
-			)}
-			{ props.isHost && (
-				<Button className="Button" variant="secondary" onClick={props.onAddBot}>Add bot</Button>
-			)}
-			{ props.isHost && (
-				<Button className="Button" variant="primary" onClick={props.onStartGame}>Start game</Button>
 			)}
 		</div>
 	)

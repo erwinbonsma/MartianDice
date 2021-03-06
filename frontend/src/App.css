@@ -32,10 +32,6 @@ h5 {
 	flex: 1 2;
 }
 
-.stretch {
-	flex: 2;
-}
-
 .ChatMessageArea {	
 	background-color: #503030;
 	flex: 1 2;
@@ -59,6 +55,7 @@ h5 {
 	justify-content: space-between;
 	height: 100%;
 	width: 100%;
+	padding: 0 0 0 1em;
 }
 
 .AppX {
@@ -134,7 +131,7 @@ h5 {
 	padding: 0.2em
 }
 
-.TableRow {
+.TableBody {
 	background-color: #503030;
 	color: #ffd0d0;
 }

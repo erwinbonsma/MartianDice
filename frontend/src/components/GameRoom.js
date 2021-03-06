@@ -4,6 +4,7 @@ import { GameSetup } from './GameSetup';
 import { PlayArea } from './PlayArea';
 import { PlayerList } from './PlayerList';
 import { useState, useEffect } from 'react';
+import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
@@ -126,22 +127,22 @@ export function GameRoom(props) {
 	return (
 		<Container>
 			<Row><Col as="h5">Room {props.roomId}</Col></Row>
-			<Row style={{height: "80vh", background: "green"}}>
+			<Row style={{height: "80vh", background: "black"}}>
 				<Col className="GameArea" sm={8}>
-					<GameHeader game={game} turnState={turnState}></GameHeader>
+					<GameHeader game={game} turnState={turnState} />
 					{ turnState &&
 						<PlayArea gameId={props.roomId} turnState={turnState} websocket={props.websocket}
-							myTurn={myTurn}></PlayArea>
+							myTurn={myTurn} />
 					}
+					{ (isHost && !game) && <center><Button variant="primary" onClick={onStartGame}>Start game</Button></center> }
 				</Col>
 				<Col className="PlayersArea" sm={4}>
 					{ !!game ? 
 						<PlayerList players={game.players} scores={game.scores} activePlayer={game.active_player}
-							offlinePlayers={offlinePlayers}></PlayerList> :
+							offlinePlayers={offlinePlayers} /> :
 						<GameSetup clients={clients} bots={bots} 
 							host={hostName} isHost={isHost}
-							onAddBot={onAddBot} onRemoveBot={onRemoveBot}
-							onStartGame={onStartGame}></GameSetup>
+							onAddBot={onAddBot} onRemoveBot={onRemoveBot} />
 					}
 					<Chat websocket={props.websocket} roomId={props.roomId} />
 				</Col>
