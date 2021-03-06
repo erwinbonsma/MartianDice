@@ -70,7 +70,10 @@ class GameServer:
 	async def main(self, websocket, path):
 		registered = False
 		while not registered:
-			client_id = await websocket.recv()
+			action = json.loads(await websocket.recv())
+			if action["action"] != "join":
+				continue
+			client_id = action["client_id"]
 			logger.info(f"Client joined: {client_id}")
 
 			# Avoid possible bot name clash here, as this check is cheap
@@ -78,7 +81,7 @@ class GameServer:
 				await websocket.send(error_message("Cannot join server. Name reserved for bots"))
 			else:
 				if await self.register(client_id, websocket):
-					await websocket.send(ok_message())
+					await websocket.send(ok_message({ "client_id": client_id }))
 					registered = True
 				else:
 					await websocket.send(error_message("Cannot join server. Name already in use"))

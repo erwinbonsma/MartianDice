@@ -6,7 +6,7 @@ import reportWebVitals from './reportWebVitals';
 
 ReactDOM.render(
   <React.StrictMode>
-    <App name={`Test-${Math.floor(Math.random() * 1000)}`} />
+    <App />
   </React.StrictMode>,
   document.getElementById('root')
 );
