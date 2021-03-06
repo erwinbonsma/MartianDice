@@ -27,6 +27,15 @@ export function PlayerList(props) {
 			})}
 			</Container>
 			<Separator />
+			{ props.observers.length > 0 && (<div className="Observers">
+				<h4 className="TableHeader">Observers</h4>
+				<Container className="TableBody">
+				{ props.observers.map(observer =>
+					(<Row key={observer}><Col>{observer}</Col></Row>)
+				)}
+				</Container>
+				<Separator />
+			</div>)}
 		</div>
 	)
 }

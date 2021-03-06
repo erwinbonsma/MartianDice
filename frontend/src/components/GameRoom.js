@@ -123,6 +123,9 @@ export function GameRoom(props) {
 	const offlinePlayers = game
 		? game.players.filter(player => !(bots.includes(player) || clients.includes(player)))
 		: [];
+	const observers = game
+		? clients.filter(client => !game.players.includes(client))
+		: [];
 
 	return (
 		<Container>
@@ -139,7 +142,7 @@ export function GameRoom(props) {
 				<Col className="PlayersArea" sm={4}>
 					{ !!game ? 
 						<PlayerList players={game.players} scores={game.scores} activePlayer={game.active_player}
-							offlinePlayers={offlinePlayers} /> :
+							offlinePlayers={offlinePlayers} observers={observers} /> :
 						<GameSetup clients={clients} bots={bots} 
 							host={hostName} isHost={isHost}
 							onAddBot={onAddBot} onRemoveBot={onRemoveBot} />
