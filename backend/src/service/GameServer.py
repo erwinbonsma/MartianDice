@@ -62,19 +62,34 @@ class GameServer:
 	async def unregister(self, client_id):
 		await self.db.remove_client(client_id)
 
+	async def handle_disconnect(self, client_id):
+		try:
+			logger.info(f"Handling disconnect of {client_id}")
+
+			games = await self.db.client_games(client_id)
+			for game_id in games:
+				game = self.db.game(game_id)
+				action_handler = await GameActionHandler.create(game)
+				await action_handler.unregister(client_id)
+
+			await self.unregister(client_id)
+
+			logger.info(f"Handled disconnect of {client_id}")
+		except Exception as e:
+			print("Exception while handling disconnect:", e)
+
 	async def next_game_id(self):
 		game_id = await self.db.next_game_id()
 		await self.db.set_next_game_id(str(int(game_id) + 1))
 		return game_id
 
-	async def main(self, websocket, path):
+	async def await_registration(self, websocket):
 		registered = False
 		while not registered:
 			action = json.loads(await websocket.recv())
 			if action["action"] != "join":
 				continue
 			client_id = action["client_id"]
-			logger.info(f"Client joined: {client_id}")
 
 			# Avoid possible bot name clash here, as this check is cheap
 			if client_id.startswith("Bot-"):
@@ -85,6 +100,12 @@ class GameServer:
 					registered = True
 				else:
 					await websocket.send(error_message("Sorry, that name has been claimed already"))
+
+		logger.info(f"Client joined: {client_id}")
+		return client_id
+
+	async def main(self, websocket, path):
+		client_id = await self.await_registration(websocket)
 
 		try:
 			async for message in websocket:
@@ -103,27 +124,32 @@ class GameServer:
 				action_handler = await GameActionHandler.create(game, client_id, websocket)
 				if action_handler:
 					await action_handler.handle_action(action)
+					#for client_id in action_handler.disconnected:
+					#	ws = action_handler.clients[client_id]
+					#	asyncio.create_task(self.handle_disconnect(client_id, ws))
 				else:
 					msg = error_message(f"Room {game_id} does not exist")
 					await websocket.send(msg)
+		except Exception as e:
+			logger.info(f"Exception for {client_id}: {e}")
 		finally:
-			await self.unregister(client_id)
-
+			await self.handle_disconnect(client_id)
 
 class GameActionHandler:
 
 	@staticmethod
-	async def create(game, client_id, client_connection):
+	async def create(game, client_id = None, client_connection = None):
 		# Fetch it already, as it is definitely needed, and sometimes more than once
 		clients = await game.clients()
 		if not clients is None:
-			return GameActionHandler(game, client_id, client_connection, clients)
+			return GameActionHandler(game, clients, client_id, client_connection)
 
-	def __init__(self, game, client_id, client_connection, clients):
+	def __init__(self, game, clients, client_id, client_connection):
 		self.game = game
 		self.client_id = client_id
 		self.client_connection = client_connection
 		self.clients = clients
+		self.disconnected = set()
 
 	def clients_message(self, host):
 		return json.dumps({
@@ -169,6 +195,14 @@ class GameActionHandler:
 		game_state = await self.game.state()
 		if game_state:
 			await self.client_connection.send(self.game_state_message(game_state, []))
+
+	async def send_with_disconnect(self, client_id, msg):
+		try:
+			ws = self.clients.get(client_id, None)
+			if ws: await ws.send(msg)
+		except:
+			print("Failed to send message to", client_id)
+			self.disconnected.add(client_id)
 
 	async def broadcast(self, message):
 		if self.clients:
@@ -289,7 +323,7 @@ class GameActionHandler:
 		await self.send_clients_event(host)
 
 	async def unregister(self, client_id):
-		await self.game.remove_client[client_id]
+		await self.game.remove_client(client_id)
 		del self.clients[client_id]
 
 		host = await self.game.host()
