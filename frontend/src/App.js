@@ -67,8 +67,9 @@ function App(props) {
 		<center>
     	<div className="App">
 			<h1>Martian Dice</h1>
-			{ playerName ?
-				<JoinRoom websocket={websocket} playerName={playerName} /> :
+			{ playerName ? (
+				<JoinRoom websocket={websocket} playerName={playerName} />
+			) : (
 				<Container><Row>
 					<Col xl={3} lg={2} md={1} />
 					<Col>
@@ -84,7 +85,7 @@ function App(props) {
 					</Col>
 					<Col xl={3} lg={2} md={1} />
 				</Row></Container>
-			}
+			)}
 		</div>
 		</center>
 	);
