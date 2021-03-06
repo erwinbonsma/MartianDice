@@ -124,9 +124,6 @@ class GameServer:
 				action_handler = await GameActionHandler.create(game, client_id, websocket)
 				if action_handler:
 					await action_handler.handle_action(action)
-					#for client_id in action_handler.disconnected:
-					#	ws = action_handler.clients[client_id]
-					#	asyncio.create_task(self.handle_disconnect(client_id, ws))
 				else:
 					msg = error_message(f"Room {game_id} does not exist")
 					await websocket.send(msg)
@@ -149,7 +146,6 @@ class GameActionHandler:
 		self.client_id = client_id
 		self.client_connection = client_connection
 		self.clients = clients
-		self.disconnected = set()
 
 	def clients_message(self, host):
 		return json.dumps({
@@ -195,14 +191,6 @@ class GameActionHandler:
 		game_state = await self.game.state()
 		if game_state:
 			await self.client_connection.send(self.game_state_message(game_state, []))
-
-	async def send_with_disconnect(self, client_id, msg):
-		try:
-			ws = self.clients.get(client_id, None)
-			if ws: await ws.send(msg)
-		except:
-			print("Failed to send message to", client_id)
-			self.disconnected.add(client_id)
 
 	async def broadcast(self, message):
 		if self.clients:
