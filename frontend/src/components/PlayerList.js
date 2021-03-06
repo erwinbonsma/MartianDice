@@ -10,8 +10,9 @@ function formatText(text, isActivePlayer, isOffline) {
 
 export function PlayerList(props) {
 	return (
-		<Container className="PlayersList">
-			<Row className="TableHeader"><Col as="h4">Players</Col></Row>
+		<div className="PlayersList">
+			<h4 className="TableHeader">Players</h4>
+			<Container>
 			{ props.players.map(player => {
 				const isActivePlayer = player === props.activePlayer;
 				const isOffline = props.offlinePlayers.includes(player);
@@ -23,6 +24,7 @@ export function PlayerList(props) {
 					</Row>
 				)
 			})}
-		</Container>
+			</Container>
+		</div>
 	)
 }
