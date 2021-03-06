@@ -1,3 +1,4 @@
+import { Chat } from './Chat';
 import { GameHeader } from './GameHeader';
 import { GameSetup } from './GameSetup';
 import { PlayArea } from './PlayArea';
@@ -118,10 +119,14 @@ export function GameRoom(props) {
 		}
 	}, [turnState, futureGame, transitionTurns.length]);
 
+	const offlinePlayers = game
+		? game.players.filter(player => !(bots.includes(player) || clients.includes(player)))
+		: [];
+
 	return (
 		<Container>
 			<Row><Col as="h5">Room {props.roomId}</Col></Row>
-			<Row>
+			<Row style={{height: "80vh", background: "green"}}>
 				<Col className="GameArea" sm={8}>
 					<GameHeader game={game} turnState={turnState}></GameHeader>
 					{ turnState &&
@@ -131,12 +136,14 @@ export function GameRoom(props) {
 				</Col>
 				<Col className="PlayersArea" sm={4}>
 					{ !!game ? 
-						<PlayerList players={game.players} scores={game.scores} activePlayer={game.active_player}></PlayerList> :
+						<PlayerList players={game.players} scores={game.scores} activePlayer={game.active_player}
+							offlinePlayers={offlinePlayers}></PlayerList> :
 						<GameSetup clients={clients} bots={bots} 
 							host={hostName} isHost={isHost}
 							onAddBot={onAddBot} onRemoveBot={onRemoveBot}
 							onStartGame={onStartGame}></GameSetup>
 					}
+					<Chat websocket={props.websocket} roomId={props.roomId} />
 				</Col>
 			</Row>
 		</Container>

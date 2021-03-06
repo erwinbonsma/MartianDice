@@ -207,6 +207,14 @@ class GameActionHandler:
 		if not game_state.active_player in bots:
 			raise ClientException("Bot move initiated while it's not a bot's turn")
 
+	async def send_chat(self, client_id, message):
+		message = json.dumps({
+			"type": "chat",
+			"client_id": client_id,
+			"message": message
+		})
+		await self.broadcast(message)
+
 	async def update_state_until_blocked(self, game_state):
 		turn_state_transitions = []
 		while not (game_state.done or game_state.awaitsInput):
@@ -325,8 +333,7 @@ class GameActionHandler:
 		try:
 			cmd = action["action"]
 			if cmd == "chat":
-				# TODO
-				return
+				return await self.send_chat(self.client_id, action["message"])
 
 			if cmd == "send-status":
 				return await self.send_status()

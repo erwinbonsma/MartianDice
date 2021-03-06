@@ -27,6 +27,40 @@ h5 {
 	color: #802020
 }
 
+.Chat {
+	font-size: medium;
+	flex: 1 2;
+}
+
+.stretch {
+	flex: 2;
+}
+
+.ChatMessageArea {	
+	background-color: #503030;
+	flex: 1 2;
+	overflow-y: auto;
+}
+
+.ChatMessages {
+	list-style-type: none;
+	padding: 0;
+	margin: 0;
+}
+
+.PlayersList {
+	flex: 0 1;
+}
+
+.PlayersArea {
+	display: flex;
+	flex-direction: column;
+	flex-wrap: none;
+	justify-content: space-between;
+	height: 100%;
+	width: 100%;
+}
+
 .AppX {
 	display: flex;
 	flex-direction: row;
@@ -48,10 +82,11 @@ h5 {
 }
 
 .GameArea {
-	background-color: #604040;;
+	background-color: #604040;
 	margin: 0;
 	padding: 0;
 	color: #ffd0d0;
+	height: 100%;
 }
 
 .GameSetup {
@@ -95,6 +130,8 @@ h5 {
 .TableHeader {
 	background-color: #604040;
 	color: #ffd0d0;
+	margin: 0;
+	padding: 0.2em
 }
 
 .TableRow {
