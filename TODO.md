@@ -15,24 +15,25 @@ Done:
 -	Let player header reflect turnState
 -	Add ability to enter name
 -	Add ability to join/create game
+-	Show active player in player list
+-	Add chat
+-	Improve input entry (JoinRoom + App) UI
+-	Add observer list
+-	Improve height adaption of game play area 
+-	Enable bot-type selection
+-	Handle disconnections
+	-	Clean up at back-end
+	-	Show offline status in frontend
 
 TODO:
 -	UI:
 	-	End game visualisation (ranking + Exit Game button)
-	-	Avoid die overflows. Show only seven tanks/rays at most, with overflow indication
-	-	Enable bot-type selection
-	-	Player list
-		-	Show offline status
-		-	Show active player
 -	Ensure graceful error handling:
-	-	Client disconnect
 	-	Server-side error
 -	Host at AWS
 	-	DynamoDb implementation
 -	Make Room IDs random four characters
--	Chat API
 -	Improve play animations:
 	-	Animate die addition/removal
 -	Improve UI styling:
-	-	Improve input entry (JoinRoom + App)
 	-	Improve button colors
