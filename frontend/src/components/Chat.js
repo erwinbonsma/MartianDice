@@ -3,11 +3,9 @@ import Button from 'react-bootstrap/Button';
 
 export function Chat(props) {
 	const [messageInput, setMessageInput] = useState('');
-	const [chatLog, setChatLog] = useState(Array.from({length: 20}, (_, index) =>
-		[index, "Bob", `Message ${index}`]
-	));
+	const [chatLog, setChatLog] = useState([]);
 
-	const lastKey = chatLog[chatLog.length - 1][0];
+	const lastKey = chatLog.length && chatLog[chatLog.length - 1][0];
 	const lastChatEntryRef = useRef(null);
 
 	const handleInputChange = (event) => {
