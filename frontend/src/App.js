@@ -41,6 +41,8 @@ function App(props) {
 	};
 
 	const onEnterName = (event) => {
+		event.preventDefault();
+
 		const onMessage = (event) => {
 			const msg = JSON.parse(event.data);
 			console.log("onEnterName:", msg);
@@ -74,11 +76,13 @@ function App(props) {
 					<Col xl={3} lg={2} md={1} />
 					<Col>
 						<p>What name would you like to use today?</p>
-						<Container><Row>
-							<Col xs="auto">Name:</Col>
-							<Col><input type="text" value={nameInput} onChange={handleInputChange} /></Col>
-							<Col xs="auto"><Button disabled={nameInput === ''} onClick={onEnterName}>OK</Button></Col>
-						</Row></Container>
+						<form onSubmit={onEnterName} style={{display: "flex", justifyContent: "space-between"}}>
+							<div>Name:&nbsp;</div>
+							<input type="text" value={nameInput} onChange={handleInputChange}
+								style={{flex: "10"}} />
+							<div style={{flex: "1"}}></div>
+							<Button type="submit" disabled={nameInput === ''} >OK</Button>
+						</form>
 						{ errorMessage &&
 							<p className="Error">{errorMessage}</p>
 						}
