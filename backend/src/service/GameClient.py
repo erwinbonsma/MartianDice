@@ -59,7 +59,10 @@ async def add_bots(ws, game_id, bots):
 
 async def play_game(args):
 	async with websockets.connect(args.url) as websocket:
-		await websocket.send(args.name)
+		await websocket.send(json.dumps({
+			"action": "join",
+			"client_id": args.name
+		}))
 		response = json.loads(await websocket.recv())
 		if not response["status"] == "ok":
 			print("Error:", response["details"])
@@ -75,7 +78,8 @@ async def play_game(args):
 
 		bots = set()
 		is_host = False
-		await add_bots(websocket, game_id, args.bots)
+		if args.bots:
+			await add_bots(websocket, game_id, args.bots)
 		
 		while True:
 			raw_message = await websocket.recv()
