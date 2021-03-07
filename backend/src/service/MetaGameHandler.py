@@ -89,7 +89,7 @@ class MetaGameHandler(GameHandler):
 		bots = self.game.bots()
 		await self.send_message(self.bots_message(bots))
 
-		game_state = await self.game.state()
+		game_state = self.game.state()
 		if game_state:
 			await self.send_message(self.game_state_message(game_state, []))
 
@@ -100,7 +100,7 @@ class MetaGameHandler(GameHandler):
 		return bot_name
 
 	async def add_bot(self, bot_behaviour):
-		await self.check_can_configure_game("add bot")
+		self.check_can_configure_game("add bot")
 
 		bot_name = self.next_bot_name()
 		bots = self.game.add_bot(bot_name, bot_behaviour)
@@ -110,7 +110,7 @@ class MetaGameHandler(GameHandler):
 			await self.send_bots_event(bots)
 
 	async def remove_bot(self, bot_name):
-		await self.check_can_configure_game("remove bot")
+		self.check_can_configure_game("remove bot")
 
 		bots = self.game.remove_bot(bot_name)
 

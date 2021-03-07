@@ -43,8 +43,8 @@ class GamePlayHandler(GameHandler):
 				turn_state_transitions.append(game_state.turn_state)
 			game_state.next()
 
-		await self.game.set_state(game_state)
-		await self.broadcast(self.game_state_message(game_state, turn_state_transitions))
+		if self.game.set_state(game_state):
+			await self.broadcast(self.game_state_message(game_state, turn_state_transitions))
 
 	async def handle_move(self, game_state, input_value):
 		game_state.next(input_value)
@@ -52,7 +52,7 @@ class GamePlayHandler(GameHandler):
 		await self.update_state_until_blocked(game_state)
 
 	async def player_move(self, cmd_message):
-		game_state = await self.game.state()
+		game_state = self.game.state()
 		self.check_my_move(game_state)
 
 		if "pick_die" in cmd_message:
@@ -75,7 +75,7 @@ class GamePlayHandler(GameHandler):
 	async def bot_move(self):
 		self.check_is_host("initiate bot move")
 
-		game_state = await self.game.state()
+		game_state = self.game.state()
 		bots = self.game.bots()
 		self.check_bot_move(game_state, bots)
 		
@@ -90,7 +90,7 @@ class GamePlayHandler(GameHandler):
 		await self.handle_move(game_state, bot_move)
 
 	async def start_game(self):
-		await self.check_can_configure_game("start game")
+		self.check_can_configure_game("start game")
 
 		self.logger.info("Starting game")
 		bots = self.game.bots()

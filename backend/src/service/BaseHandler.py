@@ -60,16 +60,16 @@ class GameHandler(BaseHandler):
 		if host != self.client_id:
 			raise ClientException(f"{self.client_id} tried to {action}, but is not the host")
 
-	async def check_is_recruiting(self, action):
+	def check_is_recruiting(self, action):
 		# Fetch here. It should be unset, so will not be re-used elsewhere
-		game_state = await self.game.state()
+		game_state = self.game.state()
 
 		if game_state:
 			raise HandlerException(f"Can only {action} when game did not yet start")
 
-	async def check_can_configure_game(self, action):
+	def check_can_configure_game(self, action):
 		self.check_is_host(action)
-		await self.check_is_recruiting(action)
+		self.check_is_recruiting(action)
 
 	async def handle_game_command(self, cmd_message):
 		pass

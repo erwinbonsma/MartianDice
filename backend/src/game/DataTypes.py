@@ -63,6 +63,9 @@ class SideDiceState:
 	def __getstate__(self):
 		return dict((die.name, count) for die, count in self.__counts.items())
 
+	def __setstate__(self, state):
+		self.__counts = dict((DieFace[die_name], count) for die_name, count in state.items())
+
 class DiceThrow:
 
 	@staticmethod
@@ -106,6 +109,9 @@ class DiceThrow:
 
 	def __getstate__(self):
 		return dict((die.name, count) for die, count in self.__counts.items())
+
+	def __setstate__(self, state):
+		self.__counts = dict((DieFace[die_name], count) for die_name, count in state.items())
 
 def random_throw(state):
 	return DiceThrow.random_throw(NUM_DICE - state.total_collected)
@@ -270,9 +276,6 @@ class TurnState:
 			phase = TurnPhase.Throwing
 		)
 
-	def __str__(self):
-		return f"phase={self.phase.name}, side_dice={self.side_dice}"
-
 	def __getstate__(self):
 		state = {
 			"throw_count": self.throw_count,
@@ -287,6 +290,12 @@ class TurnState:
 			state["end_cause"] = self.end_cause
 
 		return state
+
+	def __setstate__(self, state):
+		state["phase"] = TurnPhase[state["phase"]]
+		if not "throw" in state:
+			state["throw"] = None
+		self.__dict__.update(state)
 
 	def __str__(self):
 		return str(self.__getstate__())

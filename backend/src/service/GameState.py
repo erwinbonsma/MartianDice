@@ -67,5 +67,15 @@ class GameState:
 
 		return state
 
+	def __setstate__(self, state):
+		active_player = state.get("active_player", None)
+		if active_player:
+			state["active_player_index"] = state["players"].index(active_player)
+			del state["active_player"]
+		self.__dict__.update(state)
+
+	def __str__(self):
+		return str(self.__getstate__())
+
 	def as_json(self):
 		return jsonpickle.encode(self, unpicklable = False)

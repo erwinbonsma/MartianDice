@@ -1,20 +1,21 @@
 import json
+import jsonpickle
 from pymemcache.client import base
 
 DEFAULT_EXPIRY = 3600
 
 class JsonSerde(object):
-    def serialize(self, key, value):
-        if isinstance(value, str):
-            return value.encode('utf-8'), 1
-        return json.dumps(value).encode('utf-8'), 2
+	def serialize(self, key, value):
+		if isinstance(value, str):
+			return value.encode('utf-8'), 1
+		return jsonpickle.encode(value).encode('utf-8'), 2
 
-    def deserialize(self, key, value, flags):
-       if flags == 1:
-           return value.decode('utf-8')
-       if flags == 2:
-           return json.loads(value.decode('utf-8'))
-       raise Exception("Unknown serialization format")
+	def deserialize(self, key, value, flags):
+		if flags == 1:
+			return value.decode('utf-8')
+		if flags == 2:
+			return jsonpickle.decode(value.decode('utf-8'))
+		raise Exception("Unknown serialization format")
 
 cache_client = base.Client('memcached', serde = JsonSerde())
 
@@ -27,13 +28,13 @@ class InMemoryGame:
 		self.clients_key = f"{self.game_id}-clients"
 		self.host_key = f"{self.game_id}-host"
 		self.next_bot_id_key = f"{self.game_id}-next_bot_id"
-
-		self.__state = None
+		self.state_key = f"{self.game_id}-state"
 
 	def reset(self):
 		cache_client.set(self.next_bot_id_key, "0")
 		cache_client.set(self.bots_key, {})
 		cache_client.set(self.clients_key, {})
+		cache_client.set(self.state_key, "")
 
 	@property
 	def game_id(self):
@@ -76,11 +77,17 @@ class InMemoryGame:
 	def clients(self):
 		return cache_client.get(self.clients_key)
 
-	async def set_state(self, state):
-		self.__state = state
+	def set_state(self, state):
+		# Note: It should be practically impossible for the update to fail due to concurrency, as
+		# only one client at any moment is allowed to update the state. However, it is could
+		# conceivably occur, for example when clients (and services handling their request) have
+		# (temporarily) inconsistent views of who is hosting the game. Better safe than sorry...
+		if cache_client.cas(self.state_key, state, self.state_cas, expire = DEFAULT_EXPIRY):
+			return state
 
-	async def state(self):
-		return self.__state
+	def state(self):
+		state, self.state_cas = cache_client.gets(self.state_key)
+		return state
 
 	def host(self):
 		return cache_client.get(self.host_key)
