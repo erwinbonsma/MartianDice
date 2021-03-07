@@ -7,9 +7,11 @@ export function ContinueTurnCheck(props) {
 	return (
 		<Container>
 			<Row>
-				<Col sm={6}>Continue turn?</Col>
-				<Col><Button id="yes" onClick={props.onAnswer}>Yes</Button></Col>
-				<Col><Button id="no" onClick={props.onAnswer}>No</Button></Col>
+				<Col sm={2} />
+				<Col sm={3} ><Button id="yes" onClick={props.onAnswer} style={{width: "100%"}}>Yes</Button></Col>
+				<Col sm={2} />
+				<Col sm={3} ><Button id="no" onClick={props.onAnswer} style={{width: "100%"}}>No</Button></Col>
+				<Col sm={2} />
 			</Row>
 		</Container>
 	)

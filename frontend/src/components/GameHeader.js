@@ -9,7 +9,13 @@ export function GameHeader(props) {
 		if (game.done) {
 			header = "Game completed";
 		} else {
-			header = `${game.active_player}'s Turn`;
+			if (props.turnState?.phase === 'PickDice') {
+				header = `${game.active_player} to pick a die`;
+			} else if (props.turnState?.phase === 'ThrowAgain') {
+				header = `${game.active_player} to continue?`;
+			} else {
+				header = `${game.active_player}'s turn`;
+			}
 			left = `Round ${game.round}`;
 			if (props.turnState?.throw_count > 0) {
 				right = `Throw ${props.turnState.throw_count}`;
@@ -22,7 +28,7 @@ export function GameHeader(props) {
 	return (
 		<Container className="GameHeader">
 			<Row>
-				<Col as="h4">{left}</Col>
+				<Col as="h4" style={{textAlign:"left"}}>{left}</Col>
 				<Col as="h4" sm={6} style={{textAlign: "center"}}>{header}</Col>
 				<Col as="h4" style={{textAlign:"right"}}>{right}</Col>
 			</Row>
