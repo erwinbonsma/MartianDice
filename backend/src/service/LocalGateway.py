@@ -48,4 +48,4 @@ class LocalGateway:
 			raise e
 		finally:
 			del self.sockets[socket_id]
-			await DisconnectionHandler(self.db, self.comms, websocket).handle_disconnect()
+			await DisconnectionHandler(self.db, self.comms, socket_id).handle_disconnect()
