@@ -24,7 +24,7 @@ class InMemoryGame:
 		self.__bots = {}
 		self.__clients = {}
 		self.__state = None
-		self.set_next_bot_id(1)
+		self.__init_next_bot_id()
 
 	@property
 	def game_id(self):
@@ -39,12 +39,11 @@ class InMemoryGame:
 	async def bots(self):
 		return dict(self.__bots)
 
-	def set_next_bot_id(self, next_id):
-		print("set_next_bot_id", next_id)
-		return cache_client.set(f"{self.game_id}-next_bot_id", str(next_id))
+	def __init_next_bot_id(self):
+		return cache_client.set(f"{self.game_id}-next_bot_id", "0")
 
 	def next_bot_id(self):
-		return int(cache_client.get(f"{self.game_id}-next_bot_id"))
+		return cache_client.incr(f"{self.game_id}-next_bot_id", 1)
 
 	async def add_client(self, client_id, client_connection):
 		self.__clients[client_id] = client_connection

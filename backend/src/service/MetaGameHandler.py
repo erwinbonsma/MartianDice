@@ -82,7 +82,6 @@ class MetaGameHandler(GameHandler):
 	def next_bot_name(self):
 		next_bot_id = self.game.next_bot_id()
 		bot_name = f"Bot #{next_bot_id}"
-		self.game.set_next_bot_id(next_bot_id + 1)
 
 		return bot_name
 
