@@ -35,7 +35,7 @@ export function GameSetup(props) {
 					))}
 					{ props.isHost && (
 						<Row>
-							<Col><DropdownButton variant="secondary" title="Add bot" onSelect={props.onAddBot} style={{margin: "0 0 0.5em"}}>
+							<Col><DropdownButton variant="secondary" title="Add bot" onSelect={props.onAddBot} style={{margin: "0.3em 0 0.5em"}}>
 								<Dropdown.Item eventKey="random">Random</Dropdown.Item>
 								<Dropdown.Item eventKey="defensive">Defensive</Dropdown.Item>
 								<Dropdown.Item eventKey="smart">Smart</Dropdown.Item>
