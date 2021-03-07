@@ -1,4 +1,8 @@
+import random
 from service.BaseHandler import BaseHandler, ok_message, error_message
+
+def create_game_id():
+	return ''.join(chr(random.randint(ord('A'), ord('Z'))) for _ in range(4))
 
 class RegistrationHandler(BaseHandler):
 
@@ -18,15 +22,18 @@ class RegistrationHandler(BaseHandler):
 		await self.db.add_connection(self.connection, client_id)
 		await self.send_message(ok_message({ "client_id": client_id }))
 
-	async def next_game_id(self):
-		game_id = await self.db.next_game_id()
-		await self.db.set_next_game_id(str(int(game_id) + 1))
-		return game_id
-
 	async def handle_create_game(self):
-		game_id = await self.next_game_id()
-		game = await self.db.create_game(game_id)
-		await self.send_message(ok_message({ "game_id": game_id }))
+		attempts = 0
+		while attempts < 4:
+			game_id = create_game_id()
+			print(game_id)
+			game = await self.db.create_game(game_id)
+			if game:
+				return await self.send_message(ok_message({ "game_id": game_id }))
+
+			attempts += 1
+		
+		raise RuntimeError("Failed to generate a unique Game ID")
 
 	async def handle_command(self, cmd_message):
 		cmd = cmd_message["action"]

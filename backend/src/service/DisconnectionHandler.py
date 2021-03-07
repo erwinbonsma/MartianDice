@@ -11,7 +11,7 @@ class DisconnectionHandler(BaseHandler):
 			for game_id in games:
 				handler = MetaGameHandler(self.db, self.comms, self.connection)
 				await handler.fetch_game(game_id)
-				await handler.leave_game(client_id)
+				await handler.leave_game()
 
 			await self.db.remove_connection(self.connection)
 

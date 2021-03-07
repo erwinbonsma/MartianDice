@@ -31,31 +31,34 @@ class MetaGameHandler(GameHandler):
 		message = self.bots_message(bots)
 		await self.broadcast(message)
 
-	async def send_chat(self, client_id, message):
+	async def send_chat(self, message):
 		message = json.dumps({
 			"type": "chat",
-			"client_id": client_id,
+			"client_id": self.client_id,
 			"message": message
 		})
 		await self.broadcast(message)
 
-	async def join_game(self, client_id, client_connection):
-		await self.game.add_client(client_id, client_connection)
-		self.clients[client_id] = client_connection
+	async def join_game(self, game_id):
+		if self.game is None:
+			return await self.send_error_message(f"Cannot find Room {game_id}")
+
+		await self.game.add_client(self.client_id, self.connection)
+		self.clients[self.client_id] = self.connection
 
 		host = await self.game.host()
 		if host is None:
-			host = client_id
+			host = self.client_id
 			await self.game.set_host(host)
 
 		await self.send_clients_event(host)
 
-	async def leave_game(self, client_id):
-		await self.game.remove_client(client_id)
-		del self.clients[client_id]
+	async def leave_game(self):
+		await self.game.remove_client(self.client_id)
+		del self.clients[self.client_id]
 
 		host = await self.game.host()
-		if client_id == host:
+		if self.client_id == host:
 			if self.clients:
 				# Assign an (arbitrary) new host
 				host = list(self.clients.keys())[0]
@@ -104,16 +107,16 @@ class MetaGameHandler(GameHandler):
 		cmd = cmd_message["action"]
 
 		if cmd == "chat":
-			return await self.send_chat(self.client_id, cmd_message["message"])
+			return await self.send_chat(cmd_message["message"])
 
 		if cmd == "send-status":
 			return await self.send_status()
 
 		if cmd == "join-game":
-			return await self.join_game(self.client_id, self.connection)
+			return await self.join_game(cmd_message["game_id"])
 
 		if cmd == "leave-game":
-			return await self.leave_game(self.client_id)
+			return await self.leave_game()
 
 		if cmd == "add-bot":
 			return await self.add_bot(cmd_message["bot_behaviour"])

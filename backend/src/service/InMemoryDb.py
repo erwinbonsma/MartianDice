@@ -1,9 +1,3 @@
-class NonExistantGame:
-	async def clients(self):
-		return None
-
-NON_EXISTANT_GAME = NonExistantGame()
-
 class InMemoryGame:
 	def __init__(self, game_id, db):
 		self.__game_id = game_id
@@ -63,10 +57,6 @@ class InMemoryDb:
 		self.__games = {}
 		self.__games_for_client = {}
 		self.__connections = {}
-		self.__next_game_id = "1"
-
-	def game(self, game_id):
-		return self.__games.get(game_id, NON_EXISTANT_GAME)
 
 	async def has_connection(self, connection):
 		return connection in self.__connections
@@ -101,12 +91,13 @@ class InMemoryDb:
 		self.__games_for_client[client_id].remove(game_id)
 
 	async def create_game(self, game_id):
+		"""Creates new game. Returns None if game with given ID already exists."""
+		if game_id in self.__games:
+			return None
+
 		new_game = InMemoryGame(game_id, self)
 		self.__games[game_id] = new_game
 		return new_game
 
-	async def next_game_id(self):
-		return self.__next_game_id
-
-	async def set_next_game_id(self, next_id):
-		self.__next_game_id = next_id
+	def game(self, game_id):
+		return self.__games.get(game_id, None)

@@ -64,23 +64,25 @@ export function JoinRoom(props) {
 			<GameRoom roomId={roomId} playerName={props.playerName} websocket={props.websocket} />
 		) : (
 			<Container><Row>
-			<Col xl={3} lg={2} md={1} />
+			<Col xl={4} lg={3} md={2} />
 			<Col>
 				<p>Welcome {props.playerName}!</p>
-				<p>Please proceed to join an existing room:</p>
+				<p>Please proceed to a room:</p>
 				<Container><Row>
-					<Col xs="auto">Room:</Col>
-					<Col><input type="text" value={roomInput} onChange={handleInputChange} /></Col>
-					<Col xs={2}><Button style={{width: "100%"}} disabled={roomInput === ''} onClick={onJoinRoom}>OK</Button></Col>
+					<Col xs="auto">Join room</Col>
+					<Col><input type="text" value={roomInput} onChange={handleInputChange} size={6} /></Col>
+					<Col xs={3}><Button style={{width: "100%"}} disabled={roomInput.length !== 4} onClick={onJoinRoom}>Join</Button></Col>
 				</Row></Container>
 				{ errorMessage &&
 					<p className="Error">{errorMessage}</p>
 				}
 				<br />
-				<p>Or create a new one:</p>
-				<center><Button onClick={onCreateRoom}>Create Room</Button></center>
+				<Container><Row>
+					<Col as="p">Create new room</Col>
+					<Col xs={3}><Button style={{width: "100%"}} onClick={onCreateRoom}>Create</Button></Col>
+				</Row></Container>
 			</Col>
-			<Col xl={3} lg={2} md={1} />
+			<Col xl={4} lg={3} md={2} />
 		</Row></Container>
 	));
 }
