@@ -24,15 +24,16 @@ class InMemoryGame:
 		self.__db = db
 
 		self.bots_key = f"{self.game_id}-bots"
+		self.clients_key = f"{self.game_id}-clients"
 		self.host_key = f"{self.game_id}-host"
 		self.next_bot_id_key = f"{self.game_id}-next_bot_id"
 
-		self.__clients = {}
 		self.__state = None
 
 	def reset(self):
 		cache_client.set(self.next_bot_id_key, "0")
 		cache_client.set(self.bots_key, {})
+		cache_client.set(self.clients_key, {})
 
 	@property
 	def game_id(self):
@@ -57,16 +58,23 @@ class InMemoryGame:
 	def next_bot_id(self):
 		return cache_client.incr(self.next_bot_id_key, 1)
 
-	async def add_client(self, client_id, client_connection):
-		self.__clients[client_id] = client_connection
-		self.__db._add_client_to_game(client_id, self.game_id)
+	def add_client(self, client_id, client_connection):
+		clients, cas = cache_client.gets(self.clients_key)
+		clients[client_id] = client_connection
+		if cache_client.cas(self.clients_key, clients, cas, expire = DEFAULT_EXPIRY):
+			self.__db._add_client_to_game(client_id, self.game_id)
+			return clients
 
-	async def remove_client(self, client_id):
-		del self.__clients[client_id]
-		self.__db._remove_client_from_game(client_id, self.game_id)
+	def remove_client(self, client_id):
+		clients, cas = cache_client.gets(self.clients_key)
+		if client_id in clients:
+			del clients[client_id]
+			if cache_client.cas(self.clients_key, clients, cas, expire = DEFAULT_EXPIRY):
+				self.__db._remove_client_from_game(client_id, self.game_id)
+				return clients
 
-	async def clients(self):
-		return dict(self.__clients)
+	def clients(self):
+		return cache_client.get(self.clients_key)
 
 	async def set_state(self, state):
 		self.__state = state

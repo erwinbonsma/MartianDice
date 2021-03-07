@@ -42,8 +42,10 @@ class MetaGameHandler(GameHandler):
 		if self.game is None:
 			return await self.send_error_message(f"Cannot find Room {game_id}")
 
-		await self.game.add_client(self.client_id, self.connection)
-		self.clients[self.client_id] = self.connection
+		updated_clients = self.game.add_client(self.client_id, self.connection)
+		if updated_clients is None:
+			return await self.send_error_message("Failed to join game. Please try again")
+		self.clients = updated_clients
 
 		host = self.game.host()
 		if host is None:
@@ -53,8 +55,21 @@ class MetaGameHandler(GameHandler):
 		await self.send_clients_event(host)
 
 	async def leave_game(self):
-		await self.game.remove_client(self.client_id)
-		del self.clients[self.client_id]
+		attempts = 0
+		# Retry removal. It can fail if two (or more clients) disconnect at the same time. In that
+		# case, CAS ensures that (at least) one update succeeded so removal should eventually
+		# succeed. Note, in contrast to join_game, cannot make client responsible for retrying, as
+		# it will typically have disconnected.
+		while attempts < 4:
+			updated_clients = self.game.remove_client(self.client_id)
+			if updated_clients is not None:
+				break
+			attempts += 1
+			await asyncio.sleep(random.random() * attempts)
+
+		if updated_clients is None:
+			return self.logger.error(f"Failed to remove {self.client_id} from game {self.game.game_id}")
+		self.clients = updated_clients
 
 		host = self.game.host()
 		if self.client_id == host:

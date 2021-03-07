@@ -80,7 +80,7 @@ class GameHandler(BaseHandler):
 		if self.game:
 			# Fetch these already, as they are definitely needed, and sometimes more than once
 			self.client_id = await self.db.client_id_for_connection(self.connection)
-			self.clients = await self.game.clients()
+			self.clients = self.game.clients()
 
 	async def handle_command(self, cmd_message):
 		try:

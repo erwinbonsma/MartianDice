@@ -18,4 +18,3 @@ class DisconnectionHandler(BaseHandler):
 			self.logger.info(f"Handled disconnect of {client_id}")
 		except Exception as e:
 			self.logger.warn(f"Exception while handling disconnect: {e}")
-			raise e
