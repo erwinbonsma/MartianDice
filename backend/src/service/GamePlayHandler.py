@@ -73,10 +73,10 @@ class GamePlayHandler(GameHandler):
 		await self.handle_move(game_state, player_move)
 
 	async def bot_move(self):
-		await self.check_is_host("initiate bot move")
+		self.check_is_host("initiate bot move")
 
 		game_state = await self.game.state()
-		bots = await self.game.bots()
+		bots = self.game.bots()
 		self.check_bot_move(game_state, bots)
 		
 		action_selector = bot_behaviours[bots[game_state.active_player]]
@@ -93,7 +93,7 @@ class GamePlayHandler(GameHandler):
 		await self.check_can_configure_game("start game")
 
 		self.logger.info("Starting game")
-		bots = await self.game.bots()
+		bots = self.game.bots()
 		game_state = GameState( itertools.chain(self.clients.keys(), bots.keys()) )
 
 		await self.update_state_until_blocked(game_state)
