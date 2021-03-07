@@ -26,12 +26,10 @@ export function GameHeader(props) {
 	}
 
 	return (
-		<Container className="GameHeader">
-			<Row>
-				<Col as="h4" style={{textAlign:"left"}}>{left}</Col>
-				<Col as="h4" sm={6} style={{textAlign: "center"}}>{header}</Col>
-				<Col as="h4" style={{textAlign:"right"}}>{right}</Col>
-			</Row>
-		</Container>
+		<div className="GameHeader" style={{display: "flex", padding: "0 1em"}}>
+			<h4 style={{textAlign:"left", flex: "1 0"}}>{left}</h4>
+			<h4 style={{textAlign: "center", flex: "4 1"}}>{header}</h4>
+			<h4 style={{textAlign:"right", flex: "1 0"}}>{right}</h4>
+		</div>
 	)
 }

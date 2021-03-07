@@ -76,12 +76,13 @@ function App(props) {
 					<Col xl={3} lg={2} md={1} />
 					<Col>
 						<p>What name would you like to use today?</p>
-						<form onSubmit={onEnterName} style={{display: "flex", justifyContent: "space-between"}}>
-							<div>Name:&nbsp;</div>
-							<input type="text" value={nameInput} onChange={handleInputChange}
-								style={{flex: "10"}} />
-							<div style={{flex: "1"}}></div>
-							<Button type="submit" disabled={nameInput === ''} >OK</Button>
+						<form onSubmit={onEnterName} style={{display: "flex"}}>
+							<div>Name:</div>
+							<div style={{flex: "1"}} />
+							<input size={20} type="text" value={nameInput} onChange={handleInputChange} />
+							<div style={{flex: "2"}} />
+							<Button type="submit" disabled={nameInput === '' || nameInput.length > 12} >OK</Button>
+							<div style={{flex: "10"}} />
 						</form>
 						{ errorMessage &&
 							<p className="Error">{errorMessage}</p>
