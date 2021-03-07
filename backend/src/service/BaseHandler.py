@@ -53,9 +53,9 @@ class GameHandler(BaseHandler):
 			print("broadcasting:", message)
 			await asyncio.wait([self.comms.send(ws, message) for ws in self.clients.values()])
 
-	async def check_is_host(self, action):
+	def check_is_host(self, action):
 		# Fetch here. It should not be needed elsewhere
-		host = await self.game.host()
+		host = self.game.host()
 
 		if host != self.client_id:
 			raise ClientException(f"{self.client_id} tried to {action}, but is not the host")
@@ -68,7 +68,7 @@ class GameHandler(BaseHandler):
 			raise HandlerException(f"Can only {action} when game did not yet start")
 
 	async def check_can_configure_game(self, action):
-		await self.check_is_host(action)
+		self.check_is_host(action)
 		await self.check_is_recruiting(action)
 
 	async def handle_game_command(self, cmd_message):

@@ -46,10 +46,10 @@ class MetaGameHandler(GameHandler):
 		await self.game.add_client(self.client_id, self.connection)
 		self.clients[self.client_id] = self.connection
 
-		host = await self.game.host()
+		host = self.game.host()
 		if host is None:
 			host = self.client_id
-			await self.game.set_host(host)
+			self.game.set_host(host)
 
 		await self.send_clients_event(host)
 
@@ -57,19 +57,19 @@ class MetaGameHandler(GameHandler):
 		await self.game.remove_client(self.client_id)
 		del self.clients[self.client_id]
 
-		host = await self.game.host()
+		host = self.game.host()
 		if self.client_id == host:
 			if self.clients:
 				# Assign an (arbitrary) new host
 				host = list(self.clients.keys())[0]
 			else:
 				host = None
-			await self.game.set_host(host)
+			self.game.set_host(host)
 
 		await self.send_clients_event(host)
 
 	async def send_status(self):
-		host = await self.game.host()
+		host = self.game.host()
 		await self.send_message(self.clients_message(host))
 
 		bots = await self.game.bots()
@@ -79,17 +79,17 @@ class MetaGameHandler(GameHandler):
 		if game_state:
 			await self.send_message(self.game_state_message(game_state, []))
 
-	async def next_bot_name(self):
-		next_bot_id = await self.game.next_bot_id()
+	def next_bot_name(self):
+		next_bot_id = self.game.next_bot_id()
 		bot_name = f"Bot #{next_bot_id}"
-		await self.game.set_next_bot_id(next_bot_id + 1)
+		self.game.set_next_bot_id(next_bot_id + 1)
 
 		return bot_name
 
 	async def add_bot(self, bot_behaviour):
 		await self.check_can_configure_game("add bot")
 
-		bot_name = await self.next_bot_name()
+		bot_name = self.next_bot_name()
 		await self.game.add_bot(bot_name, bot_behaviour)
 
 		self.logger.info(f"Added bot {bot_name}")

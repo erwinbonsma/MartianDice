@@ -1,3 +1,21 @@
+import json
+from pymemcache.client import base
+
+class JsonSerde(object):
+    def serialize(self, key, value):
+        if isinstance(value, str):
+            return value.encode('utf-8'), 1
+        return json.dumps(value).encode('utf-8'), 2
+
+    def deserialize(self, key, value, flags):
+       if flags == 1:
+           return value.decode('utf-8')
+       if flags == 2:
+           return json.loads(value.decode('utf-8'))
+       raise Exception("Unknown serialization format")
+
+cache_client = base.Client('memcached', serde = JsonSerde())
+
 class InMemoryGame:
 	def __init__(self, game_id, db):
 		self.__game_id = game_id
@@ -5,9 +23,8 @@ class InMemoryGame:
 
 		self.__bots = {}
 		self.__clients = {}
-		self.__host = None
 		self.__state = None
-		self.__next_bot_id = 1
+		self.set_next_bot_id(1)
 
 	@property
 	def game_id(self):
@@ -22,11 +39,12 @@ class InMemoryGame:
 	async def bots(self):
 		return dict(self.__bots)
 
-	async def set_next_bot_id(self, next_id):
-		self.__next_bot_id = next_id
+	def set_next_bot_id(self, next_id):
+		print("set_next_bot_id", next_id)
+		return cache_client.set(f"{self.game_id}-next_bot_id", str(next_id))
 
-	async def next_bot_id(self):
-		return self.__next_bot_id
+	def next_bot_id(self):
+		return int(cache_client.get(f"{self.game_id}-next_bot_id"))
 
 	async def add_client(self, client_id, client_connection):
 		self.__clients[client_id] = client_connection
@@ -45,11 +63,11 @@ class InMemoryGame:
 	async def state(self):
 		return self.__state
 
-	async def host(self):
-		return self.__host
+	def host(self):
+		return cache_client.get(f"{self.game_id}-host")
 
-	async def set_host(self, host):
-		self.__host = host
+	def set_host(self, host):
+		cache_client.set(f"{self.game_id}-host", host)
 
 class InMemoryDb:
 	def __init__(self):

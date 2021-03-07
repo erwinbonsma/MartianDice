@@ -1,6 +1,9 @@
 version: "3.7"
 
 services:
+  memcached:
+    image: memcached:1.6
+
   game-service:
     image: martiandice-game-service
     build:
@@ -11,3 +14,5 @@ services:
     tty: true
     ports:
       - 8765:8765
+    depends_on:
+      - memcached
