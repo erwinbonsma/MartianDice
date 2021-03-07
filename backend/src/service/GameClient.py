@@ -69,12 +69,13 @@ async def play_game(args):
 			return
 
 		if args.game_id:
-			await websocket.send(json.dumps({ "action": "join-game", "game_id": args.game_id }))
 			game_id = args.game_id
 		else:
 			await websocket.send(json.dumps({ "action": "create-game" }))
 			response = json.loads(await websocket.recv())
 			game_id = response["game_id"]
+
+		await websocket.send(json.dumps({ "action": "join-game", "game_id": game_id }))
 
 		bots = set()
 		is_host = False
