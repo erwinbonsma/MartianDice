@@ -64,7 +64,7 @@ export function JoinRoom(props) {
 			<GameRoom roomId={roomId} playerName={props.playerName} websocket={props.websocket} />
 		) : (
 			<Container><Row>
-			<Col xl={4} lg={3} md={2} />
+			<Col lg={3} md={2} />
 			<Col>
 				<p>Welcome {props.playerName}!</p>
 				<p>Please proceed to a room:</p>
@@ -82,7 +82,7 @@ export function JoinRoom(props) {
 					<Col xs={3}><Button style={{width: "100%"}} onClick={onCreateRoom}>Create</Button></Col>
 				</Row></Container>
 			</Col>
-			<Col xl={4} lg={3} md={2} />
+			<Col lg={3} md={2} />
 		</Row></Container>
 	));
 }
