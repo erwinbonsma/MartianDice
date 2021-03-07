@@ -62,19 +62,30 @@ class InMemoryDb:
 		self.__clients = {}
 		self.__games = {}
 		self.__games_for_client = {}
+		self.__connections = {}
 		self.__next_game_id = "1"
 
 	def game(self, game_id):
 		return self.__games.get(game_id, NON_EXISTANT_GAME)
 
+	async def has_connection(self, connection):
+		return connection in self.__connections
+
+	async def client_id_for_connection(self, connection):
+		return self.__connections[connection]
+
 	async def has_client(self, client_id):
 		return client_id in self.__clients
 
-	async def add_client(self, client_id, client_connection):
-		self.__clients[client_id] = client_connection
+	async def add_connection(self, connection, client_id):
+		self.__clients[client_id] = connection
 		self.__games_for_client[client_id] = set()
+		self.__connections[connection] = client_id
 
-	async def remove_client(self, client_id):
+	async def remove_connection(self, connection):
+		client_id = self.__connections[connection]
+		assert(len(self.__games_for_client[client_id]) == 0)
+		del self.__connections[connection]
 		del self.__clients[client_id]
 
 	async def clients(self):

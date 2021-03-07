@@ -1,9 +1,12 @@
 import asyncio
+import logging
 import websockets
-from service.GameServer import GameServer
+from service.LocalGateway import LocalGateway
 
-game_server = GameServer()
-start_server = websockets.serve(game_server.main, "", 8765)
+logging.setLogRecordFactory(logging.LogRecord)
+
+gateway = LocalGateway()
+start_server = websockets.serve(gateway.main, "", 8765)
 
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
