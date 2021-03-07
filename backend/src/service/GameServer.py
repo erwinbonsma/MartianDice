@@ -116,10 +116,10 @@ class GameServer:
 					game_id = await self.next_game_id()
 					game = await self.db.create_game(game_id)
 					await websocket.send(ok_message({ "game_id": game_id }))
-					# Let action_handler handle rest of game set-up
-				else:
-					game_id = action["game_id"]
-					game = self.db.game(game_id)
+					continue
+
+				game_id = action["game_id"]
+				game = self.db.game(game_id)
 
 				action_handler = await GameActionHandler.create(game, client_id, websocket)
 				if action_handler:
@@ -360,7 +360,7 @@ class GameActionHandler:
 			if cmd == "send-status":
 				return await self.send_status()
 
-			if cmd == "create-game" or cmd == "join-game":
+			if cmd == "join-game":
 				return await self.register(self.client_id, self.client_connection)
 
 			if cmd == "leave-game":

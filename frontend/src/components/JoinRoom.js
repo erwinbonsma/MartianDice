@@ -15,32 +15,12 @@ export function JoinRoom(props) {
 		setErrorMessage('');
 	};
 
-	const onCreateRoom = (event) => {
-		console.log("onCreateRoom");
-
-		const onMessage = (event) => {
-			const msg = JSON.parse(event.data);
-			console.log("onCreateRoom:", msg);
-
-			if (msg.type === "response" && msg.status === "ok") {
-				setRoomId(msg.game_id);
-			}
-
-			props.websocket.removeEventListener('message', onMessage);
-		};
-		props.websocket.addEventListener('message', onMessage);
-
-		props.websocket.send(JSON.stringify({
-			action: "create-game",
-		}));
-	}
-
-	const onJoinRoom = (event) => {
+	const joinRoom = (roomId) => {
 		const onMessage = (event) => {
 			const msg = JSON.parse(event.data);
 			console.log("onJoinRoom:", msg);
 
-			if (msg.type === "clients" && msg.game_id === roomInput) {
+			if (msg.type === "clients" && msg.game_id === roomId) {
 				setRoomId(msg.game_id);
 			}
 			if (msg.type === "response" && msg.status === "error") {
@@ -53,10 +33,32 @@ export function JoinRoom(props) {
 
 		props.websocket.send(JSON.stringify({
 			action: "join-game",
-			game_id: roomInput
+			game_id: roomId
 		}));
 	}
+
+	const onJoinRoom = () => { joinRoom(roomInput); }
 	
+	const onCreateRoom = () => {
+		console.log("onCreateRoom");
+
+		const onMessage = (event) => {
+			const msg = JSON.parse(event.data);
+			console.log("onCreateRoom:", msg);
+
+			if (msg.type === "response" && msg.status === "ok") {
+				joinRoom(msg.game_id);
+			}
+
+			props.websocket.removeEventListener('message', onMessage);
+		};
+		props.websocket.addEventListener('message', onMessage);
+
+		props.websocket.send(JSON.stringify({
+			action: "create-game",
+		}));
+	}
+
 	return (
 		roomId ? (
 			<GameRoom roomId={roomId} playerName={props.playerName} websocket={props.websocket} />
