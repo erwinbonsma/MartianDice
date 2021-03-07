@@ -25,9 +25,8 @@ class MetaGameHandler(GameHandler):
 			"bots": list(bots.keys()),
 		})
 
-	async def send_bots_event(self):
+	async def send_bots_event(self, bots):
 		"""Sends event with all bots"""
-		bots = await self.game.bots()
 		message = self.bots_message(bots)
 		await self.broadcast(message)
 
@@ -72,7 +71,7 @@ class MetaGameHandler(GameHandler):
 		host = self.game.host()
 		await self.send_message(self.clients_message(host))
 
-		bots = await self.game.bots()
+		bots = self.game.bots()
 		await self.send_message(self.bots_message(bots))
 
 		game_state = await self.game.state()
@@ -89,18 +88,20 @@ class MetaGameHandler(GameHandler):
 		await self.check_can_configure_game("add bot")
 
 		bot_name = self.next_bot_name()
-		await self.game.add_bot(bot_name, bot_behaviour)
+		bots = self.game.add_bot(bot_name, bot_behaviour)
 
-		self.logger.info(f"Added bot {bot_name}")
-		await self.send_bots_event()
+		if bots is not None:
+			self.logger.info(f"Added bot {bot_name}")
+			await self.send_bots_event(bots)
 
 	async def remove_bot(self, bot_name):
 		await self.check_can_configure_game("remove bot")
 
-		await self.game.remove_bot(bot_name)
+		bots = self.game.remove_bot(bot_name)
 
-		self.logger.info(f"Removed bot {bot_name}")
-		await self.send_bots_event()
+		if bots is not None:
+			self.logger.info(f"Removed bot {bot_name}")
+			await self.send_bots_event(bots)
 
 	async def handle_game_command(self, cmd_message):
 		cmd = cmd_message["action"]

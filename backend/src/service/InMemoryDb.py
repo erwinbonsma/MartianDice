@@ -1,6 +1,8 @@
 import json
 from pymemcache.client import base
 
+DEFAULT_EXPIRY = 3600
+
 class JsonSerde(object):
     def serialize(self, key, value):
         if isinstance(value, str):
@@ -21,29 +23,39 @@ class InMemoryGame:
 		self.__game_id = game_id
 		self.__db = db
 
-		self.__bots = {}
+		self.bots_key = f"{self.game_id}-bots"
+		self.host_key = f"{self.game_id}-host"
+		self.next_bot_id_key = f"{self.game_id}-next_bot_id"
+
 		self.__clients = {}
 		self.__state = None
-		self.__init_next_bot_id()
+
+	def reset(self):
+		cache_client.set(self.next_bot_id_key, "0")
+		cache_client.set(self.bots_key, {})
 
 	@property
 	def game_id(self):
 		return self.__game_id
 
-	async def add_bot(self, bot_id, bot):
-		self.__bots[bot_id] = bot
+	def add_bot(self, bot_id, bot):
+		bots, cas = cache_client.gets(self.bots_key)
+		bots[bot_id] = bot
+		if cache_client.cas(self.bots_key, bots, cas, expire = DEFAULT_EXPIRY):
+			return bots
 
-	async def remove_bot(self, bot_id):
-		del self.__bots[bot_id]
+	def remove_bot(self, bot_id):
+		bots, cas = cache_client.gets(self.bots_key)
+		if bot_id in bots:
+			del bots[bot_id]
+			if cache_client.cas(self.bots_key, bots, cas, expire = DEFAULT_EXPIRY):
+				return bots
 
-	async def bots(self):
-		return dict(self.__bots)
-
-	def __init_next_bot_id(self):
-		return cache_client.set(f"{self.game_id}-next_bot_id", "0")
+	def bots(self):
+		return cache_client.get(self.bots_key)
 
 	def next_bot_id(self):
-		return cache_client.incr(f"{self.game_id}-next_bot_id", 1)
+		return cache_client.incr(self.next_bot_id_key, 1)
 
 	async def add_client(self, client_id, client_connection):
 		self.__clients[client_id] = client_connection
@@ -63,10 +75,10 @@ class InMemoryGame:
 		return self.__state
 
 	def host(self):
-		return cache_client.get(f"{self.game_id}-host")
+		return cache_client.get(self.host_key)
 
 	def set_host(self, host):
-		cache_client.set(f"{self.game_id}-host", host)
+		cache_client.set(self.host_key, host)
 
 class InMemoryDb:
 	def __init__(self):
@@ -113,6 +125,7 @@ class InMemoryDb:
 			return None
 
 		new_game = InMemoryGame(game_id, self)
+		new_game.reset()
 		self.__games[game_id] = new_game
 		return new_game
 
