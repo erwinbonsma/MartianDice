@@ -32,8 +32,9 @@ export function JoinRoom(props) {
 		props.websocket.addEventListener('message', onMessage);
 
 		props.websocket.send(JSON.stringify({
-			action: "join-game",
-			game_id: roomId
+			action: "join-room",
+			game_id: roomId,
+			client_id: props.playerName
 		}));
 	}
 
@@ -47,7 +48,7 @@ export function JoinRoom(props) {
 			console.log("onCreateRoom:", msg);
 
 			if (msg.type === "response" && msg.status === "ok") {
-				joinRoom(msg.game_id);
+				joinRoom(msg.room_id);
 			}
 
 			props.websocket.removeEventListener('message', onMessage);
@@ -55,7 +56,7 @@ export function JoinRoom(props) {
 		props.websocket.addEventListener('message', onMessage);
 
 		props.websocket.send(JSON.stringify({
-			action: "create-game",
+			action: "create-room",
 		}));
 	}
 
@@ -81,6 +82,7 @@ export function JoinRoom(props) {
 					<Col as="p">Create new room</Col>
 					<Col xs={3}><Button style={{width: "100%"}} onClick={onCreateRoom}>Create</Button></Col>
 				</Row></Container>
+				<center><Button onClick={props.onLogout}>Log out</Button></center>
 			</Col>
 			<Col lg={3} md={2} />
 		</Row></Container>

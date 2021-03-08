@@ -43,26 +43,11 @@ function App(props) {
 	const onEnterName = (event) => {
 		event.preventDefault();
 
-		const onMessage = (event) => {
-			const msg = JSON.parse(event.data);
-			console.log("onEnterName:", msg);
+		setPlayerName(nameInput);
+	}
 
-			if (msg.type === "response") {
-				if (msg.status === "error") {
-					setErrorMessage(msg.details);
-				} else {
-					setPlayerName(msg.client_id);
-				}
-			}
-
-			websocket.removeEventListener('message', onMessage);
-		};
-		websocket.addEventListener('message', onMessage);
-
-		websocket.send(JSON.stringify({
-			action: "join",
-			client_id: nameInput
-		}));
+	const onLogout = (event) => {
+		setPlayerName(undefined);
 	}
 
 	return (
@@ -70,7 +55,7 @@ function App(props) {
     	<div className="App">
 			<h1>Martian Dice</h1>
 			{ playerName ? (
-				<JoinRoom websocket={websocket} playerName={playerName} />
+				<JoinRoom websocket={websocket} playerName={playerName} onLogout={onLogout} />
 			) : (
 				<Container><Row>
 					<Col xl={3} lg={2} md={1} />
