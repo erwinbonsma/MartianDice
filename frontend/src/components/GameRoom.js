@@ -128,10 +128,11 @@ export function GameRoom(props) {
 		: [];
 
 	return (
-		<Container>
-			<Row><Col as="h5">Room {props.roomId}</Col></Row>
-			<Row style={{height: "80vh", background: "black"}}>
-				<Col className="GameArea" sm={8}>
+		<div>
+			<h5>Room {props.roomId}</h5>
+			<Container fluid style={{padding:"0 2em"}}><Row style={{height: "80vh"}}>
+				<Col xs={0} lg={1} />
+				<Col className="GameArea" xs={8} lg={7} >
 					<GameHeader game={game} turnState={turnState} />
 					{ turnState &&
 						<PlayArea gameId={props.roomId} turnState={turnState} websocket={props.websocket}
@@ -139,7 +140,7 @@ export function GameRoom(props) {
 					}
 					{ (isHost && !game) && <center><Button variant="primary" onClick={onStartGame}>Start game</Button></center> }
 				</Col>
-				<Col className="PlayersArea" sm={4}>
+				<Col className="PlayersArea" xs={4} lg={3}>
 					{ !!game ? 
 						<PlayerList players={game.players} scores={game.scores} activePlayer={game.active_player}
 							offlinePlayers={offlinePlayers} observers={observers} /> :
@@ -149,7 +150,8 @@ export function GameRoom(props) {
 					}
 					<Chat websocket={props.websocket} roomId={props.roomId} />
 				</Col>
-			</Row>
-		</Container>
+				<Col xs={0} lg={1} />
+			</Row></Container>
+		</div>
 	);
 }
