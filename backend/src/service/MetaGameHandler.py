@@ -9,7 +9,7 @@ class MetaGameHandler(GameHandler):
 		return json.dumps({
 			"game_id": self.game.game_id,
 			"type": "clients",
-			"clients": list(self.clients.keys()),
+			"clients": list(self.clients.values()),
 			"host": host
 		})
 
@@ -38,30 +38,37 @@ class MetaGameHandler(GameHandler):
 		})
 		await self.broadcast(message)
 
-	async def join_game(self, game_id):
-		if self.game is None:
-			return await self.send_error_message(f"Cannot find Room {game_id}")
+	async def join_room(self, game_id, client_id):
+		# Avoid possible bot name clash here, as this check is cheap
+		if client_id.startswith("Bot-"):
+			return await self.send_error_message("Sorry, that name is restricted to non-sentients")
 
-		updated_clients = self.game.add_client(self.client_id, self.connection)
+		if client_id in self.clients:
+			return await self.send_error_message(f"Name {client_id} already present in Room {game_id}")
+
+		if not self.db.set_room_for_connection(self.connection, game_id):
+			return await self.send_error_message(f"Failed to link connection to Room {game_id}")
+
+		updated_clients = self.game.add_client(self.connection, client_id)
 		if updated_clients is None:
 			return await self.send_error_message("Failed to join game. Please try again")
 		self.clients = updated_clients
 
 		host = self.game.host()
 		if host is None:
-			host = self.client_id
+			host = client_id
 			self.game.set_host(host)
 
 		await self.send_clients_event(host)
 
-	async def leave_game(self):
+	async def leave_room(self):
 		attempts = 0
 		# Retry removal. It can fail if two (or more clients) disconnect at the same time. In that
 		# case, CAS ensures that (at least) one update succeeded so removal should eventually
 		# succeed. Note, in contrast to join_game, cannot make client responsible for retrying, as
 		# it will typically have disconnected.
 		while attempts < 4:
-			updated_clients = self.game.remove_client(self.client_id)
+			updated_clients = self.game.remove_client(self.connection)
 			if updated_clients is not None:
 				break
 			attempts += 1
@@ -70,6 +77,8 @@ class MetaGameHandler(GameHandler):
 		if updated_clients is None:
 			return self.logger.error(f"Failed to remove {self.client_id} from game {self.game.game_id}")
 		self.clients = updated_clients
+
+		self.db.clear_room_for_connection(self.connection)
 
 		host = self.game.host()
 		if self.client_id == host:
@@ -127,11 +136,11 @@ class MetaGameHandler(GameHandler):
 		if cmd == "send-status":
 			return await self.send_status()
 
-		if cmd == "join-game":
-			return await self.join_game(cmd_message["game_id"])
+		if cmd == "join-room":
+			return await self.join_room(cmd_message["game_id"], cmd_message["client_id"])
 
-		if cmd == "leave-game":
-			return await self.leave_game()
+		if cmd == "leave-room":
+			return await self.leave_room()
 
 		if cmd == "add-bot":
 			return await self.add_bot(cmd_message["bot_behaviour"])

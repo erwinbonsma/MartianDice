@@ -94,7 +94,7 @@ class GamePlayHandler(GameHandler):
 
 		self.logger.info("Starting game")
 		bots = self.game.bots()
-		game_state = GameState( itertools.chain(self.clients.keys(), bots.keys()) )
+		game_state = GameState( itertools.chain(self.clients.values(), bots.keys()) )
 
 		await self.update_state_until_blocked(game_state)
 

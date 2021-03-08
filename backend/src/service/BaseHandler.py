@@ -51,14 +51,14 @@ class GameHandler(BaseHandler):
 	async def broadcast(self, message):
 		if self.clients:
 			print("broadcasting:", message)
-			await asyncio.wait([self.comms.send(ws, message) for ws in self.clients.values()])
+			await asyncio.wait([self.comms.send(ws, message) for ws in self.clients])
 
 	def check_is_host(self, action):
 		# Fetch here. It should not be needed elsewhere
 		host = self.game.host()
 
 		if host != self.client_id:
-			raise ClientException(f"{self.client_id} tried to {action}, but is not the host")
+			raise HandlerException(f"{self.client_id} tried to {action}, but {host} is the host")
 
 	def check_is_recruiting(self, action):
 		# Fetch here. It should be unset, so will not be re-used elsewhere
@@ -74,17 +74,18 @@ class GameHandler(BaseHandler):
 	async def handle_game_command(self, cmd_message):
 		pass
 
-	async def fetch_game(self, game_id):
-		self.game = self.db.game(game_id)
+	def fetch_game(self, game_id):
+		self.game = self.db.room_access(game_id)
 
-		if self.game:
-			# Fetch these already, as they are definitely needed, and sometimes more than once
-			self.client_id = await self.db.client_id_for_connection(self.connection)
-			self.clients = self.game.clients()
+		if not self.game.exists():
+			raise HandlerException(f"Game {game_id} not found")
+
+		self.clients = self.game.clients()
+		self.client_id = self.clients.get(self.connection, None)
 
 	async def handle_command(self, cmd_message):
 		try:
-			await self.fetch_game(cmd_message["game_id"])
+			self.fetch_game(cmd_message["game_id"])
 
 			await self.handle_game_command(cmd_message)
 		except Exception as e:

@@ -59,23 +59,18 @@ async def add_bots(ws, game_id, bots):
 
 async def play_game(args):
 	async with websockets.connect(args.url) as websocket:
-		await websocket.send(json.dumps({
-			"action": "join",
-			"client_id": args.name
-		}))
-		response = json.loads(await websocket.recv())
-		if not response["status"] == "ok":
-			print("Error:", response["details"])
-			return
-
 		if args.game_id:
 			game_id = args.game_id
 		else:
-			await websocket.send(json.dumps({ "action": "create-game" }))
+			await websocket.send(json.dumps({ "action": "create-room" }))
 			response = json.loads(await websocket.recv())
-			game_id = response["game_id"]
+			game_id = response["room_id"]
 
-		await websocket.send(json.dumps({ "action": "join-game", "game_id": game_id }))
+		await websocket.send(json.dumps({
+			"action": "join-room",
+			"game_id": game_id,
+			"client_id": args.name
+		}))
 
 		bots = set()
 		is_host = False
@@ -103,6 +98,7 @@ async def play_game(args):
 				state = message["state"]
 				if state["done"]:
 					break
+				print(state["turn_state"])
 				if state["active_player"] == args.name:
 					if state["turn_state"]["phase"] == "PickDice":
 						await websocket.send(pick_dice(game_id, state["turn_state"]))

@@ -4,7 +4,7 @@ from service.DisconnectionHandler import DisconnectionHandler
 from service.GamePlayHandler import GamePlayHandler
 from service.MetaGameHandler import MetaGameHandler
 from service.RegistrationHandler import RegistrationHandler
-from service.InMemoryDb import InMemoryDb
+from service.MemcachedStorage import MemcachedStorage
 
 logger = logging.getLogger('gateway')
 logger.setLevel(logging.INFO)
@@ -12,7 +12,8 @@ logger.addHandler(logging.StreamHandler())
 
 class LocalGateway:
 	def __init__(self):
-		self.db = InMemoryDb()
+		self.db = MemcachedStorage()
+		self.db.clear_connections() # TODO: Remove
 		self.comms = self
 		self.logger = logger
 
@@ -25,7 +26,7 @@ class LocalGateway:
 			await socket.send(message)
 
 	async def main(self, websocket, path):
-		socket_id = self.next_socket_id
+		socket_id = str(self.next_socket_id)
 		self.sockets[socket_id] = websocket
 		self.next_socket_id += 1
 
@@ -35,7 +36,7 @@ class LocalGateway:
 				cmd_message = json.loads(message)
 				cmd = cmd_message["action"]
 
-				if cmd == "join" or cmd == "create-game":
+				if cmd == "create-room":
 					cmd_handler = RegistrationHandler(self.db, self.comms, socket_id)
 				elif cmd == "start-game" or cmd == "move" or cmd == "bot-move":
 					cmd_handler = GamePlayHandler(self.db, self.comms, socket_id)
