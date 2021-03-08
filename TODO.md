@@ -24,15 +24,20 @@ Done:
 -	Handle disconnections
 	-	Clean up at back-end
 	-	Show offline status in frontend
+-	Make Room IDs random four characters
+-	Add logout button to JoinRoom screen
+-	Loosen name-uniqueness check to game
+-	Move remaining state to memcached
+	-	socket ID => game(s)
 
 TODO:
--	UI:
-	-	End game visualisation (ranking + Exit Game button)
+-	Improve End game handling:
+	-	Show ranking
+	-	Let players leave
+	-	Let host start new game
 -	Ensure graceful error handling:
 	-	Server-side error
 -	Host at AWS
-	-	DynamoDb implementation
--	Make Room IDs random four characters
 -	Improve play animations:
 	-	Animate die addition/removal
 -	Improve UI styling:
