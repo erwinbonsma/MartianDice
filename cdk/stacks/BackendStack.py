@@ -12,12 +12,12 @@ def CacheHelper(scope: core.Construct, vpc: ec2.Vpc, lambda_security_group: ec2.
 		vpc = vpc
 	)
 
-	# cache_security_group.add_ingress_rule(
-	# 	lambda_security_group, ec2.Port.tcp(11211), 'Memcached ingress 11211'
-	# )
 	cache_security_group.add_ingress_rule(
-		Peer.any_ipv4(), ec2.Port.tcp(11211), 'Memcached ingress 11211'
+		lambda_security_group, ec2.Port.tcp(11211), 'Memcached ingress 11211'
 	)
+	# cache_security_group.add_ingress_rule(
+	# 	Peer.any_ipv4(), ec2.Port.tcp(11211), 'Memcached ingress 11211'
+	# )
 
 	subnet_group = cache.CfnSubnetGroup(
 		scope, 'vpc-subnet-group',
@@ -59,15 +59,22 @@ class BackendStack(core.Stack):
 
 		cache_cluster = CacheHelper(self, vpc, lambda_security_group)
 
+		main_layer = _lambda.LayerVersion(
+			self, 'MainLayer',
+			code = _lambda.AssetCode('../backend/layers/main_layer'),
+			compatible_runtimes = [_lambda.Runtime.PYTHON_3_7]
+		)
+
 		my_lambda = _lambda.Function(
 			self, 'HelloLambda',
 			runtime = _lambda.Runtime.PYTHON_3_7,
 			code = _lambda.Code.asset('../backend/src'),
+			layers = [main_layer],
 			handler = 'hello.handler',
 			environment = {
 				"CACHE_CLUSTER": f"{cache_cluster.attr_configuration_endpoint_address}:{cache_cluster.attr_configuration_endpoint_port}"
 			},
 			vpc = vpc,
 			vpc_subnets = ec2.SubnetSelection(subnet_type = ec2.SubnetType.ISOLATED),
-			# security_groups = [lambda_security_group]
+			security_groups = [lambda_security_group]
 		)
