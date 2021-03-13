@@ -4,6 +4,16 @@ services:
   memcached:
     image: memcached:1.6
 
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    command: "-jar DynamoDBLocal.jar -sharedDb -optimizeDbBeforeStartup -dbPath ./data"
+    container_name: dynamodb
+    ports:
+      - 8000:8000
+    volumes:
+      - ./docker/dynamodb:/home/dynamodblocal/data
+    working_dir: /home/dynamodblocal
+
   game-service:
     image: martiandice-game-service
     build:
@@ -16,3 +26,8 @@ services:
       - 8765:8765
     depends_on:
       - memcached
+      - dynamodb
+    environment:
+      AWS_ACCESS_KEY_ID: 'DUMMYIDEXAMPLE'
+      AWS_SECRET_ACCESS_KEY: 'DUMMYEXAMPLEKEY'
+      REGION: 'eu-west-1'
