@@ -57,10 +57,6 @@ class MemcachedStorage:
 	def clear_room_for_connection(self, connection):
 		return self.cache_client.delete(f"Con#{connection}")
 
-	# TODO: Remove. Temporarily needed to cope with lingering connections
-	def clear_connections(self):
-		return self.cache_client.delete(f"Con#1")
-
 class MemcachedRoom:
 
 	def __init__(self, room_id, cache_client):
