@@ -1,8 +1,10 @@
 from aws_cdk import (
     core,
+	aws_apigatewayv2 as apigateway,
+	aws_apigatewayv2_integrations as apigateway_integrations,
 	aws_lambda as _lambda,
 	aws_elasticache as cache,
-	aws_ec2 as ec2
+	aws_ec2 as ec2,
 )
 
 def CacheHelper(scope: core.Construct, vpc: ec2.Vpc, lambda_security_group: ec2.SecurityGroup):
@@ -58,6 +60,7 @@ class BackendStack(core.Stack):
 		)
 
 		cache_cluster = CacheHelper(self, vpc, lambda_security_group)
+		cache_cluster_endpoint = f"{cache_cluster.attr_configuration_endpoint_address}:{cache_cluster.attr_configuration_endpoint_port}"
 
 		main_layer = _lambda.LayerVersion(
 			self, 'MainLayer',
@@ -65,16 +68,56 @@ class BackendStack(core.Stack):
 			compatible_runtimes = [_lambda.Runtime.PYTHON_3_7]
 		)
 
+		shared_lambda_cfg = {
+			"runtime": _lambda.Runtime.PYTHON_3_7,
+			"layers": [main_layer],
+			"environment": {
+				"CACHE_CLUSTER": cache_cluster_endpoint
+			},
+			"vpc": vpc,
+			"vpc_subnets": ec2.SubnetSelection(subnet_type = ec2.SubnetType.ISOLATED),
+			"security_groups": [lambda_security_group]
+		}
+
 		my_lambda = _lambda.Function(
 			self, 'HelloLambda',
-			runtime = _lambda.Runtime.PYTHON_3_7,
+			**shared_lambda_cfg,
 			code = _lambda.Code.asset('../backend/src'),
-			layers = [main_layer],
 			handler = 'hello.handler',
-			environment = {
-				"CACHE_CLUSTER": f"{cache_cluster.attr_configuration_endpoint_address}:{cache_cluster.attr_configuration_endpoint_port}"
-			},
-			vpc = vpc,
-			vpc_subnets = ec2.SubnetSelection(subnet_type = ec2.SubnetType.ISOLATED),
-			security_groups = [lambda_security_group]
+		)
+
+		registration_handler = _lambda.Function(
+			self, 'RegistrationLambda',
+			**shared_lambda_cfg,
+			code = _lambda.Code.asset('../backend/src'),
+			handler = 'WebsocketHandlers.handle_registration',
+		)
+
+		disconnect_handler = _lambda.Function(
+			self, 'DisconnectLambda',
+			**shared_lambda_cfg,
+			code = _lambda.Code.asset('../backend/src'),
+			handler = 'WebsocketHandlers.handle_disconnect',
+		)
+
+		api = apigateway.WebSocketApi(
+			self, 'MartianDiceApi',
+			default_route_options = apigateway.WebSocketRouteOptions(
+				integration = apigateway_integrations.LambdaWebSocketIntegration(
+					handler = registration_handler
+				)
+			),
+			disconnect_route_options = apigateway.WebSocketRouteOptions(
+				integration = apigateway_integrations.LambdaWebSocketIntegration(
+					handler = disconnect_handler
+				)
+			),
+			#route_selection_expression = ‘request.body.action’
+		)
+
+		api_stage = apigateway.WebSocketStage(
+			self, 'dev-stage',
+			web_socket_api = api,
+			stage_name = 'dev',
+			auto_deploy = True
 		)

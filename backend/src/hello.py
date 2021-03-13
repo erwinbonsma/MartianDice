@@ -9,7 +9,7 @@ elasticache_config_endpoint = os.getenv('CACHE_CLUSTER')
 # nodes = map(lambda x: (x[1], int(x[2])), nodes)
 # cache_client = HashClient(nodes)
 
-cache_client = base.Client('mar-ca-xnvk9ngi0xbk.lq2hi0.0001.euw1.cache.amazonaws.com:11211')
+cache_client = base.Client(elasticache_config_endpoint)
 
 def handler(event, context):
 	print(f'cache_cluster: {elasticache_config_endpoint}')
