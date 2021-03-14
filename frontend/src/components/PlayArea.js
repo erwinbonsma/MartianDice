@@ -63,7 +63,7 @@ export function PlayArea(props) {
 
 	const turnDone = (turnState.phase === "Done");
 	return (
-		<div>
+		<div className="PlayArea">
 			<div className="GameZoneTopRow">
 			{ onCheckContinue
 				? (<div style={{ minHeight: throwAreaHeight }}>

@@ -57,7 +57,7 @@ export function Chat(props) {
 					)}
 				</ul>
 			</div>
-			<form className="TableRow" style={{display: "flex"}} onSubmit={onSendMessage}>
+			<form className="TableBody" style={{display: "flex"}} onSubmit={onSendMessage}>
 				<input type="text" value={messageInput} onChange={handleInputChange}
 					style={{fontSize: "small", flex: "1 1 0" }}/>
 				<Button type="submit" disabled={messageInput === ''} sz="sm">Send</Button>

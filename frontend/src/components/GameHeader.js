@@ -1,7 +1,3 @@
-import Col from 'react-bootstrap/Col';
-import Container from 'react-bootstrap/Container';
-import Row from 'react-bootstrap/Row';
-
 export function GameHeader(props) {
 	let left, right, header;
 	if (props.game) {
@@ -27,9 +23,9 @@ export function GameHeader(props) {
 
 	return (
 		<div className="GameHeader" style={{display: "flex", padding: "0 1em"}}>
-			<h4 style={{textAlign:"left", flex: "1 0"}}>{left}</h4>
-			<h4 style={{textAlign: "center", flex: "4 1"}}>{header}</h4>
-			<h4 style={{textAlign:"right", flex: "1 0"}}>{right}</h4>
+			<h4 style={{textAlign:"left", flex: "2 0"}}>{left}</h4>
+			<h4 style={{textAlign: "center", flex: "5 1"}}>{header}</h4>
+			<h4 style={{textAlign:"right", flex: "2 0"}}>{right}</h4>
 		</div>
 	)
 }

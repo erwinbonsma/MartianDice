@@ -1,14 +1,3 @@
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
 h1 {
 	text-align: center;
 	color: #ffd0d0;
@@ -38,6 +27,7 @@ h5 {
 	background-color: #503030;
 	flex: 1 2;
 	overflow-y: auto;
+	padding: 0.4em
 }
 
 .ChatMessages {
@@ -50,6 +40,10 @@ h5 {
 	flex: 0 1;
 }
 
+.PlayersAreaBorder {
+	padding: 0.2em;
+}
+
 .PlayersArea {
 	display: flex;
 	flex-direction: column;
@@ -57,18 +51,11 @@ h5 {
 	justify-content: space-between;
 	height: 100%;
 	width: 100%;
-	padding: 0 0 0 1em;
-}
-
-.AppX {
-	display: flex;
-	flex-direction: row;
-	align-items: left;
-	justify-content: center;  
+	padding: 0;
 }
 
 .App {
-  background-color: black;
+  background-color: #100000;
   min-height: 100vh;
   font-size: calc(10px + 1.5vmin);
   color: #ffd0d0;
@@ -80,12 +67,17 @@ h5 {
 	margin: 0.2em;
 }
 
+.GameAreaBorder {
+	padding: 0.2em;
+}
+
 .GameArea {
-	background-color: #604040;
-	margin: 0;
-	padding: 0;
+	background-color: #503030;
 	color: #ffd0d0;
-	height: 100%;
+}
+
+.PlayArea {
+	background-color: #604040;
 }
 
 .GameSetup {
@@ -119,11 +111,6 @@ h5 {
 	padding: 0.5em;
 }
 
-.DiceThrowXXX {
-	background-color: #503030;
-	padding: 0.5em;
-}
-
 .GameHeader {
 	background-color: #604040;
 }
@@ -138,13 +125,5 @@ h5 {
 .TableBody {
 	background-color: #503030;
 	color: #ffd0d0;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+	padding: 0.4em
 }

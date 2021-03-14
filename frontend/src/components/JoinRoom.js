@@ -64,7 +64,7 @@ export function JoinRoom(props) {
 		roomId ? (
 			<GameRoom roomId={roomId} playerName={props.playerName} websocket={props.websocket} />
 		) : (
-			<Container><Row>
+		<Container><Row>
 			<Col lg={3} md={2} />
 			<Col>
 				<p>Welcome {props.playerName}!</p>

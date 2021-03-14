@@ -1,7 +1,4 @@
 import { Separator } from './Separator';
-import Col from 'react-bootstrap/Col';
-import Container from 'react-bootstrap/Container';
-import Row from 'react-bootstrap/Row';
 
 function formatText(text, isActivePlayer, isOffline) {
 	return (<div className={isOffline ? "Error" : ""}>
@@ -13,27 +10,28 @@ export function PlayerList(props) {
 	return (
 		<div className="PlayersList">
 			<h4 className="TableHeader">Players</h4>
-			<Container className="TableBody">
+			<div className="TableBody">
 			{ props.players.map(player => {
 				const isActivePlayer = player === props.activePlayer;
 				const isOffline = props.offlinePlayers.includes(player);
 				return (
-					<Row key={player}>
-						<Col sm={9}>{formatText(player, isActivePlayer, isOffline)}</Col>
-						<Col sm={3} style={{textAlign: "right"}}
-							>{formatText(props.scores[player], isActivePlayer, isOffline)}</Col>
-					</Row>
+					<div key={player} style={{display: "flex"}}>
+						<div style={{flex: "1 1"}}
+							>{formatText(player, isActivePlayer, isOffline)}</div>
+						<div style={{textAlign: "right"}}
+							>{formatText(props.scores[player], isActivePlayer, isOffline)}</div>
+					</div>
 				)
 			})}
-			</Container>
+			</div>
 			<Separator />
 			{ props.observers.length > 0 && (<div className="Observers">
 				<h4 className="TableHeader">Observers</h4>
-				<Container className="TableBody">
+				<div className="TableBody">
 				{ props.observers.map(observer =>
-					(<Row key={observer}><Col>{observer}</Col></Row>)
+					(<div key={observer}>{observer}</div>)
 				)}
-				</Container>
+				</div>
 				<Separator />
 			</div>)}
 		</div>

@@ -130,17 +130,19 @@ export function GameRoom(props) {
 	return (
 		<div>
 			<h5>Room {props.roomId}</h5>
-			<Container fluid style={{padding:"0 2em"}}><Row style={{height: "80vh"}}>
-				<Col xs={0} lg={1} />
-				<Col className="GameArea" xs={8} lg={7} >
+			<Container fluid className="Room"><Row>
+				<Col xs={0} xl={1} />
+				<Col className="GameAreaBorder" xs={12} lg={8} xl={7} ><div className="GameArea">
 					<GameHeader game={game} turnState={turnState} />
 					{ turnState &&
 						<PlayArea gameId={props.roomId} turnState={turnState} websocket={props.websocket}
 							myTurn={myTurn} />
 					}
-					{ (isHost && !game) && <center><Button variant="primary" onClick={onStartGame}>Start game</Button></center> }
-				</Col>
-				<Col className="PlayersArea" xs={4} lg={3}>
+					{ (isHost && !game) && (<div className="TableBody">
+						<center><Button variant="primary" onClick={onStartGame}>Start game</Button></center>
+					</div>) }
+				</div></Col>
+				<Col className="PlayersAreaBorder" xs={12} lg={4} xl={3} style={{height: "80vh"}}><div className="PlayersArea">
 					{ !!game ? 
 						<PlayerList players={game.players} scores={game.scores} activePlayer={game.active_player}
 							offlinePlayers={offlinePlayers} observers={observers} /> :
@@ -149,8 +151,8 @@ export function GameRoom(props) {
 							onAddBot={onAddBot} onRemoveBot={onRemoveBot} />
 					}
 					<Chat websocket={props.websocket} roomId={props.roomId} />
-				</Col>
-				<Col xs={0} lg={1} />
+				</div></Col>
+				<Col xs={0} xl={1} />
 			</Row></Container>
 		</div>
 	);
