@@ -7,7 +7,7 @@ logger = logging.getLogger('dynamodb')
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
-DEFAULT_CLIENT = boto3.client('dynamodb', endpoint_url="http://dynamodb:8000")
+DEFAULT_CLIENT = boto3.client('dynamodb')
 
 class DynamoDbStorage:
 

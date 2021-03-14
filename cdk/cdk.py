@@ -4,8 +4,7 @@ from aws_cdk import core
 
 from stacks.BackendStack import BackendStack
 
-
 app = core.App()
-BackendStack(app, "MartianDiceBackend", env={'region': 'eu-west-1'})
+BackendStack(app, "MartianDiceBackend", env = { 'region': 'eu-west-1' })
 
 app.synth()

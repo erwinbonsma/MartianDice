@@ -1,19 +1,22 @@
+import boto3
 import json
 import logging
 from service.DisconnectionHandler import DisconnectionHandler
 from service.GamePlayHandler import GamePlayHandler
 from service.MetaGameHandler import MetaGameHandler
 from service.RegistrationHandler import RegistrationHandler
-#from service.MemcachedStorage import MemcachedStorage
 from service.DynamoDbStorage import DynamoDbStorage
 
 logger = logging.getLogger('gateway')
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
+
 class LocalGateway:
 	def __init__(self):
-		self.db = DynamoDbStorage()
+		self.db = DynamoDbStorage(
+			client = boto3.client('dynamodb', endpoint_url="http://dynamodb:8000")
+		)
 		self.comms = self
 		self.logger = logger
 

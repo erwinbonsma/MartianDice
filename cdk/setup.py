@@ -18,6 +18,7 @@ setuptools.setup(
         "aws-cdk.core==1.92.0",
 		"aws-cdk.aws_apigatewayv2==1.92.0",
 		"aws-cdk.aws_apigatewayv2_integrations==1.92.0",
+        "aws-cdk.aws_dynamodb==1.92.0",
         "aws-cdk.aws_lambda==1.92.0",
 		"aws-cdk.aws_elasticache==1.92.0"
     ],
