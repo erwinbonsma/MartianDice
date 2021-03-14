@@ -29,15 +29,18 @@ Done:
 -	Loosen name-uniqueness check to game
 -	Move remaining state to memcached
 	-	socket ID => game(s)
+-	Ensure graceful error handling:
+	-	Server-side error
+-	Migrate form memcached to DynamoDb
+-	Host at AWS
 
 TODO:
 -	Improve End game handling:
 	-	Show ranking
 	-	Let players leave
 	-	Let host start new game
--	Ensure graceful error handling:
-	-	Server-side error
--	Host at AWS
+-	Let host configure behaviour for disconnect players: auto-pass/wait
+-	Improve server logging
 -	Improve play animations:
 	-	Animate die addition/removal
 -	Improve UI styling:
