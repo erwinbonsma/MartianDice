@@ -26,12 +26,8 @@ class DynamoDbStorage:
 			self.client.put_item(
 				TableName = "rooms",
 				Item = {
-					"PKEY": {
-						"S": f"Room#{room_id}"
-					},
-					"SKEY": {
-						"S": "Instance"
-					}
+					"PKEY": { "S": f"Room#{room_id}" },
+					"SKEY": { "S": "Instance" }
 				},
 				ConditionExpression = "attribute_not_exists(PKEY)"
 			)
@@ -42,19 +38,13 @@ class DynamoDbStorage:
 	def set_room_for_connection(self, connection, room_id):
 		try:
 			response = self.client.put_item(
+				TableName = "rooms",
 				Item={
-					"PKEY": {
-						"S": f"Conn#{connection}"
-					},
-					"SKEY": {
-						"S": "Instance"
-					},
-					"RoomId": {
-						"S": room_id
-					}
+					"PKEY": { "S": f"Conn#{connection}" },
+					"SKEY": { "S": "Instance" },
+					"RoomId": { "S": room_id }
 				},
-				TableName="rooms",
-				ReturnValues="ALL_OLD"
+				ReturnValues = "ALL_OLD"
 			)
 			if "RoomId" in response["Attributes"]:
 				old_room = response["Attributes"]["RoomId"]["S"]
@@ -70,14 +60,9 @@ class DynamoDbStorage:
 			response = self.client.get_item(
 				TableName = "rooms",
 				Key = {
-					"PKEY": {
-						"S": f"Conn#{connection}"
-					},
-					"SKEY": {
-						"S": "Instance",
-					}
-				},
-				ReturnConsumedCapacity = "NONE"
+					"PKEY": { "S": f"Conn#{connection}" },
+					"SKEY": { "S": "Instance" }
+				}
 			)
 
 			if "Item" in response:
@@ -90,14 +75,9 @@ class DynamoDbStorage:
 			response = self.client.delete_item(
 				TableName = "rooms",
 				Key = {
-					"PKEY": {
-						"S": f"Conn#{connection}"
-					},
-					"SKEY": {
-						"S": "Instance",
-					}
+					"PKEY": { "S": f"Conn#{connection}" },
+					"SKEY": { "S": "Instance" }
 				},
-				ReturnConsumedCapacity = "NONE"
 			)
 		except Exception as e:
 			logger.warn(f"Failed to clear room for connection {connection}: {e}")
@@ -132,11 +112,8 @@ class DynamoDbRoom:
 				TableName = "rooms",
 				KeyConditionExpression = "PKEY = :pkey",
 				ExpressionAttributeValues = {
-					":pkey": {
-						"S": f"Room#{self.room_id}"
-					}
-				},
-				ReturnConsumedCapacity = "NONE"
+					":pkey": { "S": f"Room#{self.room_id}" }
+				}
 			)
 
 			self.__items = response["Items"]
@@ -156,18 +133,12 @@ class DynamoDbRoom:
 			self.client.update_item(
 				TableName = "rooms",
 				Key = {
-					"PKEY": {
-						"S": f"Room#{self.room_id}"
-					},
-					"SKEY": {
-						"S": "Instance"
-					}
+					"PKEY": { "S": f"Room#{self.room_id}" },
+					"SKEY": { "S": "Instance" }
 				},
 				UpdateExpression = "SET Host = :host",
 				ExpressionAttributeValues = {
-					":host": {
-						"S": host,
-					}
+					":host": { "S": host }
 				},
 				ConditionExpression = "attribute_not_exists(Host)"
 			)
@@ -181,18 +152,12 @@ class DynamoDbRoom:
 			response = self.client.update_item(
 				TableName = "rooms",
 				Key = {
-					"PKEY": {
-						"S": f"Room#{self.room_id}"
-					},
-					"SKEY": {
-						"S": "Instance"
-					}
+					"PKEY": { "S": f"Room#{self.room_id}" },
+					"SKEY": { "S": "Instance" }
 				},
 				UpdateExpression = "ADD NextBotId :inc",
 				ExpressionAttributeValues = {
-					":inc": {
-						"N": "1"
-					}
+					":inc": { "N": "1" }
 				},
 				ReturnValues = "UPDATED_NEW"
 			)
@@ -217,15 +182,9 @@ class DynamoDbRoom:
 			self.client.put_item(
 				TableName = "rooms",
 				Item = {
-					"PKEY": {
-						"S": f"Room#{self.room_id}"
-					},
-					"SKEY": {
-						"S": f"Bot#{bot_name}"
-					},
-					"Behaviour": {
-						"S": bot_behaviour
-					}
+					"PKEY": { "S": f"Room#{self.room_id}" },
+					"SKEY": { "S": f"Bot#{bot_name}" },
+					"Behaviour": { "S": bot_behaviour }
 				},
 				ConditionExpression = "attribute_not_exists(PKEY)"
 			)
@@ -242,12 +201,8 @@ class DynamoDbRoom:
 			response = self.client.delete_item(
 				TableName = "rooms",
 				Key = {
-					"PKEY": {
-						"S": f"Room#{self.room_id}"
-					},
-					"SKEY": {
-						"S": f"Bot#{bot_name}"
-					},
+					"PKEY": { "S": f"Room#{self.room_id}" },
+					"SKEY": { "S": f"Bot#{bot_name}" },
 				}
 			)
 
@@ -274,15 +229,9 @@ class DynamoDbRoom:
 			self.client.put_item(
 				TableName = "rooms",
 				Item = {
-					"PKEY": {
-						"S": f"Room#{self.room_id}"
-					},
-					"SKEY": {
-						"S": f"Conn#{connection}"
-					},
-					"ClientId": {
-						"S": client_id
-					}
+					"PKEY": { "S": f"Room#{self.room_id}" },
+					"SKEY": { "S": f"Conn#{connection}" },
+					"ClientId": { "S": client_id }
 				},
 				ConditionExpression = "attribute_not_exists(PKEY)"
 			)
