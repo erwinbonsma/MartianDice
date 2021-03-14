@@ -39,21 +39,20 @@ class DynamoDbStorage:
 		try:
 			response = self.client.put_item(
 				TableName = "rooms",
-				Item={
+				Item = {
 					"PKEY": { "S": f"Conn#{connection}" },
 					"SKEY": { "S": "Instance" },
 					"RoomId": { "S": room_id }
 				},
 				ReturnValues = "ALL_OLD"
 			)
-			if "RoomId" in response["Attributes"]:
+
+			if "Attributes" in response:
 				old_room = response["Attributes"]["RoomId"]["S"]
 				logger.warn(f"Replaced room {old_room} for Connection {connection} by {room_id}")
 			return True
 		except Exception as e:
 			logger.warn(f"Failed to set room for connection {connection}: {e}")
-			print(e)
-			print(e.message)
 
 	def room_for_connection(self, connection):
 		try:
@@ -66,7 +65,7 @@ class DynamoDbStorage:
 			)
 
 			if "Item" in response:
-				return response["Item"]["RoomId"]
+				return response["Item"]["RoomId"]["S"]
 		except Exception as e:
 			logger.warn(f"Failed to get room for connection {connection}: {e}")
 
@@ -144,7 +143,7 @@ class DynamoDbRoom:
 			)
 
 			self.__instance_item()["Host"] = { "S": host }
-		except:
+		except Exception as e:
 			logger.warn(f"Failed to set host for Room {self.room_id} to {host}: {e}")
 
 	def next_bot_id(self):
@@ -240,7 +239,7 @@ class DynamoDbRoom:
 			clients[connection] = client_id
 
 			return clients
-		except:
+		except Exception as e:
 			logger.warn(f"Failed to add client {client_id} to Room {self.room_id}: {e}")
 
 	def remove_client(self, connection):
