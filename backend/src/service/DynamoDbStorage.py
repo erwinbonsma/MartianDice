@@ -1,4 +1,6 @@
 import boto3
+import jsonpickle
+import hashlib
 import logging
 
 logger = logging.getLogger('dynamodb')
@@ -109,6 +111,7 @@ class DynamoDbRoom:
 		self.__items = None
 		self.__bots = None
 		self.__clients = None
+		self.__game_state_hash = None
 
 	@property
 	def game_id(self):
@@ -260,8 +263,8 @@ class DynamoDbRoom:
 			self.__clients = {}
 			for item in self.__items:
 				skey = item["SKEY"]["S"]
-				if skey.startswith("Client#"):
-					self.__clients[item["Connection"]["S"]] = skey[7:]
+				if skey.startswith("Conn#"):
+					self.__clients[skey[5:]] = item["ClientId"]["S"]
 
 			print("clients =", self.__clients)
 		return self.__clients
@@ -275,10 +278,10 @@ class DynamoDbRoom:
 						"S": f"Room#{self.room_id}"
 					},
 					"SKEY": {
-						"S": f"Client#{client_id}"
+						"S": f"Conn#{connection}"
 					},
-					"Connection": {
-						"S": connection
+					"ClientId": {
+						"S": client_id
 					}
 				},
 				ConditionExpression = "attribute_not_exists(PKEY)"
@@ -287,9 +290,94 @@ class DynamoDbRoom:
 			clients = self.clients()
 			clients[connection] = client_id
 
-			return self.clients
+			return clients
 		except:
-			logger.warn(f"Failed to add client {client_id} in Room {self.room_id}: {e}")
+			logger.warn(f"Failed to add client {client_id} to Room {self.room_id}: {e}")
+
+	def remove_client(self, connection):
+		try:
+			response = self.client.delete_item(
+				TableName = "rooms",
+				Key = {
+					"PKEY": { "S": f"Room#{self.room_id}" },
+					"SKEY": { "S": f"Conn#{connection}" }
+				}
+			)
+
+			clients = self.clients() # Ensure it is fetched
+			del clients[connection]
+
+			return clients
+		except Exception as e:
+			logger.warn(f"Failed to remove client {client_id} from room {self.room_id}: {e}")
+
+	def __fetch_game_state(self):
+		if self.__game_state_hash is not None:
+			return # Already fetched it
+
+		instance = self.__instance_item()
+
+		if not "GameState" in instance:
+			self.__game_state = None
+			return # Nothing to fetch
+
+		self.__game_state_hash = instance["GameState"]["S"]
+		try:
+			response = self.client.get_item(
+				TableName = "games",
+				Key = {
+					"PKEY": { "S": self.__game_state_hash }
+				},
+			)
+
+			pickled = response["Item"]["GameState"]["S"]
+			self.__game_state = jsonpickle.decode(pickled)
+
+		except Exception as e:
+			logger.warn(f"Failed to get game state {self.__game_state_hash} for room {self.room_id}: {e}")
+
+	def set_state(self, game_state):
+		old_hash = self.__game_state_hash
+		opt_values = {}
+
+		if old_hash is not None:
+			game_state.set_from_hash(old_hash)
+			opt_values = { ":old_hash": { "S": old_hash } }
+
+		pickled = jsonpickle.encode(game_state)
+		new_hash = hashlib.md5(pickled.encode('utf-8')).hexdigest()
+
+		try:
+			self.client.put_item(
+				TableName = "games",
+				Item = {
+					"PKEY": { "S": new_hash },
+					"GameState": { "S": pickled }
+				}
+			)
+
+			self.client.update_item(
+				TableName = "rooms",
+				Key = {
+					"PKEY": { "S": f"Room#{self.room_id}" },
+					"SKEY": { "S": "Instance" }
+				},
+				UpdateExpression = "SET GameState = :new_hash",
+				ExpressionAttributeValues = {
+					":new_hash": { "S": new_hash },
+					**opt_values
+				},
+				ConditionExpression = "GameState = :old_hash" if old_hash else "attribute_not_exists(GameState)"
+			)
+
+			self.__game_state = game_state
+			self.__game_state_hash = new_hash
+
+			return game_state
+		except Exception as e:
+			logger.warn(f"Failed to update game state from {old_hash} to {new_hash} for Room {self.room_id}: {e}")
 
 	def state(self):
-		pass
+		self.__fetch_game_state()
+		
+		return self.__game_state

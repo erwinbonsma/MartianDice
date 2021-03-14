@@ -15,6 +15,7 @@ class GameState:
 		self.active_player_index = 0
 		self.scores = dict((id, 0) for id in self.players)
 		self.turn_state = TurnState()
+		self.from_hash = None
 
 	@property
 	def done(self):
@@ -29,6 +30,9 @@ class GameState:
 	def awaitsInput(self):
 		assert(not self.done)
 		return (not self.turn_state.done) and self.turn_state.awaitsInput
+
+	def set_from_hash(self, from_hash):
+		self.from_hash = from_hash
 
 	def next(self, input = None):
 		assert(not self.done)
@@ -64,10 +68,13 @@ class GameState:
 		if not self.done:
 			state["turn_state"] = self.turn_state
 			state["active_player"] = self.active_player
+		if self.from_hash:
+			state["from_hash"] = self.from_hash
 
 		return state
 
 	def __setstate__(self, state):
+		self.from_hash = None # Set default
 		active_player = state.get("active_player", None)
 		if active_player:
 			state["active_player_index"] = state["players"].index(active_player)
