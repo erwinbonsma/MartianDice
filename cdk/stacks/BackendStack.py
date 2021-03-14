@@ -47,13 +47,6 @@ class BackendStack(core.Stack):
 			"layers": [main_layer],
 		}
 
-		my_lambda = _lambda.Function(
-			self, 'HelloLambda',
-			**shared_lambda_cfg,
-			code = _lambda.Code.asset('../backend/src'),
-			handler = 'hello.handler',
-		)
-
 		registration_handler = _lambda.Function(
 			self, 'RegistrationLambda',
 			**shared_lambda_cfg,
