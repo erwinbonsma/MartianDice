@@ -1,5 +1,6 @@
 import { Chat } from './Chat';
 import { GameHeader } from './GameHeader';
+import { GameRules } from './GameRules';
 import { GameSetup } from './GameSetup';
 import { PlayArea } from './PlayArea';
 import { PlayerList } from './PlayerList';
@@ -141,6 +142,7 @@ export function GameRoom(props) {
 					{ (isHost && !game) && (<div className="TableBody">
 						<center><Button variant="primary" onClick={onStartGame}>Start game</Button></center>
 					</div>) }
+					{ !game && <GameRules/> }
 				</div></Col>
 				<Col className="PlayersAreaBorder" xs={12} lg={4} xl={3} style={{height: "80vh"}}><div className="PlayersArea">
 					{ !!game ? 

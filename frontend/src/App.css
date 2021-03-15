@@ -91,7 +91,7 @@ h5 {
 }
   
 .Die img {
-	margin: 0.1em 0em 0.1em 0.4em;
+	margin: 0.1em 0.2em 0.1em 0.2em;
 	height: calc(8px + 8vmin);
 	width: calc(8px + 8vmin)
 }
