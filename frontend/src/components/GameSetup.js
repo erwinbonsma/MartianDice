@@ -14,7 +14,7 @@ export function GameSetup(props) {
 				<Container className="TableBody">
 				{ props.clients.map(client => (
 					<Row key={client}>
-						<Col sm={6}>{client}</Col>
+						<Col>{client}</Col>
 						<Col style={{textAlign: "right"}}>{ (client === props.host) && "Host"}</Col>
 					</Row>
 				))}
@@ -27,7 +27,7 @@ export function GameSetup(props) {
 					<Container className="TableBody">
 					{ props.bots.map(bot => (
 						<Row key={bot}>
-							<Col sm={6}>{bot}</Col>
+							<Col>{bot}</Col>
 							<Col style={{textAlign: "right"}}>{ props.isHost && (
 								<Button className="Button" variant="secondary" size="sm" onClick={props.onRemoveBot} id={bot}>Remove</Button>
 							)}</Col>
