@@ -42,7 +42,6 @@ export function GameRoom(props) {
 			}
 		};
 		
-		console.log("addListener");
 		props.websocket.addEventListener('message', onMessage);
 
 		props.websocket.send(JSON.stringify({
@@ -51,7 +50,6 @@ export function GameRoom(props) {
 		}));
     
 		return function cleanup() {
-			console.log("removeListener");
 			props.websocket.removeEventListener('message', onMessage);
 		}
 	}, [props.websocket, props.roomId]);
@@ -130,7 +128,6 @@ export function GameRoom(props) {
 
 	return (
 		<div>
-			<h5>Room {props.roomId}</h5>
 			<Container fluid className="Room"><Row>
 				<Col xs={0} xl={1} />
 				<Col className="GameAreaBorder" xs={12} lg={8} xl={7} ><div className="GameArea">

@@ -6,7 +6,6 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 
 export function JoinRoom(props) {
-	const [roomId, setRoomId] = useState();
 	const [roomInput, setRoomInput] = useState('');
 	const [errorMessage, setErrorMessage] = useState();
 
@@ -21,7 +20,7 @@ export function JoinRoom(props) {
 			console.log("onJoinRoom:", msg);
 
 			if (msg.type === "clients" && msg.game_id === roomId) {
-				setRoomId(msg.game_id);
+				props.onRoomJoined(msg.game_id);
 			}
 			if (msg.type === "response" && msg.status === "error") {
 				setErrorMessage(msg.details);
@@ -48,6 +47,9 @@ export function JoinRoom(props) {
 			console.log("onCreateRoom:", msg);
 
 			if (msg.type === "response" && msg.status === "ok") {
+				// Set input so that you can easily return after accidentally leaving the room
+				setRoomInput(msg.room_id);
+
 				joinRoom(msg.room_id);
 			}
 
@@ -61,18 +63,17 @@ export function JoinRoom(props) {
 	}
 
 	return (
-		roomId ? (
-			<GameRoom roomId={roomId} playerName={props.playerName} websocket={props.websocket} />
+		props.roomId ? (
+			<GameRoom roomId={props.roomId} playerName={props.playerName} websocket={props.websocket} />
 		) : (
 		<Container><Row>
 			<Col lg={3} md={2} />
 			<Col>
-				<p>Welcome {props.playerName}!</p>
-				<p>Please proceed to a room:</p>
+				<h4>Please proceed to a room</h4><br />
 				<Container><Row>
 					<Col xs="auto">Join room</Col>
 					<Col><input type="text" value={roomInput} onChange={handleInputChange} size={6} /></Col>
-					<Col xs={3}><Button style={{width: "100%"}} disabled={roomInput.length !== 4} onClick={onJoinRoom}>Join</Button></Col>
+					<Col xs={4} sm={3}><Button style={{width: "100%"}} disabled={roomInput.length !== 4} onClick={onJoinRoom}>Join</Button></Col>
 				</Row></Container>
 				{ errorMessage &&
 					<p className="Error">{errorMessage}</p>
@@ -80,9 +81,8 @@ export function JoinRoom(props) {
 				<br />
 				<Container><Row>
 					<Col as="p">Create new room</Col>
-					<Col xs={3}><Button style={{width: "100%"}} onClick={onCreateRoom}>Create</Button></Col>
+					<Col xs={4} sm={3}><Button style={{width: "100%"}} onClick={onCreateRoom}>Create</Button></Col>
 				</Row></Container>
-				<center><Button onClick={props.onLogout}>Log out</Button></center>
 			</Col>
 			<Col lg={3} md={2} />
 		</Row></Container>

@@ -10,11 +10,13 @@ function App(props) {
 	const [websocket, setWebsocket] = useState();
 	const [nameInput, setNameInput] = useState('');
 	const [playerName, setPlayerName] = useState();
+	const [roomId, setRoomId] = useState();
 	const [errorMessage, setErrorMessage] = useState();
 
 	useEffect(() => {
 		if (!websocket) {
 			// Create WebSocket connection.
+			//const socket = new WebSocket('wss://gv9b6yzx3j.execute-api.eu-west-1.amazonaws.com/dev');
 			const socket = new WebSocket('ws://127.0.0.1:8765');
 
 			// Connection opened
@@ -47,15 +49,45 @@ function App(props) {
 	}
 
 	const onLogout = (event) => {
+		if (roomId) {
+			onRoomExit();
+		}
+
 		setPlayerName(undefined);
+	}
+
+	const onRoomJoined = (roomId) => {
+		setRoomId(roomId);
+	}
+	const onRoomExit = () => {
+		websocket.send(JSON.stringify({
+			action: "leave-room",
+			game_id: roomId
+		}));
+
+		setRoomId(undefined);
 	}
 
 	return (
 		<center>
     	<div className="App">
-			<h1>Martian Dice</h1>
+			<Container>
+				<Row>
+					<Col xs={4} sm={2}>{playerName && (<center>
+						{playerName} <br/>
+						<Button  variant="secondary" size="xs" onClick={onLogout}>logout</Button>
+					</center>)}</Col>
+					<Col xs={4} sm={8} as="h1">Martian Dice</Col>
+					<Col xs={4} sm={2}>{roomId && (<center>
+						Room {roomId} <br/>
+						<Button  variant="secondary" size="xs" onClick={onRoomExit}>leave</Button>
+					</center>)}
+					</Col>
+				</Row>
+			</Container>
 			{ playerName ? (
-				<JoinRoom websocket={websocket} playerName={playerName} onLogout={onLogout} />
+				<JoinRoom websocket={websocket} playerName={playerName} roomId={roomId}
+					onRoomJoined={onRoomJoined} />
 			) : (
 				<Container><Row>
 					<Col xl={3} lg={2} md={1} />
