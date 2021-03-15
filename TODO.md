@@ -33,12 +33,17 @@ Done:
 	-	Server-side error
 -	Migrate form memcached to DynamoDb
 -	Host at AWS
+-	Add rules summary
 
 TODO:
+-	Enable graceful leave room
+	-	Extend top bar with: {User}, Room {RoomId} + [Leave]
+	-	On leaving room, ensure that roomInput is prefilled with room just exited (also when user created room)
 -	Improve End game handling:
 	-	Show ranking
 	-	Let players leave
 	-	Let host start new game
+-	Enable TTL for Room table
 -	Let host configure behaviour for disconnect players: auto-pass/wait
 -	Improve server logging
 -	Improve play animations:
