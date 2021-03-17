@@ -43,6 +43,9 @@ class MetaGameHandler(GameHandler):
 		if client_id.startswith("Bot-"):
 			return await self.send_error_message("Sorry, that name is restricted to non-sentients")
 
+		if len(client_id) == 0 or len(client_id) > 12:
+			return await self.send_error_message("Invalid name length")
+
 		if client_id in self.clients:
 			return await self.send_error_message(f"Name {client_id} already present in Room {game_id}")
 
@@ -84,10 +87,10 @@ class MetaGameHandler(GameHandler):
 		if self.client_id == host:
 			if self.clients:
 				# Assign an (arbitrary) new host
-				host = list(self.clients.keys())[0]
+				host = self.game.set_host(list(self.clients.values())[0], old_host = host)
 			else:
 				host = None
-			self.game.set_host(host)
+				self.game.clear_host()
 
 		await self.send_clients_event(host)
 

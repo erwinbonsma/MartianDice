@@ -116,7 +116,7 @@ class DynamoDbRoom:
 			)
 
 			self.__items = response["Items"]
-			print(self.__items)
+			print(f"Data for room {self.room_id}:", self.__items)
 
 			return len(self.__items) > 0
 		except Exception as e:
@@ -127,7 +127,8 @@ class DynamoDbRoom:
 		if "Host" in instance:
 			return instance["Host"]["S"]
 
-	def set_host(self, host):
+	def clear_host(self):
+		logger.info(f"Clearing host for Room {self.room_id}")
 		try:
 			self.client.update_item(
 				TableName = "rooms",
@@ -135,14 +136,44 @@ class DynamoDbRoom:
 					"PKEY": { "S": f"Room#{self.room_id}" },
 					"SKEY": { "S": "Instance" }
 				},
-				UpdateExpression = "SET Host = :host",
-				ExpressionAttributeValues = {
-					":host": { "S": host }
+				UpdateExpression = "REMOVE #Host",
+				ExpressionAttributeNames = {
+					"#Host": "Host"
+				}
+			)
+
+			del self.__instance_item()["Host"]
+		except Exception as e:
+			logger.warn(f"Failed to clear host for Room {self.room_id}: {e}")
+
+	def set_host(self, host, old_host = None):
+		if old_host:
+			logger.info(f"Changing host for Room {self.room_id} from {old_host} to {host}")
+			opt_values = { ":old_host": { "S": old_host } }
+		else:
+			logger.info(f"Setting host for Room {self.room_id} to {host}")
+			opt_values = {}
+
+		try:
+			self.client.update_item(
+				TableName = "rooms",
+				Key = {
+					"PKEY": { "S": f"Room#{self.room_id}" },
+					"SKEY": { "S": "Instance" }
 				},
-				ConditionExpression = "attribute_not_exists(Host)"
+				UpdateExpression = "SET #Host = :host",
+				ExpressionAttributeNames = {
+					"#Host": "Host"
+				},
+				ExpressionAttributeValues = {
+					":host": { "S": host },
+					**opt_values
+				},
+				ConditionExpression = "#Host = :old_host" if old_host else "attribute_not_exists(#Host)"
 			)
 
 			self.__instance_item()["Host"] = { "S": host }
+			return host
 		except Exception as e:
 			logger.warn(f"Failed to set host for Room {self.room_id} to {host}: {e}")
 
