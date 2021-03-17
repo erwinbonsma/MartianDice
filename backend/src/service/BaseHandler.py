@@ -77,15 +77,15 @@ class GameHandler(BaseHandler):
 	def fetch_game(self, game_id):
 		self.game = self.db.room_access(game_id)
 
-		if not self.game.exists():
-			raise HandlerException(f"Game {game_id} not found")
-
-		self.clients = self.game.clients()
-		self.client_id = self.clients.get(self.connection, None)
+		if self.game.exists():
+			self.clients = self.game.clients()
+			self.client_id = self.clients.get(self.connection, None)
+			return True
 
 	async def handle_command(self, cmd_message):
 		try:
-			self.fetch_game(cmd_message["game_id"])
+			if not self.fetch_game(cmd_message["game_id"]):
+				return await self.send_error_message("Room not found")
 
 			await self.handle_game_command(cmd_message)
 		except Exception as e:

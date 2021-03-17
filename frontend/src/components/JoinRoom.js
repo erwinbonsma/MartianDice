@@ -30,6 +30,9 @@ export function JoinRoom(props) {
 		};
 		props.websocket.addEventListener('message', onMessage);
 
+		// Clear any lingering error message from previous attempt
+		setErrorMessage('');
+
 		props.websocket.send(JSON.stringify({
 			action: "join-room",
 			game_id: roomId,
