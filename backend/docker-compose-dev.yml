@@ -6,13 +6,29 @@ services:
 
   dynamodb:
     image: amazon/dynamodb-local:latest
-    command: "-jar DynamoDBLocal.jar -sharedDb -optimizeDbBeforeStartup -dbPath ./data"
     container_name: dynamodb
     ports:
       - 8000:8000
-    volumes:
-      - ./docker/dynamodb:/home/dynamodblocal/data
+    ## Disable hosting of DB on mounted volume, as this could cause database corruption.
+    ## For the current deployment, database persistence is not really needed anyway.
+    #command: "-jar DynamoDBLocal.jar -sharedDb -optimizeDbBeforeStartup -dbPath ./data"
+    #volumes:
+    #  - ./docker/dynamodb:/home/dynamodblocal/data
     working_dir: /home/dynamodblocal
+
+  dynamodb-setup:
+    image: banst/awscli
+    depends_on:
+      - dynamodb
+    environment:
+      AWS_ACCESS_KEY_ID: 'DUMMYIDEXAMPLE'
+      AWS_SECRET_ACCESS_KEY: 'DUMMYEXAMPLEKEY'
+      REGION: 'eu-west-1'
+    volumes:
+      - ./scripts:/home/dynamodb-setup/scripts
+    working_dir: /home/dynamodb-setup
+    entrypoint: /bin/sh
+    command: ./scripts/init-tables.sh
 
   game-service:
     image: martiandice-game-service
@@ -30,4 +46,4 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: 'DUMMYIDEXAMPLE'
       AWS_SECRET_ACCESS_KEY: 'DUMMYEXAMPLEKEY'
-      REGION: 'eu-west-1'
+      AWS_DEFAULT_REGION: 'eu-west-1'
