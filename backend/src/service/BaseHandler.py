@@ -64,8 +64,8 @@ class GameHandler(BaseHandler):
 		# Fetch here. It should be unset, so will not be re-used elsewhere
 		game_state = self.game.state()
 
-		if game_state:
-			raise HandlerException(f"Can only {action} when game did not yet start")
+		if game_state and not game_state.done:
+			raise HandlerException(f"Can only {action} when no game is in progress")
 
 	def check_can_configure_game(self, action):
 		self.check_is_host(action)

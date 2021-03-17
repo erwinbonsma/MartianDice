@@ -2,7 +2,7 @@ export function GameHeader(props) {
 	let left, right, header;
 	if (props.game) {
 		const game = props.game;
-		if (game.done) {
+		if (game.winner) {
 			header = "Game completed";
 		} else {
 			if (props.turnState?.phase === 'PickDice') {

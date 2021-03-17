@@ -1,5 +1,6 @@
 import { Chat } from './Chat';
 import { GameHeader } from './GameHeader';
+import { GameResult } from './GameResult';
 import { GameRules } from './GameRules';
 import { GameSetup } from './GameSetup';
 import { PlayArea } from './PlayArea';
@@ -136,13 +137,14 @@ export function GameRoom(props) {
 						<PlayArea gameId={props.roomId} turnState={turnState} websocket={props.websocket}
 							myTurn={myTurn} />
 					}
-					{ (isHost && !game) && (<div className="TableBody">
-						<center><Button variant="primary" onClick={onStartGame}>Start game</Button></center>
+					{ (game && !turnState) && <GameResult game={game} />}
+					{ (isHost && !turnState) && (<div className="TableBody">
+						<center><Button variant="primary" onClick={onStartGame}>{game ? "New game" : "Start game"}</Button></center>
 					</div>) }
 					{ !game && <GameRules/> }
 				</div></Col>
 				<Col className="PlayersAreaBorder" xs={12} lg={4} xl={3} style={{height: "80vh"}}><div className="PlayersArea">
-					{ !!game ? 
+					{ (game && turnState) ? 
 						<PlayerList players={game.players} scores={game.scores} activePlayer={game.active_player}
 							offlinePlayers={offlinePlayers} observers={observers} /> :
 						<GameSetup clients={clients} bots={bots} 

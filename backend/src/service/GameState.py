@@ -16,6 +16,7 @@ class GameState:
 		self.scores = dict((id, 0) for id in self.players)
 		self.turn_state = TurnState()
 		self.from_hash = None
+		self.winner = None
 
 	@property
 	def done(self):
@@ -48,6 +49,7 @@ class GameState:
 
 		self.scores[self.active_player] += self.turn_state.score
 		if self.scores[self.active_player] >= TARGET_SCORE:
+			self.winner = self.active_player
 			self.turn_state = None
 			self.active_player_index = None
 			return
@@ -62,19 +64,24 @@ class GameState:
 		state = {
 			"players": self.players,
 			"round": self.round,
-			"scores": self.scores,
-			"done": self.done
+			"scores": self.scores
 		}
 		if not self.done:
 			state["turn_state"] = self.turn_state
 			state["active_player"] = self.active_player
 		if self.from_hash:
 			state["from_hash"] = self.from_hash
+		if self.winner:
+			state["winner"] = self.winner
 
 		return state
 
 	def __setstate__(self, state):
-		self.from_hash = None # Set default
+		# Set defaults for optional variables
+		self.from_hash = None
+		self.winner = None
+		self.turn_state = None
+
 		active_player = state.get("active_player", None)
 		if active_player:
 			state["active_player_index"] = state["players"].index(active_player)
