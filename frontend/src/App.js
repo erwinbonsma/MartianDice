@@ -1,4 +1,5 @@
 import './App.css';
+import { Die } from './components/Die';
 import { JoinRoom } from './components/JoinRoom';
 import { useState, useEffect } from 'react';
 import Col from 'react-bootstrap/Col';
@@ -77,7 +78,12 @@ function App(props) {
 						{playerName} <br/>
 						<Button variant="outline-secondary" size="xs" onClick={onLogout}>logout</Button>
 					</center>)}</Col>
-					<Col xs={4} sm={8} as="h1">Martian Dice</Col>
+					<Col xs={4} sm={8} as="h1" className="TableHeader"
+						style={{color: "black", display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+						<Die face="tank" />
+						<h1 className="d-none d-md-block">Martian Dice</h1>
+						<Die face="ray" />
+					</Col>
 					<Col xs={4} sm={2}>{roomId && (<center>
 						Room {roomId} <br/>
 						<Button  variant="outline-secondary" size="xs" onClick={onRoomExit}>leave</Button>
