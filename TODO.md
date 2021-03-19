@@ -41,14 +41,13 @@ Done:
 -	Fixed: Error not shown when joining room that does not exist
 -	Show winner at end of game
 -	Let host start new game after game completed
+-	Show fancy game result
+-	Improve button colors
 
 TODO:
--	Improve End game handling:
-	-	Show ranking
+-	Limit number of players
 -	Enable TTL for Room table
 -	Let host configure behaviour for disconnect players: auto-pass/wait
 -	Improve server logging
 -	Improve play animations:
 	-	Animate die addition/removal
--	Improve UI styling:
-	-	Improve button colors
