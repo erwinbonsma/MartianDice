@@ -14,6 +14,30 @@ h5 {
 	text-align: center;
 }
 
+.btn-primary {
+    color: #fff;
+    background-color: #ccaa44;
+    border-color: #ccaa44;
+}
+
+.btn-primary:hover,
+.btn-primary[hover] {
+    color: #fff;
+    background-color: #cc9922;
+    border-color: #cc9922;
+}
+
+.btn-primary:disabled,
+.btn-primary[disabled] {
+    color: #fff;
+    background-color: #886622;
+    border-color:  #886622;
+}
+
+.btn-outline-secondary {
+	border-width: 0
+}
+
 .Error {
 	color: #802020
 }

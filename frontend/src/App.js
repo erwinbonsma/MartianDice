@@ -75,12 +75,12 @@ function App(props) {
 				<Row>
 					<Col xs={4} sm={2}>{playerName && (<center>
 						{playerName} <br/>
-						<Button  variant="secondary" size="xs" onClick={onLogout}>logout</Button>
+						<Button variant="outline-secondary" size="xs" onClick={onLogout}>logout</Button>
 					</center>)}</Col>
 					<Col xs={4} sm={8} as="h1">Martian Dice</Col>
 					<Col xs={4} sm={2}>{roomId && (<center>
 						Room {roomId} <br/>
-						<Button  variant="secondary" size="xs" onClick={onRoomExit}>leave</Button>
+						<Button  variant="outline-secondary" size="xs" onClick={onRoomExit}>leave</Button>
 					</center>)}
 					</Col>
 				</Row>
