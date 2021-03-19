@@ -115,6 +115,17 @@ h5 {
 	background-color: #604040;
 }
 
+.Winner {
+	color: #ccaa44;
+	font-weight: bold;
+}
+.ScoreBar {
+	background-color: #ffd0d0;
+}
+.ScoreBar-Winner {
+	background-color: #ccaa44;
+}
+
 .TableHeader {
 	background-color: #604040;
 	color: #ffd0d0;
