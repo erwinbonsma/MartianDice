@@ -78,8 +78,8 @@ function App(props) {
 						{playerName} <br/>
 						<Button variant="outline-secondary" size="xs" onClick={onLogout}>logout</Button>
 					</center>)}</Col>
-					<Col xs={4} sm={8} as="h1" className="TableHeader"
-						style={{color: "black", display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+					<Col xs={4} sm={8} className="TableHeader"
+						style={{display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 						<Die face="tank" />
 						<h1 className="d-none d-md-block">Martian Dice</h1>
 						<Die face="ray" />
@@ -96,22 +96,24 @@ function App(props) {
 					onRoomJoined={onRoomJoined} />
 			) : (
 				<Container><Row>
-					<Col xl={3} lg={2} md={1} />
-					<Col>
-						<p>What name would you like to use today?</p>
-						<form onSubmit={onEnterName} style={{display: "flex"}}>
+					<Col lg={3} md={2} sm={1} />
+					<Col lg={6} md={8} sm={10} >
+						<center>
+						<h4>Registration</h4>
+						<p>Who will be captaining your Martian fleet?</p>
+						<form onSubmit={onEnterName} style={{ display: "flex" }}>
 							<div>Name:</div>
 							<div style={{flex: "1"}} />
 							<input size={20} type="text" value={nameInput} onChange={handleInputChange} />
 							<div style={{flex: "2"}} />
 							<Button type="submit" disabled={nameInput === '' || nameInput.length > 12} >OK</Button>
-							<div style={{flex: "10"}} />
 						</form>
 						{ errorMessage &&
 							<p className="Error">{errorMessage}</p>
 						}
+						</center>
 					</Col>
-					<Col xl={3} lg={2} md={1} />
+					<Col lg={3} md={2} sm={1} />
 				</Row></Container>
 			)}
 		</div>

@@ -18,7 +18,7 @@ export function GameHeader(props) {
 			}
 		}
 	} else {
-		header = "Waiting for game to start";
+		header = "Awaiting crew assembly";
 	}
 
 	return (
