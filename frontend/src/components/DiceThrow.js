@@ -44,7 +44,7 @@ export function DiceThrow(props) {
 			const throwAnimation = setTimeout(() => {
 				setThrownDice(addDie(thrownDice, shuffledDice[0]));
 				setShuffledDice(shuffledDice.slice(1));
-			}, 1000);
+			}, 500);
 
 			return function cleanup() {
 				clearTimeout(throwAnimation);
