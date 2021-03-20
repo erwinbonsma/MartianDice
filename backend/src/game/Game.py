@@ -55,13 +55,13 @@ def show_state(state: TurnState):
 	if state.phase == TurnPhase.PickDice:
 		return
 
-	if state.phase == TurnPhase.PostPick:
+	if state.phase == TurnPhase.PickedDice:
 		print("%s selected" % (state.last_pick.name))
 		print()
 		show_side_dice(state.side_dice)
 		return
 
-	if state.phase == TurnPhase.ThrowAgain:
+	if state.phase == TurnPhase.CheckPass:
 		print("Score (sofar):", state.score)
 		return
 
@@ -86,7 +86,7 @@ def play_turn(action_selector, throw_fun = random_throw, ini_side_dice = None, s
 			if state.phase == TurnPhase.PickDice:
 				selected_die = action_selector.select_die(state)
 				state = state.next(selected_die)
-			elif state.phase == TurnPhase.ThrowAgain:
+			elif state.phase == TurnPhase.CheckPass:
 				should_stop = action_selector.should_stop(state)
 				state = state.next(should_stop)
 			else:

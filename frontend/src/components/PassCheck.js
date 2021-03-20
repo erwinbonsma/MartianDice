@@ -3,7 +3,7 @@ import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 
-export function ContinueTurnCheck(props) {
+export function PassCheck(props) {
 	return (
 		<Container>
 			<Row>

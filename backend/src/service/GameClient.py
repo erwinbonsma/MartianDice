@@ -35,12 +35,12 @@ def pick_dice(game_id, turn_state):
 
 def check_exit(game_id):
 	while True:
-		choice = input("Continue (Y/N)? : ").upper()
+		choice = input("Pass (Y/N)? : ").upper()
 		if choice == "Y" or choice == "N":
 			return json.dumps({
 				"action": "move",
 				"game_id": game_id,
-				"throw_again": choice == "Y"
+				"pass": choice == "Y"
 			})
 
 def bot_move(game_id):
@@ -102,7 +102,7 @@ async def play_game(args):
 				if state["active_player"] == args.name:
 					if state["turn_state"]["phase"] == "PickDice":
 						await websocket.send(pick_dice(game_id, state["turn_state"]))
-					elif state["turn_state"]["phase"] == "ThrowAgain":
+					elif state["turn_state"]["phase"] == "CheckPass":
 						await websocket.send(check_exit(game_id))
 				if is_host and state["active_player"] in bots:
 					await websocket.send(bot_move(game_id))

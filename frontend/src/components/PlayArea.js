@@ -1,6 +1,6 @@
 import { AbductionZone } from './AbductionZone';
 import { BattleZone } from './BattleZone';
-import { ContinueTurnCheck } from './ContinueTurnCheck';
+import { PassCheck } from './PassCheck';
 import { DiceThrow } from './DiceThrow';
 import { TurnResult } from './TurnResult';
 import Measure from 'react-measure';
@@ -35,13 +35,13 @@ export function PlayArea(props) {
 		};
 	};
 
-	let handleContinueAnswer;
-	if (props.myTurn && turnState.phase === "ThrowAgain") {
-		handleContinueAnswer = (e) => {
+	let handlePassAnswer;
+	if (props.myTurn && turnState.phase === "CheckPass") {
+		handlePassAnswer = (e) => {
 			props.websocket.send(JSON.stringify({
 				action: "move",
 				game_id: props.gameId,
-				throw_again: e.target.id === "yes"
+				pass: e.target.id === "yes"
 			}));
 		}
 	}
@@ -72,9 +72,9 @@ export function PlayArea(props) {
 	return (
 		<div className="PlayArea">
 			<div className="GameZoneTopRow">
-			{ handleContinueAnswer
+			{ handlePassAnswer
 				? (<div style={{ minHeight: throwAreaHeight }}>
-					<ContinueTurnCheck onAnswer={handleContinueAnswer} />
+					<PassCheck onAnswer={handlePassAnswer} />
 				</div>)
 				: ( diceThrow && (
 					<Measure bounds onResize={handleDiceThrowResize}>

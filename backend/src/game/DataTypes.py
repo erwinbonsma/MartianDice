@@ -18,8 +18,8 @@ class TurnPhase(IntEnum):
 	Throwing = 0
 	Thrown = 1
 	PickDice = 2
-	PostPick = 3
-	ThrowAgain = 4
+	PickedDice = 3
+	CheckPass = 4
 	Done = 5
 
 class SideDiceState:
@@ -139,7 +139,7 @@ class TurnState:
 	@property
 	def awaitsInput(self):
 		assert(not self.done)
-		return self.phase == TurnPhase.PickDice or self.phase == TurnPhase.ThrowAgain
+		return self.phase == TurnPhase.PickDice or self.phase == TurnPhase.CheckPass
 
 	@property
 	def selectable_earthlings(self):
@@ -160,9 +160,9 @@ class TurnState:
 			return self._move_tanks()
 		elif self.phase == TurnPhase.PickDice:
 			return self._handle_pick(input_value)
-		elif self.phase == TurnPhase.PostPick:
+		elif self.phase == TurnPhase.PickedDice:
 			return self._check_post_pick_exit()
-		elif self.phase == TurnPhase.ThrowAgain:
+		elif self.phase == TurnPhase.CheckPass:
 			return self._check_player_exit(input_value)
 		else:
 			assert(False)
@@ -237,14 +237,14 @@ class TurnState:
 			throw = self.throw.remove(selected_die),
 			throw_count = self.throw_count,
 			side_dice = self.side_dice.add(selected_die, self.throw[selected_die]),
-			phase = TurnPhase.PostPick
+			phase = TurnPhase.PickedDice
 		)
 		new_state.last_pick = selected_die
 
 		return new_state
 
 	def _check_post_pick_exit(self):
-		assert(self.phase == TurnPhase.PostPick)
+		assert(self.phase == TurnPhase.PickedDice)
 
 		if self.side_dice.total_collected == NUM_DICE:
 			return self._end_turn("No more dice")
@@ -256,11 +256,11 @@ class TurnState:
 			throw = None,
 			throw_count = self.throw_count,
 			side_dice = self.side_dice,
-			phase = TurnPhase.ThrowAgain if self.score > 0 else TurnPhase.Throwing
+			phase = TurnPhase.CheckPass if self.score > 0 else TurnPhase.Throwing
 		)
 
 	def _check_player_exit(self, stop):
-		assert(self.phase == TurnPhase.ThrowAgain)
+		assert(self.phase == TurnPhase.CheckPass)
 
 		if stop:
 			return self._end_turn("Player choice")

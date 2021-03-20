@@ -65,8 +65,8 @@ class GamePlayHandler(GameHandler):
 				raise HandlerException(f"Cannot select: {picked}")
 
 			player_move = die
-		elif "throw_again" in cmd_message:
-			player_move = not cmd_message["throw_again"]
+		elif "pass" in cmd_message:
+			player_move = cmd_message["pass"]
 		else:
 			raise HandlerException("Unknown move")
 

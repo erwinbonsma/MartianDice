@@ -7,8 +7,8 @@ export function GameHeader(props) {
 		} else {
 			if (props.turnState?.phase === 'PickDice') {
 				header = `${game.active_player} to pick a die`;
-			} else if (props.turnState?.phase === 'ThrowAgain') {
-				header = `${game.active_player} to continue?`;
+			} else if (props.turnState?.phase === 'CheckPass') {
+				header = `${game.active_player} to pass?`;
 			} else {
 				header = `${game.active_player}'s turn`;
 			}
