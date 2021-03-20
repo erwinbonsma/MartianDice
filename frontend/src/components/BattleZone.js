@@ -6,8 +6,8 @@ export function BattleZone(props) {
 	return (
 		<div className="BattleZone">
 			<h4>Battle Zone</h4>
-			<DiceRow dice={{ray: numRays}} padLength={7}></DiceRow>
-			<DiceRow dice={{tank: numTanks}} padLength={7}></DiceRow>
+			<DiceRow dice={{ray: numRays}} padLength={7} instanceId={props.instanceId} />
+			<DiceRow dice={{tank: numTanks}} padLength={7} instanceId={props.instanceId} />
 		</div>		
 	)
 }

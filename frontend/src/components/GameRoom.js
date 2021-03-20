@@ -134,8 +134,8 @@ export function GameRoom(props) {
 				<Col className="GameAreaBorder" xs={12} lg={8} xl={7} ><div className="GameArea">
 					<GameHeader game={game} turnState={turnState} />
 					{ turnState &&
-						<PlayArea gameId={props.roomId} turnState={turnState} websocket={props.websocket}
-							myTurn={myTurn} />
+						<PlayArea gameId={props.roomId} game={game} turnState={turnState} myTurn={myTurn}
+							websocket={props.websocket} />
 					}
 					{ (game && !turnState) && <GameResult game={game} />}
 					{ (isHost && !turnState) && (<div className="TableBody">

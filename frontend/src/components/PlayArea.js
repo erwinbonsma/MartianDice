@@ -62,29 +62,36 @@ export function PlayArea(props) {
 	}
 
 	const turnDone = (turnState.phase === "Done");
+
+	// These instance IDs determine the dice row lifetime. As long as remains the same, dice
+	// changes are applied as deltas such that die positions remain fixed.
+	const turnInstanceId = `${props.game?.round}-${props.game?.active_player}`;
+	const throwInstanceId = `${turnInstanceId}-${turnState.throw_count}`;
+
 	return (
 		<div className="PlayArea">
 			<div className="GameZoneTopRow">
 			{ onCheckContinue
 				? (<div style={{ minHeight: throwAreaHeight }}>
-					<ContinueTurnCheck onAnswer={onCheckContinue}></ContinueTurnCheck>
+					<ContinueTurnCheck onAnswer={onCheckContinue} />
 				</div>)
 				: ( diceThrow && (
 					<Measure bounds onResize={onDiceThrowResize}>
 						{({ measureRef }) => (<div  style={{ minHeight: throwAreaHeight }}>
 							<div ref={measureRef}>
-								<DiceThrow throw={diceThrow} onDiceClick={onDiceClick} pad={!turnDone}></DiceThrow>
+								<DiceThrow throw={diceThrow} onDiceClick={onDiceClick} pad={!turnDone}
+									instanceId={throwInstanceId} />
 							</div>
 							{ turnDone && (
-								<TurnResult score={turnState.score} end_cause={turnState.end_cause}></TurnResult>
+								<TurnResult score={turnState.score} end_cause={turnState.end_cause} />
 							)}
 						</div>)}
 					</Measure>
 				))
 			}
 			</div>
-			<BattleZone combatants={combatants}></BattleZone>
-			<AbductionZone earthlings={earthlings}></AbductionZone>
+			<BattleZone combatants={combatants} instanceId={turnInstanceId} />
+			<AbductionZone earthlings={earthlings} instanceId={turnInstanceId}/>
 		</div>
 	)
 }
