@@ -1,23 +1,12 @@
 import { Die } from './Die';
 import { useEffect, useState } from 'react';
 
-function shuffle(l) {
-	for (let i = l.length; --i > 0; ) {
-		const j = Math.floor(Math.random() * (i + 1));
-		const tmp = l[i];
-		l[i] = l[j];
-		l[j] = tmp;
-	}
-}
-
 function createDiceRow(diceDict) {
-	const diceList = Object.entries(diceDict).map(
+	const row = Object.entries(diceDict).map(
 		([die, number]) => Array.from({length: number}, () => die)
 	).flat();
 
-	shuffle(diceList);
-
-	return diceList;
+	return row;
 }
 
 function updateDiceRow(oldList, targetState) {
@@ -51,11 +40,19 @@ function updateDiceRow(oldList, targetState) {
 
 export function DiceRow(props) {
 	const [instanceId, setInstanceId] = useState();
+
+	// Maintain array of dice. It is used to keep the dice positions fixed despite dice additions
+	// and removals, as long as the instanceId remains the same.
 	const [diceRow, setDiceRow] = useState([]);
 
 	useEffect(() => {
-		console.log("useEffect", props.instanceId, instanceId);
+		if (props.enableLog) {
+			console.log("useEffect", props.instanceId, instanceId);
+		}
 		if (props.instanceId !== instanceId) {
+			if (props.enableLog) {
+				console.log("clearing DiceRow");
+			}
 			setDiceRow(createDiceRow(props.dice));
 			setInstanceId(props.instanceId);
 		} else {

@@ -77,10 +77,10 @@ export function GameRoom(props) {
 	}
 
 	const turnState = transitionTurns.length > 0 ? transitionTurns[0] : futureGame?.turn_state;
-	const isAnimating = transitionTurns.length > 0;
+	const isReplaying = transitionTurns.length > 0;
 	const isHost = (props.playerName === hostName);
-	const myTurn = !isAnimating && (props.playerName === futureGame?.active_player);
-	const triggerBotMove = !isAnimating && isHost && bots.includes(futureGame?.active_player);
+	const myTurn = !isReplaying && (props.playerName === futureGame?.active_player);
+	const triggerBotMove = !isReplaying && isHost && bots.includes(futureGame?.active_player);
 
 	// Let host initiate bot moves
 	useEffect(() => {
@@ -101,15 +101,27 @@ export function GameRoom(props) {
 	// Turn animations
 	useEffect(() => {
 		if (transitionTurns.length > 0) {
-			const turnAnimation = setTimeout(() => {
-				setTransitionTurns(transitionTurns.slice(1));
-			}, 2000);
-
-			return function cleanup() {
-				clearTimeout(turnAnimation);
+			if (turnState?.phase !== "Thrown") {
+				const turnAnimation = setTimeout(() => {
+					// Finished animating current transition. Move to the next
+					setTransitionTurns(transitionTurns.slice(1));
+				}, 1000);
+	
+				return function cleanup() {
+					clearTimeout(turnAnimation);
+				}	
 			}
 		}
 	}, [transitionTurns]);
+
+	let handleThrowAnimationDone;
+	if (turnState?.phase === "Thrown") {
+		handleThrowAnimationDone = () => {
+			// Finished animating throw transition. Move to the next
+			console.log("handleThrowAnimationDone");
+			setTransitionTurns(transitionTurns.slice(1));
+		}
+	}
 
 	useEffect(() => {
 		if (
@@ -135,6 +147,7 @@ export function GameRoom(props) {
 					<GameHeader game={game} turnState={turnState} />
 					{ turnState &&
 						<PlayArea gameId={props.roomId} game={game} turnState={turnState} myTurn={myTurn}
+							onThrowAnimationDone={handleThrowAnimationDone}
 							websocket={props.websocket} />
 					}
 					{ (game && !turnState) && <GameResult game={game} />}

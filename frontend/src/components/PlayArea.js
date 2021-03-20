@@ -7,7 +7,8 @@ import Measure from 'react-measure';
 import { useState } from 'react';
 
 export function PlayArea(props) {
-	const turnState = props.turnState;
+	const { turnState } = props;
+	const { onThrowAnimationDone } = props; 
 	const diceThrow = turnState.throw || {};
 	const earthlings = {};
 	const combatants = {};
@@ -23,9 +24,9 @@ export function PlayArea(props) {
 		}
 	});
 
-	let onDiceClick;
+	let handleDiceClick;
 	if (props.myTurn && turnState.phase === "PickDice") {
-		onDiceClick = (e) => {
+		handleDiceClick = (e) => {
 			props.websocket.send(JSON.stringify({
 				action: "move",
 				game_id: props.gameId,
@@ -34,9 +35,9 @@ export function PlayArea(props) {
 		};
 	};
 
-	let onCheckContinue;
+	let handleContinueAnswer;
 	if (props.myTurn && turnState.phase === "ThrowAgain") {
-		onCheckContinue = (e) => {
+		handleContinueAnswer = (e) => {
 			props.websocket.send(JSON.stringify({
 				action: "move",
 				game_id: props.gameId,
@@ -45,7 +46,7 @@ export function PlayArea(props) {
 		}
 	}
 
-	const onDiceThrowResize = (contentRect) => {
+	const handleDiceThrowResize = (contentRect) => {
 		if (contentRect?.bounds) {
 			const height = contentRect.bounds.bottom - contentRect.bounds.top;
 			const width = contentRect.bounds.right - contentRect.bounds.left;
@@ -71,16 +72,17 @@ export function PlayArea(props) {
 	return (
 		<div className="PlayArea">
 			<div className="GameZoneTopRow">
-			{ onCheckContinue
+			{ handleContinueAnswer
 				? (<div style={{ minHeight: throwAreaHeight }}>
-					<ContinueTurnCheck onAnswer={onCheckContinue} />
+					<ContinueTurnCheck onAnswer={handleContinueAnswer} />
 				</div>)
 				: ( diceThrow && (
-					<Measure bounds onResize={onDiceThrowResize}>
+					<Measure bounds onResize={handleDiceThrowResize}>
 						{({ measureRef }) => (<div  style={{ minHeight: throwAreaHeight }}>
 							<div ref={measureRef}>
-								<DiceThrow throw={diceThrow} onDiceClick={onDiceClick} pad={!turnDone}
-									instanceId={throwInstanceId} />
+								<DiceThrow diceThrow={diceThrow} instanceId={throwInstanceId} pad={!turnDone}
+									onAnimationDone={onThrowAnimationDone}
+									onDiceClick={handleDiceClick} />
 							</div>
 							{ turnDone && (
 								<TurnResult score={turnState.score} end_cause={turnState.end_cause} />
