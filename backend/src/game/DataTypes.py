@@ -17,10 +17,11 @@ NUM_DIE_FACE_TYPES = 5
 class TurnPhase(IntEnum):
 	Throwing = 0
 	Thrown = 1
-	PickDice = 2
-	PickedDice = 3
-	CheckPass = 4
-	Done = 5
+	MovedTanks = 2
+	PickDice = 3
+	PickedDice = 4
+	CheckPass = 5
+	Done = 6
 
 class SideDiceState:
 
@@ -158,6 +159,8 @@ class TurnState:
 			return self._set_throw(throw)
 		elif self.phase == TurnPhase.Thrown:
 			return self._move_tanks()
+		elif self.phase == TurnPhase.MovedTanks:
+			return self._check_post_throw_exit()
 		elif self.phase == TurnPhase.PickDice:
 			return self._handle_pick(input_value)
 		elif self.phase == TurnPhase.PickedDice:
@@ -205,8 +208,8 @@ class TurnState:
 			throw = throw,
 			throw_count = self.throw_count,
 			side_dice = side_dice,
-			phase = TurnPhase.PickDice
-		)._check_post_throw_exit()
+			phase = TurnPhase.MovedTanks
+		)
 
 	def _check_post_throw_exit(self):
 		rays = self.throw[DieFace.Ray]
@@ -226,7 +229,12 @@ class TurnState:
 			else:
 				return self._end_turn("No selectable dice", clear_throw = False)
 
-		return self
+		return TurnState(
+			throw = self.throw,
+			throw_count = self.throw_count,
+			side_dice = self.side_dice,
+			phase = TurnPhase.PickDice
+		)
 
 	def _handle_pick(self, selected_die):
 		assert(self.phase == TurnPhase.PickDice)
