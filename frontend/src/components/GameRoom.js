@@ -20,6 +20,7 @@ export function GameRoom(props) {
 	const [clients, setClients] = useState([]);
 	const [bots, setBots] = useState([]);
 	const [transitionTurns, setTransitionTurns] = useState([]);
+	const [isAnimating, setIsAnimating] = useState(false);
 
 	useEffect(() => {
 		// Listen for messages
@@ -101,27 +102,34 @@ export function GameRoom(props) {
 	// Turn animations
 	useEffect(() => {
 		if (transitionTurns.length > 0) {
-			if (turnState?.phase !== "Thrown") {
+			if (!isAnimating) {
+				console.log("scheduling transition");
 				const turnAnimation = setTimeout(() => {
 					// Finished animating current transition. Move to the next
 					setTransitionTurns(transitionTurns.slice(1));
-				}, 1000);
+					console.log("performed transition");
+				}, 10000);
 	
 				return function cleanup() {
+					console.log("unscheduling transition");
 					clearTimeout(turnAnimation);
 				}	
+			} else {
+				console.log("skipping transitions while animating");
 			}
+		} else {
+			console.log("No transitions");
 		}
-	}, [transitionTurns]);
+	}, [transitionTurns, isAnimating]);
 
-	let handleThrowAnimationDone;
-	if (turnState?.phase === "Thrown") {
-		handleThrowAnimationDone = () => {
-			// Finished animating throw transition. Move to the next
-			console.log("handleThrowAnimationDone");
-			setTransitionTurns(transitionTurns.slice(1));
+	const handleAnimationChange = (flag) => {
+		console.log("GameRoom.isAnimating =", flag);
+		if (flag !== isAnimating) {
+			setIsAnimating(flag);
 		}
 	}
+
+	console.log("turnState =", turnState);
 
 	useEffect(() => {
 		if (
@@ -147,7 +155,7 @@ export function GameRoom(props) {
 					<GameHeader game={game} turnState={turnState} />
 					{ turnState &&
 						<PlayArea gameId={props.roomId} game={game} turnState={turnState} myTurn={myTurn}
-							onThrowAnimationDone={handleThrowAnimationDone}
+							onAnimationChange={handleAnimationChange}
 							websocket={props.websocket} />
 					}
 					{ (game && !turnState) && <GameResult game={game} />}

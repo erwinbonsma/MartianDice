@@ -1,14 +1,6 @@
 import { DiceRow } from './DiceRow';
 import { useEffect, useState } from 'react';
-
-function shuffle(l) {
-	for (let i = l.length; --i > 0; ) {
-		const j = Math.floor(Math.random() * (i + 1));
-		const tmp = l[i];
-		l[i] = l[j];
-		l[j] = tmp;
-	}
-}
+import { applyDieDelta, isDictionaryEmpty, shuffle } from '../utils';
 
 function shuffleDice(diceDict) {
 	const diceList = Object.entries(diceDict).map(
@@ -20,15 +12,8 @@ function shuffleDice(diceDict) {
 	return diceList;
 }
 
-function addDie(diceDict, die) {
-	const newDict = {...diceDict};
-	newDict[die] = (newDict[die] || 0) + 1;
-
-	return newDict;
-}
-
 export function DiceThrow(props) {
-	const {diceThrow, instanceId, pad, onDiceClick, onAnimationDone} = props;
+	const {diceThrow, instanceId, pad, onDiceClick, onAnimationChange} = props;
 
 	const [shuffledDice, setShuffledDice] = useState([]);
 	const [throwInstanceId, setThrowInstanceId] = useState();
@@ -40,9 +25,17 @@ export function DiceThrow(props) {
 			setThrowInstanceId(instanceId);
 			setShuffledDice(shuffleDice(diceThrow));
 			setThrownDice({});
-		} else if (shuffledDice.length > 0) {
+
+			if (!isDictionaryEmpty(diceThrow)) {
+				onAnimationChange(true);
+			}
+		}
+	}, [instanceId, throwInstanceId, diceThrow, onAnimationChange]);
+	
+	useEffect(() => {
+		if (shuffledDice.length > 0) {
 			const throwAnimation = setTimeout(() => {
-				setThrownDice(addDie(thrownDice, shuffledDice[0]));
+				setThrownDice(applyDieDelta(thrownDice, shuffledDice[0], 1));
 				setShuffledDice(shuffledDice.slice(1));
 			}, 500);
 
@@ -50,13 +43,12 @@ export function DiceThrow(props) {
 				clearTimeout(throwAnimation);
 			}
 		} else {
-			setThrownDice(diceThrow)
-
-			if (onAnimationDone) {
-				onAnimationDone();
+			if (thrownDice !== diceThrow) {
+				setThrownDice(diceThrow);
+				onAnimationChange(false);
 			}
 		}
-	}, [instanceId, throwInstanceId, shuffledDice, thrownDice, onAnimationDone, diceThrow]);
+	}, [shuffledDice, thrownDice, onAnimationChange, diceThrow]);
 
 	return (
 		<div className="DiceThrow">
