@@ -278,6 +278,12 @@ export class PlayArea extends React.Component {
 
 		this.prepareMoveAnimation();
 		this.startMoveAnimation();
+
+		if (!this.props.turnState.throw && !isDictionaryEmpty(this.state.diceThrow)) {
+			this.setState({
+				diceThrow: {}
+			});
+		}
 	}
 
 	render() {
@@ -296,7 +302,7 @@ export class PlayArea extends React.Component {
 							{({ measureRef }) => (<div style={{ minHeight: this.state.throwArea.height }}>
 								<div ref={measureRef}>
 									<DiceThrow diceThrow={this.state.diceThrow} pad={!turnDone}
-										instanceId={this.throwId}
+										instanceId={this.state.plannedThrowAnimation}
 										onAnimationChange={this.handleThrowAnimationChange}
 										onDiceClick={this.acceptDiceClick ? this.handleDiceClick : undefined} />
 								</div>
