@@ -134,7 +134,7 @@ export class GameRoom extends React.Component {
 		// Do not make player wait unnecessarily before picking a die
 		const fastTransition = (
 			this.state.transitionTurns.length === 1 &&
-			this.state.futureGame.turn_state.phase === "PickDice"
+			this.state.futureGame.turn_state?.phase === "PickDice"
 		);
 
 		console.log("Scheduling new turnAnimation", fastTransition ? "fast" : "slow");
