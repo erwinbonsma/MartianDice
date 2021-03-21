@@ -90,10 +90,14 @@ export class PlayArea extends React.Component {
 
 		if (width !== this.state.throwArea.width) {
 			// When width changes, clear previous maximum height
-			this.setState({ width, height });
+			this.setState({ 
+				throwArea: { width, height }
+			});
 		} else if (height > this.state.throwArea.height) {
 			// Adapt maximum height
-			this.setState({ height });
+			this.setState({ 
+				throwArea: { width: this.state.throwArea.width, height }
+			});
 		}
 	}
 
