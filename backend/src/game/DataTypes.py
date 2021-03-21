@@ -204,12 +204,17 @@ class TurnState:
 			side_dice = self.side_dice
 			throw = self.throw
 
-		return TurnState(
+		new_state = TurnState(
 			throw = throw,
 			throw_count = self.throw_count,
 			side_dice = side_dice,
 			phase = TurnPhase.MovedTanks
 		)
+
+		if new_tanks == 0:
+			new_state.skip_when_animating = True
+
+		return new_state
 
 	def _check_post_throw_exit(self):
 		rays = self.throw[DieFace.Ray]
