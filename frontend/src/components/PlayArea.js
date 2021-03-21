@@ -131,6 +131,19 @@ export class PlayArea extends React.Component {
 		});
 	}
 
+	clearThrow() {
+		if (
+			!this.props.turnState.throw &&
+			this.state.diceThrow &&
+			!isDictionaryEmpty(this.state.diceThrow)
+		) {
+			console.log("Clearing throw");
+			this.setState({
+				diceThrow: {}
+			});
+		}
+	}
+
 	prepareThrowAnimation() {
 		const throwId = this.throwId;
 		if (
@@ -302,6 +315,21 @@ export class PlayArea extends React.Component {
 		}
 	}
 
+	componentDidMount() {
+		console.log("componentDidMount", this.props.instanceId, this.state.instanceId);
+		if (this.props.instanceId !== this.state.instanceId) {
+			console.log("New PlayArea instance", this.props.turnState);
+
+			if (this.props.turnState.phase !== "Throwing") {
+				this.rejoinGame();
+			}
+
+			this.setState({
+				instanceId: this.props.instanceId
+			});
+		}
+	}
+
 	componentWillUnmount() {
 		console.log("componentWillUnmount");
 
@@ -319,29 +347,13 @@ export class PlayArea extends React.Component {
 	}
 
 	componentDidUpdate() {
-		if (this.props.instanceId !== this.state.instanceId) {
-			console.log("New PlayArea instance", this.props.turnState);
-
-			if (this.props.turnState.phase !== "Throwing") {
-				this.rejoinGame();
-			}
-
-			this.setState({
-				instanceId: this.props.instanceId
-			});
-		}
-
 		this.prepareThrowAnimation();
 		this.startThrowAnimation();
 
 		this.prepareMoveAnimation();
 		this.startMoveAnimation();
 
-		if (!this.props.turnState.throw && !isDictionaryEmpty(this.state.diceThrow)) {
-			this.setState({
-				diceThrow: {}
-			});
-		}
+		this.clearThrow();
 	}
 
 	render() {
