@@ -117,24 +117,31 @@ export class GameRoom extends React.Component {
 
 	animateTransitions() {
 		if (this.turnAnimation) {
+			console.log("turnAnimation in progress");
 			return;
 		}
 
 		if (this.state.transitionTurns.length === 0) {
+			console.log("No more transitions");
 			return;
 		}
 		if (this.state.isAnimating) {
+			console.log("Animation in progress");
 			return;
 		}
 
+		console.log("Scheduling new turnAnimation");
 		this.turnAnimation = setTimeout(() => {
-			// Finished animating current transition. Move to the next
-			this.setState((state) => ({
-				transitionTurns: state.transitionTurns.slice(1)
-			}));
-			console.log("performed transition");
-
 			this.turnAnimation = undefined;
+
+			// Finished animating current transition. Move to the next
+			this.setState((state) => {
+				console.log("transitionTurns.length (old) =", state.transitionTurns.length);
+				return {
+					transitionTurns: state.transitionTurns.slice(1)
+				};
+			});
+			console.log("performed transition");
 		}, 2000);
 	}
 
