@@ -79,6 +79,10 @@ export class GameRoom extends React.Component {
 			this.setState({
 				isAnimating: flag
 			});
+			if (flag) {
+				clearTimeout(this.turnAnimation);
+				this.turnAnimation = undefined;
+			}
 		}
 	}
 
@@ -98,9 +102,12 @@ export class GameRoom extends React.Component {
 				});
 				break;
 			case "game-state":
+				console.log("setting transition turns");
 				this.setState({
 					transitionTurns: msg.turn_state_transitions,
-					futureGame: msg.state
+					futureGame: msg.state,
+					// Ensure game state is always set when there is a turn state
+					game: this.state.game || msg.state
 				});
 				break;
 			default:
@@ -110,16 +117,13 @@ export class GameRoom extends React.Component {
 
 	animateTransitions() {
 		if (this.turnAnimation) {
-			console.log("Animation already scheduled");
 			return;
 		}
 
 		if (this.state.transitionTurns.length === 0) {
-			console.log("No transitions");
 			return;
 		}
 		if (this.state.isAnimating) {
-			console.log("skipping transitions while animating");
 			return;
 		}
 
@@ -129,7 +133,9 @@ export class GameRoom extends React.Component {
 				transitionTurns: state.transitionTurns.slice(1)
 			}));
 			console.log("performed transition");
-		}, 10000);
+
+			this.turnAnimation = undefined;
+		}, 2000);
 	}
 
 	triggerBotMove() {
@@ -207,6 +213,7 @@ export class GameRoom extends React.Component {
 		const turnState = this.turnState;
 
 		console.log("turnState =", turnState);
+		console.log("game =", game);
 
 		const offlinePlayers = game
 			? game.players.filter(
