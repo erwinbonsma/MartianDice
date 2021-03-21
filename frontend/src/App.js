@@ -51,7 +51,7 @@ function App(props) {
 
 	const handleLogout = (event) => {
 		if (roomId) {
-			onRoomExit();
+			handleRoomExit();
 		}
 
 		setPlayerName(undefined);
