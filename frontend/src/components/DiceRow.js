@@ -58,7 +58,7 @@ export function DiceRow(props) {
 		} else {
 			setDiceRow(updateDiceRow(diceRow, props.dice));
 		}	
-	}, [props.instanceId, props.dice, instanceId, diceRow]);
+	}, [props.instanceId, props.dice, instanceId, diceRow, props.enableLog]);
 
 	const numDice = diceRow.length;
 	const padDice = props.padLength ? Math.max(0, props.padLength - numDice) : 0;
