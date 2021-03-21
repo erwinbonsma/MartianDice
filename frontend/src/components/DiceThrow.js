@@ -6,7 +6,7 @@ export function DiceThrow(props) {
 	return (
 		<div className="DiceThrow">
 			<DiceRow dice={diceThrow} instanceId={instanceId} padLength={pad ? 13 : 0}
-				onDiceClick={onDiceClick} enableLog={true} />
+				onDiceClick={onDiceClick} />
 		</div>
 	)
 }

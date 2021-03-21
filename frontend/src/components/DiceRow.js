@@ -46,19 +46,13 @@ export function DiceRow(props) {
 	const [diceRow, setDiceRow] = useState([]);
 
 	useEffect(() => {
-		if (props.enableLog) {
-			console.log("useEffect", props.instanceId, instanceId);
-		}
 		if (props.instanceId !== instanceId) {
-			if (props.enableLog) {
-				console.log("clearing DiceRow");
-			}
 			setDiceRow(createDiceRow(props.dice));
 			setInstanceId(props.instanceId);
 		} else {
 			setDiceRow(updateDiceRow(diceRow, props.dice));
 		}	
-	}, [props.instanceId, props.dice, instanceId, diceRow, props.enableLog]);
+	}, [props.instanceId, props.dice, instanceId, diceRow]);
 
 	const numDice = diceRow.length;
 	const padDice = props.padLength ? Math.max(0, props.padLength - numDice) : 0;

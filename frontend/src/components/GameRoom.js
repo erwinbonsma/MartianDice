@@ -136,7 +136,6 @@ export class GameRoom extends React.Component {
 
 			// Finished animating current transition. Move to the next
 			this.setState((state) => {
-				console.log("transitionTurns.length (old) =", state.transitionTurns.length);
 				return {
 					transitionTurns: state.transitionTurns.slice(1)
 				};
