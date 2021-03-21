@@ -43,13 +43,13 @@ function App(props) {
 		setErrorMessage('');
 	};
 
-	const onEnterName = (event) => {
+	const handleRegistration = (event) => {
 		event.preventDefault();
 
 		setPlayerName(nameInput);
 	}
 
-	const onLogout = (event) => {
+	const handleLogout = (event) => {
 		if (roomId) {
 			onRoomExit();
 		}
@@ -57,10 +57,10 @@ function App(props) {
 		setPlayerName(undefined);
 	}
 
-	const onRoomJoined = (roomId) => {
+	const handleRoomEntry = (roomId) => {
 		setRoomId(roomId);
 	}
-	const onRoomExit = () => {
+	const handleRoomExit = () => {
 		websocket.send(JSON.stringify({
 			action: "leave-room",
 			game_id: roomId
@@ -76,7 +76,7 @@ function App(props) {
 				<Row>
 					<Col xs={4} sm={2}>{playerName && (<center>
 						{playerName} <br/>
-						<Button variant="outline-secondary" size="xs" onClick={onLogout}>logout</Button>
+						<Button variant="outline-secondary" size="xs" onClick={handleLogout}>logout</Button>
 					</center>)}</Col>
 					<Col xs={4} sm={8} className="TableHeader"
 						style={{display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -86,14 +86,14 @@ function App(props) {
 					</Col>
 					<Col xs={4} sm={2}>{roomId && (<center>
 						Room {roomId} <br/>
-						<Button  variant="outline-secondary" size="xs" onClick={onRoomExit}>leave</Button>
+						<Button  variant="outline-secondary" size="xs" onClick={handleRoomExit}>leave</Button>
 					</center>)}
 					</Col>
 				</Row>
 			</Container>
 			{ playerName ? (
 				<JoinRoom websocket={websocket} playerName={playerName} roomId={roomId}
-					onRoomJoined={onRoomJoined} />
+					onRoomJoined={handleRoomEntry} />
 			) : (
 				<Container><Row>
 					<Col lg={3} md={2} sm={1} />
@@ -101,7 +101,7 @@ function App(props) {
 						<center>
 						<h4>Registration</h4>
 						<p>Who will be captaining your Martian fleet?</p>
-						<form onSubmit={onEnterName} style={{ display: "flex" }}>
+						<form onSubmit={handleRegistration} style={{ display: "flex" }}>
 							<div>Name:</div>
 							<div style={{flex: "1"}} />
 							<input size={20} type="text" value={nameInput} onChange={handleInputChange} />
