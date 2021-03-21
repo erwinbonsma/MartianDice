@@ -17,7 +17,6 @@ export function JoinRoom(props) {
 	const joinRoom = (roomId) => {
 		const onMessage = (event) => {
 			const msg = JSON.parse(event.data);
-			console.log("onJoinRoom:", msg);
 
 			if (msg.type === "clients" && msg.game_id === roomId) {
 				props.onRoomJoined(msg.game_id);
@@ -40,14 +39,11 @@ export function JoinRoom(props) {
 		}));
 	}
 
-	const onJoinRoom = () => { joinRoom(roomInput); }
+	const handleJoinRoom = () => { joinRoom(roomInput); }
 	
-	const onCreateRoom = () => {
-		console.log("onCreateRoom");
-
+	const handleCreateRoom = () => {
 		const onMessage = (event) => {
 			const msg = JSON.parse(event.data);
-			console.log("onCreateRoom:", msg);
 
 			if (msg.type === "response" && msg.status === "ok") {
 				// Set input so that you can easily return after accidentally leaving the room
@@ -76,7 +72,9 @@ export function JoinRoom(props) {
 				<Container><Row>
 					<Col xs="auto">Join room</Col>
 					<Col><input type="text" value={roomInput} onChange={handleInputChange} size={6} /></Col>
-					<Col xs={4} sm={3}><Button style={{width: "100%"}} disabled={roomInput.length !== 4} onClick={onJoinRoom}>Join</Button></Col>
+					<Col xs={4} sm={3}>
+						<Button style={{width: "100%"}} disabled={roomInput.length !== 4} onClick={handleJoinRoom}>Join</Button>
+					</Col>
 				</Row></Container>
 				{ errorMessage &&
 					<p className="Error">{errorMessage}</p>
@@ -84,7 +82,9 @@ export function JoinRoom(props) {
 				<br />
 				<Container><Row>
 					<Col as="p">Create new room</Col>
-					<Col xs={4} sm={3}><Button style={{width: "100%"}} onClick={onCreateRoom}>Create</Button></Col>
+					<Col xs={4} sm={3}>
+						<Button style={{width: "100%"}} onClick={handleCreateRoom}>Create</Button>
+					</Col>
 				</Row></Container>
 			</Col>
 			<Col lg={3} md={2} />
