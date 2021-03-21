@@ -51,7 +51,7 @@ export function DiceRow(props) {
 			setInstanceId(props.instanceId);
 		} else {
 			setDiceRow(updateDiceRow(diceRow, props.dice));
-		}	
+		}
 	}, [props.instanceId, props.dice, instanceId, diceRow]);
 
 	const numDice = diceRow.length;
