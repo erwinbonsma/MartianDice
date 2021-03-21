@@ -246,7 +246,8 @@ export class GameRoom extends React.Component {
 					<Col className="GameAreaBorder" xs={12} lg={8} xl={7} ><div className="GameArea">
 						<GameHeader game={game} turnState={turnState} />
 						{ turnState &&
-							<PlayArea gameId={this.props.roomId} game={game} turnState={turnState} myTurn={this.myTurn}
+							<PlayArea gameId={this.props.roomId} instanceId={this.props.instanceId}
+								game={game} turnState={turnState} myTurn={this.myTurn}
 								onAnimationChange={this.handleAnimationChange}
 								websocket={this.props.websocket} />
 						}

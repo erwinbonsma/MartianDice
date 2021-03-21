@@ -8,6 +8,7 @@ import Row from 'react-bootstrap/Row';
 export function JoinRoom(props) {
 	const [roomInput, setRoomInput] = useState('');
 	const [errorMessage, setErrorMessage] = useState();
+	const [joinCount, setJoinCount] = useState(0);
 
 	const handleInputChange = (event) => {
 		setRoomInput(event.target.value);
@@ -31,6 +32,8 @@ export function JoinRoom(props) {
 
 		// Clear any lingering error message from previous attempt
 		setErrorMessage('');
+
+		setJoinCount(joinCount + 1);
 
 		props.websocket.send(JSON.stringify({
 			action: "join-room",
@@ -63,7 +66,8 @@ export function JoinRoom(props) {
 
 	return (
 		props.roomId ? (
-			<GameRoom roomId={props.roomId} playerName={props.playerName} websocket={props.websocket} />
+			<GameRoom roomId={props.roomId} playerName={props.playerName} instanceId={joinCount}
+				websocket={props.websocket} />
 		) : (
 		<Container><Row>
 			<Col lg={3} md={2} />

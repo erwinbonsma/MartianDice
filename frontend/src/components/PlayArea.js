@@ -17,24 +17,28 @@ function shuffleDice(diceDict) {
 	return diceList;
 }
 
+const INITIAL_STATE = {
+	instanceId: undefined,
+
+	plannedThrowAnimation: undefined,
+	diceThrow: {},
+	diceToAdd: [],
+
+	plannedMoveAnimation: undefined,
+	diceToMove: {},
+	combatants: {},
+	earthlings: {},
+	prevSideDice: {},
+
+	throwArea: { width: 0, height: 0 }
+}
+
 export class PlayArea extends React.Component {
 
 	constructor(props) {
 		super(props);
 
-		this.state = {
-			plannedThrowAnimation: undefined,
-			diceThrow: {},
-			diceToAdd: [],
-
-			plannedMoveAnimation: undefined,
-			diceToMove: {},
-			combatants: {},
-			earthlings: {},
-			prevSideDice: {},
-
-			throwArea: { width: 0, height: 0 }
-		}
+		this.state = INITIAL_STATE;
 
 		this.handleDiceClick = this.handleDiceClick.bind(this);
 		this.handlePassAnswer = this.handlePassAnswer.bind(this);
@@ -42,10 +46,12 @@ export class PlayArea extends React.Component {
 	}
 
 	get turnId() {
-		return `${this.props.game.round}-${this.props.game.active_player}`;
+		// Adding instanceId to ensure state of DiceRow children is cleared when rejoining a room
+		// (which might replay some history)
+		return `${this.props.game.round}-${this.props.game.active_player}-${this.props.instanceId}`;
 	}
 	get throwId() {
-		return `${this.turnInstanceId}-${this.props.turnState.throw_count}`;
+		return `${this.turnId}-${this.props.turnState.throw_count}`;
 	}
 	get phaseId() {
 		return `${this.throwId}-${this.props.turnState.phase}`;
@@ -101,9 +107,36 @@ export class PlayArea extends React.Component {
 		}
 	}
 
+	rejoinGame() {
+		console.log("Joining game in progress");
+
+		const sideDice = this.props.turnState.side_dice;
+		const earthlings = {};
+		const combatants = {};
+		Object.keys(sideDice).forEach(die => {
+			if (die === "Tank" || die === "Ray") {
+				combatants[die] = sideDice[die];
+			} else {
+				earthlings[die] = sideDice[die];
+			}
+		});
+
+		this.setState({
+			diceThrow: this.props.turnState.throw,
+			combatants,
+			earthlings,
+			prevSideDice: sideDice,
+			// Not strictly needed, but no harm
+			plannedThrowAnimation: this.throwId
+		});
+	}
+
 	prepareThrowAnimation() {
 		const throwId = this.throwId;
-		if (this.state.plannedThrowAnimation === throwId) {
+		if (
+			this.state.plannedThrowAnimation === throwId ||
+			this.props.turnState.phase !== "Thrown"
+		) {
 			return;
 		}
 
@@ -167,6 +200,15 @@ export class PlayArea extends React.Component {
 				plannedMoveAnimation: phaseId
 			});
 
+			return;
+		}
+
+		if (
+			this.props.turnState.phase !== "MovedTanks" &&
+			this.props.turnState.phase !== "PickedDice"
+		) {
+			// No move animation required. This may improve performance, but also avoids
+			// animations when joining a game in progress.
 			return;
 		}
 		
@@ -261,6 +303,8 @@ export class PlayArea extends React.Component {
 	}
 
 	componentWillUnmount() {
+		console.log("componentWillUnmount");
+
 		if (this.moveAnimation) {
 			clearTimeout(this.moveAnimation);
 			this.moveAnimation = undefined;
@@ -270,9 +314,23 @@ export class PlayArea extends React.Component {
 			clearTimeout(this.throwAnimation);
 			this.throwAnimation = undefined;
 		}
+
+		this.setState(INITIAL_STATE);
 	}
 
 	componentDidUpdate() {
+		if (this.props.instanceId !== this.state.instanceId) {
+			console.log("New PlayArea instance", this.props.turnState);
+
+			if (this.props.turnState.phase !== "Throwing") {
+				this.rejoinGame();
+			}
+
+			this.setState({
+				instanceId: this.props.instanceId
+			});
+		}
+
 		this.prepareThrowAnimation();
 		this.startThrowAnimation();
 
