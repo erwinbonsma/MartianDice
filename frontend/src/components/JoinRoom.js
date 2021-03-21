@@ -15,7 +15,7 @@ export function JoinRoom(props) {
 	};
 
 	const joinRoom = (roomId) => {
-		const onMessage = (event) => {
+		const handleMessage = (event) => {
 			const msg = JSON.parse(event.data);
 
 			if (msg.type === "clients" && msg.game_id === roomId) {
@@ -25,9 +25,9 @@ export function JoinRoom(props) {
 				setErrorMessage(msg.details);
 			}
 
-			props.websocket.removeEventListener('message', onMessage);
+			props.websocket.removeEventListener('message', handleMessage);
 		};
-		props.websocket.addEventListener('message', onMessage);
+		props.websocket.addEventListener('message', handleMessage);
 
 		// Clear any lingering error message from previous attempt
 		setErrorMessage('');
@@ -42,7 +42,7 @@ export function JoinRoom(props) {
 	const handleJoinRoom = () => { joinRoom(roomInput); }
 	
 	const handleCreateRoom = () => {
-		const onMessage = (event) => {
+		const handleMessage = (event) => {
 			const msg = JSON.parse(event.data);
 
 			if (msg.type === "response" && msg.status === "ok") {
@@ -52,9 +52,9 @@ export function JoinRoom(props) {
 				joinRoom(msg.room_id);
 			}
 
-			props.websocket.removeEventListener('message', onMessage);
+			props.websocket.removeEventListener('message', handleMessage);
 		};
-		props.websocket.addEventListener('message', onMessage);
+		props.websocket.addEventListener('message', handleMessage);
 
 		props.websocket.send(JSON.stringify({
 			action: "create-room",
