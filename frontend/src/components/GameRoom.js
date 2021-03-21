@@ -167,6 +167,8 @@ export class GameRoom extends React.Component {
 		}
 		
 		this.botMoveTrigger = setTimeout(() => {
+			this.botMoveTrigger = undefined;
+
 			this.props.websocket.send(JSON.stringify({
 				action: "bot-move",
 				game_id: this.props.roomId
