@@ -88,6 +88,8 @@ class GameHandler(BaseHandler):
 				return await self.send_error_message("Room not found")
 
 			await self.handle_game_command(cmd_message)
+		except HandlerException as e:
+			return await self.send_error_message(e.message)
 		except Exception as e:
 			self.logger.warn(e)
 			raise e
