@@ -96,7 +96,8 @@ async def play_game(args):
 					print(turn_state)
 					await asyncio.sleep(1)
 				state = message["state"]
-				if state["done"]:
+				if "winner" in state:
+					print(f"{state[winner]} has won!")
 					break
 				print(state["turn_state"])
 				if state["active_player"] == args.name:
