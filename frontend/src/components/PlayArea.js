@@ -220,14 +220,14 @@ export class PlayArea extends React.Component {
 		if (this.state.startMoveAnimation) {
 			console.log("Starting move animation");
 			this.props.onAnimationChange(true);
-			this.animateDiceMoves();
+			this.animateDiceMoves(true);
 			this.setState({
 				startMoveAnimation: false
 			});
 		}
 	}
 
-	animateDiceMoves() {
+	animateDiceMoves(isFirst) {
 		console.assert(!this.moveAnimation);
 
 		if (this.state.diceToMove.number) {
@@ -251,7 +251,7 @@ export class PlayArea extends React.Component {
 
 				this.moveAnimation = undefined;
 				this.animateDiceMoves();
-			}, 1000);
+			}, isFirst ? 100 : 1000);
 		} else {
 			this.props.onAnimationChange(false);
 			this.setState({

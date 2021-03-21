@@ -76,13 +76,14 @@ export class GameRoom extends React.Component {
 	handleAnimationChange(flag) {
 		console.log("GameRoom.isAnimating =", flag);
 		if (flag !== this.state.isAnimating) {
-			this.setState({
-				isAnimating: flag
-			});
 			if (flag) {
 				clearTimeout(this.turnAnimation);
 				this.turnAnimation = undefined;
 			}
+
+			this.setState({
+				isAnimating: flag
+			});	
 		}
 	}
 
@@ -130,7 +131,13 @@ export class GameRoom extends React.Component {
 			return;
 		}
 
-		console.log("Scheduling new turnAnimation");
+		// Do not make player wait unnecessarily before picking a die
+		const fastTransition = (
+			this.state.transitionTurns.length === 1 &&
+			this.state.futureGame.turn_state.phase === "PickDice"
+		);
+
+		console.log("Scheduling new turnAnimation", fastTransition ? "fast" : "slow");
 		this.turnAnimation = setTimeout(() => {
 			this.turnAnimation = undefined;
 
@@ -141,7 +148,7 @@ export class GameRoom extends React.Component {
 				};
 			});
 			console.log("performed transition");
-		}, 2000);
+		}, fastTransition ? 200 : 2000);
 	}
 
 	triggerBotMove() {
