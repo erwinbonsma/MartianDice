@@ -132,15 +132,20 @@ export class PlayArea extends React.Component {
 	}
 
 	clearThrow() {
-		if (
-			!this.props.turnState.throw &&
-			this.state.diceThrow &&
-			!isDictionaryEmpty(this.state.diceThrow)
-		) {
-			console.log("Clearing throw");
-			this.setState({
-				diceThrow: {}
-			});
+		if (!this.props.turnState.throw) {
+			if (this.state.diceThrow) {
+				console.log("Clearing throw");
+				this.setState({
+					diceThrow: undefined
+				});	
+			}
+		} else if (isDictionaryEmpty(this.props.turnState.throw)) {
+			if (!isDictionaryEmpty(this.state.diceThrow)) {
+				console.log("Emptying throw");
+				this.setState({
+					diceThrow: {}
+				});
+			}
 		}
 	}
 
@@ -367,21 +372,21 @@ export class PlayArea extends React.Component {
 					? (<div style={{ minHeight: this.state.throwArea.height }}>
 						<PassCheck onAnswer={this.handlePassAnswer} />
 					</div>)
-					: ( this.state.diceThrow && (
-						<Measure bounds onResize={this.handleDiceThrowAreaResize}>
+					: (<Measure bounds onResize={this.handleDiceThrowAreaResize}>
 							{({ measureRef }) => (<div style={{ minHeight: this.state.throwArea.height }}>
 								<div ref={measureRef}>
-									<DiceThrow diceThrow={this.state.diceThrow} pad={!turnDone}
-										instanceId={this.state.plannedThrowAnimation}
-										onAnimationChange={this.handleThrowAnimationChange}
-										onDiceClick={this.acceptDiceClick ? this.handleDiceClick : undefined} />
+									{ (this.state.diceThrow && !isDictionaryEmpty(this.state.diceThrow)) &&
+										<DiceThrow diceThrow={this.state.diceThrow} pad={!turnDone}
+											instanceId={this.state.plannedThrowAnimation}
+											onAnimationChange={this.handleThrowAnimationChange}
+											onDiceClick={this.acceptDiceClick ? this.handleDiceClick : undefined} />
+									}
 								</div>
-								{ turnDone && (
+								{ turnDone &&
 									<TurnResult score={turnState.score} end_cause={turnState.end_cause} />
-								)}
+								}
 							</div>)}
-						</Measure>
-					))
+					</Measure>)
 				}
 				</div>
 				<BattleZone combatants={this.state.combatants} instanceId={this.turnId} />
