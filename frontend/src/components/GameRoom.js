@@ -241,9 +241,8 @@ export class GameRoom extends React.Component {
 
 		return (
 			<div>
-				<Container fluid className="Room"><Row>
-					<Col xs={0} xl={1} />
-					<Col className="GameAreaBorder" xs={12} lg={8} xl={7} ><div className="GameArea">
+				<Container className="Room"><Row>
+					<Col className="GameAreaBorder" xs={12} lg={8} ><div className="GameArea">
 						<GameHeader game={game} turnState={turnState} />
 						{ turnState &&
 							<PlayArea gameId={this.props.roomId} instanceId={this.props.instanceId}
@@ -259,7 +258,7 @@ export class GameRoom extends React.Component {
 						</div>) }
 						{ !game && <GameRules/> }
 					</div></Col>
-					<Col className="PlayersAreaBorder" xs={12} lg={4} xl={3} style={{height: "80vh"}}><div className="PlayersArea">
+					<Col className="PlayersAreaBorder" xs={12} lg={4} style={{height: "80vh"}}><div className="PlayersArea">
 						{ (game && turnState) ? 
 							<PlayerList players={game.players} scores={game.scores} activePlayer={game.active_player}
 								offlinePlayers={offlinePlayers} observers={observers} /> :
@@ -269,7 +268,6 @@ export class GameRoom extends React.Component {
 						}
 						<Chat websocket={this.props.websocket} roomId={this.props.roomId} />
 					</div></Col>
-					<Col xs={0} xl={1} />
 				</Row></Container>
 			</div>
 		);		
