@@ -89,6 +89,7 @@ class GameHandler(BaseHandler):
 
 			await self.handle_game_command(cmd_message)
 		except HandlerException as e:
+			self.logger.warn(e.message)
 			return await self.send_error_message(e.message)
 		except Exception as e:
 			self.logger.warn(e)

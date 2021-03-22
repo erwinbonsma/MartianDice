@@ -1,6 +1,10 @@
 import json
-from service.BaseHandler import GameHandler, ok_message, error_message
+from service.BaseHandler import GameHandler, HandlerException, ok_message
 from service.GameState import GameState
+
+MAX_NAME_LENGTH = 12
+MAX_CLIENTS_PER_ROOM = 6
+MAX_BOTS_PER_ROOM = 6
 
 class MetaGameHandler(GameHandler):
 	"""Handles everything about the game/room, except the game play."""
@@ -38,23 +42,26 @@ class MetaGameHandler(GameHandler):
 		})
 		await self.broadcast(message)
 
-	async def join_room(self, game_id, client_id):
+	async def join_room(self, room_id, client_id):
 		# Avoid possible bot name clash here, as this check is cheap
 		if client_id.startswith("Bot-"):
-			return await self.send_error_message("Sorry, that name is restricted to non-sentients")
+			raise HandlerException(f"Name {client_id} is restricted to non-sentients")
 
-		if len(client_id) == 0 or len(client_id) > 12:
-			return await self.send_error_message("Invalid name length")
+		if len(client_id) == 0 or len(client_id) > MAX_NAME_LENGTH:
+			raise HandlerException("Invalid name length")
 
-		if client_id in self.clients:
-			return await self.send_error_message(f"Name {client_id} already present in Room {game_id}")
+		if client_id in self.clients.values():
+			raise HandlerException(f"Name {client_id} already present in Room {room_id}")
 
-		if not self.db.set_room_for_connection(self.connection, game_id):
-			return await self.send_error_message(f"Failed to link connection to Room {game_id}")
+		if len(self.clients) >= MAX_CLIENTS_PER_ROOM:
+			raise HandlerException(f"Room {room_id} is at its player capacity limit")
+
+		if not self.db.set_room_for_connection(self.connection, room_id):
+			raise HandlerException(f"Failed to link connection to Room {room_id}")
 
 		updated_clients = self.game.add_client(self.connection, client_id)
 		if updated_clients is None:
-			return await self.send_error_message("Failed to join game. Please try again")
+			raise HandlerException("Failed to join game. Please try again")
 		self.clients = updated_clients
 
 		host = self.game.host()
@@ -113,6 +120,9 @@ class MetaGameHandler(GameHandler):
 
 	async def add_bot(self, bot_behaviour):
 		self.check_can_configure_game("add bot")
+
+		if len(self.game.bots()) >= MAX_BOTS_PER_ROOM:
+			raise HandlerException(f"Room {self.game.game_id} is at its bot capacity limit")
 
 		bot_name = self.next_bot_name()
 		bots = self.game.add_bot(bot_name, bot_behaviour)
