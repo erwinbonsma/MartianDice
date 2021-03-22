@@ -7,7 +7,7 @@ export function GameResult(props) {
 
 	return (<>
 		<h4>Results</h4>
-		<div style={{margin: "0 1em"}}>
+		<div style={{padding: "0 1em 0.2em"}}>
 		{	ranked.map(result => {
 				const playerName = result[0];
 				const score = result[1];
