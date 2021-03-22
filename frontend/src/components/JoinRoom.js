@@ -11,7 +11,7 @@ export function JoinRoom(props) {
 	const [joinCount, setJoinCount] = useState(0);
 
 	const handleInputChange = (event) => {
-		setRoomInput(event.target.value);
+		setRoomInput(event.target.value.toUpperCase());
 		setErrorMessage('');
 	};
 
