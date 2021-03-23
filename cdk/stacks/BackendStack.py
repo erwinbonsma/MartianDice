@@ -62,6 +62,7 @@ class BackendStack(core.Stack):
 			handler = 'WebsocketHandlers.handle_meta_game',
 		)
 		rooms_table.grant_read_write_data(meta_game_handler)
+		games_table.grant_read_data(meta_game_handler)
 
 		game_play_handler = _lambda.Function(
 			self, 'GamePlayLambda',
