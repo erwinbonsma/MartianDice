@@ -43,11 +43,17 @@ Done:
 -	Let host start new game after game completed
 -	Show fancy game result
 -	Improve button colors
-
-TODO:
--	Limit number of players
--	Enable TTL for Room table
--	Let host configure behaviour for disconnect players: auto-pass/wait
--	Improve server logging
 -	Improve play animations:
 	-	Animate die addition/removal
+-	Limit number of players
+-	Fixed: permission issue on AWS
+-	Updated favicon, logos and metadata
+
+TODO:
+-	Enable TTL for Room table
+-	Handle disconnected players
+	-	Let host/other players force a move
+	-	Let host configure behaviour for disconnect players: auto-pass/wait
+-	Improve disconnection detection
+-	Improve server logging
+-	Clean up client logging
