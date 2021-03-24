@@ -15,6 +15,10 @@ const AUDIO_URLS = {
 	Ray: "ufo.mp3"
 };
 
+const THROW_DELAY = 500;
+const FIRST_MOVE_DELAY = 100;
+const MOVE_DELAY = 750;
+
 function shuffleDice(diceDict) {
 	const diceList = Object.entries(diceDict).map(
 		([die, number]) => Array.from({length: number}, () => die)
@@ -204,7 +208,7 @@ export class PlayArea extends React.Component {
 
 				this.throwAnimation = undefined;
 				this.animateThrow();
-			}, 500);
+			}, THROW_DELAY);
 		} else {
 			console.log("Signal throw animation end");
 			this.props.onAnimationChange(false);
@@ -319,7 +323,7 @@ export class PlayArea extends React.Component {
 
 				this.moveAnimation = undefined;
 				this.animateDiceMoves();
-			}, isFirst ? 100 : 1000);
+			}, isFirst ? FIRST_MOVE_DELAY : MOVE_DELAY);
 		} else {
 			this.props.onAnimationChange(false);
 			this.setState({

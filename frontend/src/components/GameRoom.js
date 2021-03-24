@@ -11,6 +11,9 @@ import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 
+const FIRST_TRANSITION_DELAY = 100;
+const TRANSITION_DELAY = 1000;
+
 export class GameRoom extends React.Component {
 
 	constructor(props) {
@@ -148,7 +151,7 @@ export class GameRoom extends React.Component {
 				};
 			});
 			console.log("performed transition");
-		}, fastTransition ? 200 : 2000);
+		}, fastTransition ? FIRST_TRANSITION_DELAY : TRANSITION_DELAY);
 	}
 
 	triggerBotMove() {
