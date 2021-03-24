@@ -329,7 +329,6 @@ export class PlayArea extends React.Component {
 	}
 
 	componentDidMount() {
-		console.log("componentDidMount", this.props.instanceId, this.state.instanceId);
 		if (this.props.instanceId !== this.state.instanceId) {
 			console.log("New PlayArea instance", this.props.turnState);
 
@@ -344,8 +343,6 @@ export class PlayArea extends React.Component {
 	}
 
 	componentWillUnmount() {
-		console.log("componentWillUnmount");
-
 		if (this.moveAnimation) {
 			clearTimeout(this.moveAnimation);
 			this.moveAnimation = undefined;
