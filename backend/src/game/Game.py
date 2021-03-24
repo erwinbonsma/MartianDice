@@ -56,7 +56,7 @@ def show_state(state: TurnState):
 		return
 
 	if state.phase == TurnPhase.PickedDice:
-		print("%s selected" % (state.last_pick.name))
+		print("%s selected" % (state.picked.name))
 		print()
 		show_side_dice(state.side_dice)
 		return

@@ -252,7 +252,7 @@ class TurnState:
 			side_dice = self.side_dice.add(selected_die, self.throw[selected_die]),
 			phase = TurnPhase.PickedDice
 		)
-		new_state.last_pick = selected_die
+		new_state.picked = selected_die
 
 		return new_state
 
@@ -297,6 +297,8 @@ class TurnState:
 		if self.phase == TurnPhase.Done:
 			state["score"] = self.score
 			state["end_cause"] = self.end_cause
+		if self.phase == TurnPhase.PickedDice:
+			state['picked'] = self.picked.name
 
 		return state
 

@@ -1,3 +1,4 @@
+import { AudioPlayer } from './AudioPlayer';
 import { AbductionZone } from './AbductionZone';
 import { BattleZone } from './BattleZone';
 import { PassCheck } from './PassCheck';
@@ -6,6 +7,13 @@ import { TurnResult } from './TurnResult';
 import { applyDieDelta, isDictionaryEmpty, shuffle } from '../utils';
 import Measure from 'react-measure';
 import React from 'react';
+
+const AUDIO_URLS = {
+	Chicken: "kip.mp3",
+	Cow: "cow.mp3",
+	Human: "huh.mp3",
+	Ray: "ufo.mp3"
+};
 
 function shuffleDice(diceDict) {
 	const diceList = Object.entries(diceDict).map(
@@ -391,6 +399,7 @@ export class PlayArea extends React.Component {
 				</div>
 				<BattleZone combatants={this.state.combatants} instanceId={this.turnId} />
 				<AbductionZone earthlings={this.state.earthlings} instanceId={this.turnId} />
+				<AudioPlayer tracks={AUDIO_URLS} playTrack={turnState?.picked} />
 			</div>
 		)	
 	}
