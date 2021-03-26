@@ -9,7 +9,7 @@ const AUDIO_URLS = {
 	Chicken: "kip.mp3",
 	Cow: "cow.mp3",
 	Human: "huh.mp3",
-	Ray: "ufo.mp3",
+	Ray: "ray.mp3",
 	Success: "win.mp3",
 	Fail: "die.mp3"
 };
