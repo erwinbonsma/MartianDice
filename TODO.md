@@ -48,8 +48,11 @@ Done:
 -	Limit number of players
 -	Fixed: permission issue on AWS
 -	Updated favicon, logos and metadata
+-	Added audio
+	-	Enable audio on Safari/Chrome on iPad
 
 TODO:
+-	Add audio on successful/failed abductions
 -	Enable TTL for Room table
 -	Handle disconnected players
 	-	Let host/other players force a move
@@ -57,3 +60,4 @@ TODO:
 -	Improve disconnection detection
 -	Improve server logging
 -	Clean up client logging
+-	Add license + credits

@@ -8,13 +8,6 @@ import { applyDieDelta, isDictionaryEmpty, shuffle } from '../utils';
 import Measure from 'react-measure';
 import React from 'react';
 
-const AUDIO_URLS = {
-	Chicken: "kip.mp3",
-	Cow: "cow.mp3",
-	Human: "huh.mp3",
-	Ray: "ufo.mp3"
-};
-
 const THROW_DELAY = 500;
 const FIRST_MOVE_DELAY = 100;
 const MOVE_DELAY = 750;
@@ -400,7 +393,7 @@ export class PlayArea extends React.Component {
 				</div>
 				<BattleZone combatants={this.state.combatants} instanceId={this.turnId} />
 				<AbductionZone earthlings={this.state.earthlings} instanceId={this.turnId} />
-				<AudioPlayer tracks={AUDIO_URLS} playTrack={turnState?.picked} />
+				<AudioPlayer audioTracks={this.props.audioTracks} playTrack={turnState?.picked} />
 			</div>
 		)	
 	}

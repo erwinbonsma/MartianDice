@@ -5,10 +5,18 @@ import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 
+const AUDIO_URLS = {
+	Chicken: "kip.mp3",
+	Cow: "cow.mp3",
+	Human: "huh.mp3",
+	Ray: "ufo.mp3"
+};
+
 export function JoinRoom(props) {
 	const [roomInput, setRoomInput] = useState('');
 	const [errorMessage, setErrorMessage] = useState();
 	const [joinCount, setJoinCount] = useState(0);
+	const [audioTracks, setAudioTracks] = useState();
 
 	const handleInputChange = (event) => {
 		setRoomInput(event.target.value.toUpperCase());
@@ -42,9 +50,46 @@ export function JoinRoom(props) {
 		}));
 	}
 
-	const handleJoinRoom = () => { joinRoom(roomInput); }
+	const initAudioTracks = () => {
+		if (audioTracks) {
+			return;
+		}
+
+		const tracks = Object.entries(AUDIO_URLS).reduce(
+			(dict, [key, url]) => {
+				dict[key] = new Audio(url);
+				return dict;
+			}, {});
+
+		// Many browsers require user interaction before audio can be played. So when user clicks
+		// button, initialise all audio tracks by playing them (with zero volume).
+		Object.entries(tracks).forEach(([key, audio]) => {
+			const origVolume = audio.volume;
+			const playPromise = audio.play();
+			audio.volume = 0;
+			if (playPromise) {
+				playPromise.then(_ => {
+					audio.pause();
+					audio.volume = origVolume;
+					audio.currentTime = 0;
+				})
+				.catch(error => {
+					console.error(`Failed to play/pause ${key}: ${error}`);
+				});
+			}
+		});
+
+		setAudioTracks(tracks);
+	}
+
+	const handleJoinRoom = () => {
+		initAudioTracks();
+		joinRoom(roomInput);
+	}
 	
 	const handleCreateRoom = () => {
+		initAudioTracks();
+
 		const handleMessage = (event) => {
 			const msg = JSON.parse(event.data);
 
@@ -67,7 +112,7 @@ export function JoinRoom(props) {
 	return (
 		props.roomId ? (
 			<GameRoom roomId={props.roomId} playerName={props.playerName} instanceId={joinCount}
-				websocket={props.websocket} />
+				audioTracks={audioTracks} websocket={props.websocket} />
 		) : (
 		<Container><Row>
 			<Col lg={3} md={2} />
