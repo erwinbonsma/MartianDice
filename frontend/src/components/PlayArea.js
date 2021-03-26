@@ -366,6 +366,7 @@ export class PlayArea extends React.Component {
 	render() {
 		const turnState = this.props.turnState;
 		const turnDone = (turnState.phase === "Done");
+		const playTrack = turnDone ? (turnState.score > 0 ? "Success" : "Fail") : turnState?.picked;
 
 		return (
 			<div className="PlayArea">
@@ -393,7 +394,7 @@ export class PlayArea extends React.Component {
 				</div>
 				<BattleZone combatants={this.state.combatants} instanceId={this.turnId} />
 				<AbductionZone earthlings={this.state.earthlings} instanceId={this.turnId} />
-				<AudioPlayer audioTracks={this.props.audioTracks} playTrack={turnState?.picked} />
+				<AudioPlayer audioTracks={this.props.audioTracks} playTrack={playTrack} />
 			</div>
 		)	
 	}
