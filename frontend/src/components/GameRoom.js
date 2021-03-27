@@ -78,7 +78,6 @@ export class GameRoom extends React.Component {
 	}
 
 	handleAnimationChange(flag) {
-		console.log("GameRoom.isAnimating =", flag);
 		if (flag !== this.state.isAnimating) {
 			if (flag) {
 				clearTimeout(this.turnAnimation);
@@ -121,17 +120,11 @@ export class GameRoom extends React.Component {
 	}
 
 	animateTransitions() {
-		if (this.turnAnimation) {
-			console.log("turnAnimation in progress");
-			return;
-		}
-
-		if (this.state.transitionTurns.length === 0) {
-			console.log("No more transitions");
-			return;
-		}
-		if (this.state.isAnimating) {
-			console.log("Animation in progress");
+		if (
+			this.turnAnimation ||
+			this.state.transitionTurns.length === 0 ||
+			this.state.isAnimating
+		) {
 			return;
 		}
 

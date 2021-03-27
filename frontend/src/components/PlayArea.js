@@ -139,14 +139,12 @@ export class PlayArea extends React.Component {
 	clearThrow() {
 		if (!this.props.turnState.throw) {
 			if (this.state.diceThrow) {
-				console.log("Clearing throw");
 				this.setState({
 					diceThrow: undefined
 				});	
 			}
 		} else if (isDictionaryEmpty(this.props.turnState.throw)) {
 			if (!isDictionaryEmpty(this.state.diceThrow)) {
-				console.log("Emptying throw");
 				this.setState({
 					diceThrow: {}
 				});
@@ -180,7 +178,6 @@ export class PlayArea extends React.Component {
 
 	startThrowAnimation() {
 		if (this.state.startThrowAnimation) {
-			console.log("Starting throw animation");
 			this.props.onAnimationChange(true);
 			this.animateThrow();
 			this.setState({
@@ -203,7 +200,6 @@ export class PlayArea extends React.Component {
 				this.animateThrow();
 			}, THROW_DELAY);
 		} else {
-			console.log("Signal throw animation end");
 			this.props.onAnimationChange(false);
 		}
 	}
@@ -283,7 +279,6 @@ export class PlayArea extends React.Component {
 
 	startMoveAnimation() {
 		if (this.state.startMoveAnimation) {
-			console.log("Starting move animation");
 			this.props.onAnimationChange(true);
 			this.animateDiceMoves(true);
 			this.setState({
