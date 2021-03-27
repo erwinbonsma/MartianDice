@@ -394,7 +394,9 @@ export class PlayArea extends React.Component {
 				</div>
 				<BattleZone combatants={this.state.combatants} instanceId={this.turnId} />
 				<AbductionZone earthlings={this.state.earthlings} instanceId={this.turnId} />
-				<AudioPlayer audioTracks={this.props.audioTracks} playTrack={playTrack} />
+				{ this.props.enableSound &&
+					<AudioPlayer audioTracks={this.props.audioTracks} playTrack={playTrack} />
+				}
 			</div>
 		)	
 	}

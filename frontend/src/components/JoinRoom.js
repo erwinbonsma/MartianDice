@@ -16,6 +16,7 @@ const AUDIO_URLS = {
 
 export function JoinRoom(props) {
 	const [roomInput, setRoomInput] = useState('');
+	const [enableSound, setEnableSound] = useState(true);
 	const [errorMessage, setErrorMessage] = useState();
 	const [joinCount, setJoinCount] = useState(0);
 	const [audioTracks, setAudioTracks] = useState();
@@ -88,6 +89,10 @@ export function JoinRoom(props) {
 		initAudioTracks();
 		joinRoom(roomInput);
 	}
+
+	const handleSoundToggle = () => {
+		setEnableSound(!enableSound);
+	}
 	
 	const handleCreateRoom = () => {
 		initAudioTracks();
@@ -114,29 +119,37 @@ export function JoinRoom(props) {
 	return (
 		props.roomId ? (
 			<GameRoom roomId={props.roomId} playerName={props.playerName} instanceId={joinCount}
-				audioTracks={audioTracks} websocket={props.websocket} />
+				audioTracks={audioTracks} enableSound={enableSound} websocket={props.websocket} />
 		) : (
 		<Container><Row>
 			<Col lg={3} md={2} />
 			<Col>
-				<h4>Please proceed to a room</h4><br />
-				<Container><Row>
-					<Col xs="auto">Join room</Col>
-					<Col><input type="text" value={roomInput} onChange={handleInputChange} size={6} /></Col>
-					<Col xs={4} sm={3}>
-						<Button style={{width: "100%"}} disabled={roomInput.length !== 4} onClick={handleJoinRoom}>Join</Button>
-					</Col>
-				</Row></Container>
-				{ errorMessage &&
-					<p className="Error">{errorMessage}</p>
-				}
-				<br />
-				<Container><Row>
-					<Col as="p">Create new room</Col>
-					<Col xs={4} sm={3}>
-						<Button style={{width: "100%"}} onClick={handleCreateRoom}>Create</Button>
-					</Col>
-				</Row></Container>
+				<Container>
+					<Row className="FormRow"><Col as="h4">Please proceed to a room</Col></Row>
+					<Row className="FormRow">
+						<Col xs="auto">Join room</Col>
+						<Col><input type="text" value={roomInput} onChange={handleInputChange} size={6} /></Col>
+						<Col xs={4} sm={3}>
+							<Button style={{width: "100%"}} disabled={roomInput.length !== 4} onClick={handleJoinRoom}>Join</Button>
+						</Col>
+					</Row>
+					{ errorMessage &&
+						<Row className="FormRow"><Col as="p" className="Error">{errorMessage}</Col></Row>
+					}
+					<Row className="FormRow">
+						<Col as="p">Create new room</Col>
+						<Col xs={4} sm={3}>
+							<Button style={{width: "100%"}} onClick={handleCreateRoom}>Create</Button>
+						</Col>
+					</Row>
+					<Row className="FormRow">
+						<Col as="label" htmlFor="soundToggle">Sound effects</Col>
+						<Col xs={4} sm={3}>
+							<center><input type="checkbox" name="sound" id="soundToggle"
+								checked={enableSound} onChange={handleSoundToggle} /></center>
+						</Col>
+					</Row>
+				</Container>
 			</Col>
 			<Col lg={3} md={2} />
 		</Row></Container>

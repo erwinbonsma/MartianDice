@@ -251,7 +251,7 @@ export class GameRoom extends React.Component {
 							<PlayArea gameId={this.props.roomId} instanceId={this.props.instanceId}
 								game={game} turnState={turnState} myTurn={this.myTurn}
 								onAnimationChange={this.handleAnimationChange}
-								audioTracks={this.props.audioTracks}
+								audioTracks={this.props.audioTracks} enableSound={this.props.enableSound}
 								websocket={this.props.websocket} />
 						}
 						{ (game && !turnState) && <GameResult game={game} />}
