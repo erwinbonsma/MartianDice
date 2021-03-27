@@ -3,11 +3,12 @@ import json
 from service.BaseHandler import GameHandler, HandlerException, ok_message, error_message
 from service.GameState import GameState
 from game.DataTypes import TurnState, TurnPhase, DieFace
-from game.Game import RandomPlayer, DefensivePlayer
+from game.Game import RandomPlayer, AggressivePlayer, DefensivePlayer
 from game.OptimalPlay import OptimalActionSelector
 
 bot_behaviours = {
 	"random": RandomPlayer(),
+	"aggressive": AggressivePlayer(),
 	"defensive": DefensivePlayer(),
 	"smart": OptimalActionSelector()
 }

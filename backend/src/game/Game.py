@@ -15,13 +15,43 @@ class RandomPlayer:
 	def __str__(self):
 		return "RandomPlayer"
 
+class AggressivePlayer:
+
+	def select_die(self, state: TurnState):
+		"""
+		Always select the maximum number of earthlings possible that does not lead to inevitable
+		defeat.
+		"""
+		rays_shortage = state.side_dice[DieFace.Tank] - state.side_dice[DieFace.Ray]
+		max_earthlings = state.throw.num_dice - rays_shortage
+
+		options = [e for e in state.selectable_earthlings if state.throw[e] <= max_earthlings]
+		if len(options) == 0:
+			return DieFace.Ray
+
+		max_size = max(state.throw[e] for e in options)
+		return choice([e for e in options if state.throw[e] == max_size])
+
+	def should_stop(self, state: TurnState):
+		"""Only stop when no more move is possible"""
+		return False
+
+	def __str__(self):
+		return "AggressivePlayer"
+
 class DefensivePlayer:
 
 	def select_die(self, state: TurnState):
+		"""
+		Always select a ray when there are more tanks than rays. Otherwise, collect the most earthlings.
+		"""
 		if state.throw[DieFace.Ray] > 0 and state.side_dice[DieFace.Tank] > state.side_dice[DieFace.Ray]:
 			return DieFace.Ray
 		options = state.selectable_earthlings
-		return choice(options) if len(options) > 0 else DieFace.Ray
+		if len(options) == 0:
+			return DieFace.Ray
+		max_size = max(state.throw[earthling] for earthling in options)
+		return choice([earthling for earthling in options if state.throw[earthling] == max_size])
 
 	def should_stop(self, state: TurnState):
 		buffer = state.side_dice[DieFace.Ray] - state.side_dice[DieFace.Tank]
@@ -102,7 +132,7 @@ if __name__ == '__main__':
 
 	play_turn(action_selector, state_listener = show_state)
 
-	for player in [RandomPlayer(), DefensivePlayer()]:
-		num_turns = 100
+	for player in [RandomPlayer(), DefensivePlayer(), AggressivePlayer()]:
+		num_turns = 1000
 		summed_score = sum(play_turn(player) for _ in range(num_turns))
 		print("Average score of %s" % (player), summed_score / num_turns)

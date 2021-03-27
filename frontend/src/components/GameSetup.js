@@ -34,6 +34,7 @@ export function GameSetup(props) {
 						<div>
 							<DropdownButton variant="secondary" title="Add bot" onSelect={props.onAddBot} style={{margin: "0.3em 0 0.5em"}}>
 								<Dropdown.Item eventKey="random">Random</Dropdown.Item>
+								<Dropdown.Item eventKey="aggressive">Aggressive</Dropdown.Item>
 								<Dropdown.Item eventKey="defensive">Defensive</Dropdown.Item>
 								<Dropdown.Item eventKey="smart">Smart</Dropdown.Item>
 							</DropdownButton>

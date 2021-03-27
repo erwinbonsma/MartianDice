@@ -1,5 +1,6 @@
 import json
 from service.BaseHandler import GameHandler, HandlerException, ok_message
+from service.GamePlayHandler import bot_behaviours
 from service.GameState import GameState
 
 MAX_NAME_LENGTH = 12
@@ -123,6 +124,9 @@ class MetaGameHandler(GameHandler):
 
 		if len(self.game.bots()) >= MAX_BOTS_PER_ROOM:
 			raise HandlerException(f"Room {self.game.game_id} is at its bot capacity limit")
+
+		if not bot_behaviour in bot_behaviours:
+			raise HandlerException(f"Unknown bot behaviour '{bot_behaviour}'")
 
 		bot_name = self.next_bot_name()
 		bots = self.game.add_bot(bot_name, bot_behaviour)
