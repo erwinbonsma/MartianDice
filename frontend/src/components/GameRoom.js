@@ -11,7 +11,8 @@ import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 
-const FIRST_TRANSITION_DELAY = 100;
+const FAST_TRANSITION_DELAY = 100;
+const SLOW_TRANSITION_DELAY = 2500;
 const TRANSITION_DELAY = 1000;
 
 export class GameRoom extends React.Component {
@@ -134,13 +135,19 @@ export class GameRoom extends React.Component {
 			return;
 		}
 
-		// Do not make player wait unnecessarily before picking a die
-		const fastTransition = (
+		let transitionDelay = TRANSITION_DELAY; // Default
+
+		if (
 			this.state.transitionTurns.length === 1 &&
 			this.state.futureGame.turn_state?.phase === "PickDice"
-		);
+		) {
+			// Do not make player wait unnecessarily before picking a die
+			transitionDelay = FAST_TRANSITION_DELAY;
+		} else if (this.state.transitionTurns[0].phase === "Done") {
+			// Show turn result for a bit longer 
+			transitionDelay = SLOW_TRANSITION_DELAY;
+		}
 
-		console.log("Scheduling new turnAnimation", fastTransition ? "fast" : "slow");
 		this.turnAnimation = setTimeout(() => {
 			this.turnAnimation = undefined;
 
@@ -150,8 +157,7 @@ export class GameRoom extends React.Component {
 					transitionTurns: state.transitionTurns.slice(1)
 				};
 			});
-			console.log("performed transition");
-		}, fastTransition ? FIRST_TRANSITION_DELAY : TRANSITION_DELAY);
+		}, transitionDelay);
 	}
 
 	triggerBotMove() {
