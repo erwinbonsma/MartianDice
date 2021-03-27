@@ -1,6 +1,7 @@
 from enum import IntEnum
 import jsonpickle
 import random
+import time
 from game.DataTypes import TurnState, TurnPhase
 
 TARGET_SCORE = 25
@@ -17,6 +18,7 @@ class GameState:
 		self.turn_state = TurnState()
 		self.from_hash = None
 		self.winner = None
+		self.last_update = time.time()
 
 	@property
 	def done(self):
@@ -32,6 +34,10 @@ class GameState:
 		assert(not self.done)
 		return (not self.turn_state.done) and self.turn_state.awaitsInput
 
+	@property
+	def age_in_seconds(self):
+		return time.time() - self.last_update
+
 	def set_from_hash(self, from_hash):
 		self.from_hash = from_hash
 
@@ -42,6 +48,7 @@ class GameState:
 			self.turn_state = self.turn_state.next(input)
 		else:
 			self._end_turn()
+		self.last_update = time.time()
 
 	def _end_turn(self):
 		assert(not self.done)
@@ -64,7 +71,8 @@ class GameState:
 		state = {
 			"players": self.players,
 			"round": self.round,
-			"scores": self.scores
+			"scores": self.scores,
+			"last_update": int(self.last_update)
 		}
 		if not self.done:
 			state["turn_state"] = self.turn_state

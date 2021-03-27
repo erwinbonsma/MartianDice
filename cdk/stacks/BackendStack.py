@@ -109,6 +109,7 @@ class BackendStack(core.Stack):
 		api.add_route('start-game', integration = game_play_integration)
 		api.add_route('move', integration = game_play_integration)
 		api.add_route('bot-move', integration = game_play_integration)
+		api.add_route('end-turn', integration = game_play_integration)
 
 		websocket_send_statement = iam.PolicyStatement(
 			effect = iam.Effect.ALLOW,

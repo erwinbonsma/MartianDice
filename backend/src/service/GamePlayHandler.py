@@ -6,6 +6,8 @@ from game.DataTypes import TurnState, TurnPhase, DieFace
 from game.Game import RandomPlayer, AggressivePlayer, DefensivePlayer
 from game.OptimalPlay import OptimalActionSelector
 
+MAX_MOVE_TIME_IN_SECONDS = 30
+
 bot_behaviours = {
 	"random": RandomPlayer(),
 	"aggressive": AggressivePlayer(),
@@ -36,6 +38,13 @@ class GamePlayHandler(GameHandler):
 		self.check_expect_move(game_state)
 		if not game_state.active_player in bots:
 			raise HandlerException("Bot move initiated while it's not a bot's turn")
+
+	def check_can_end_turn(self, game_state):
+		if game_state.age_in_seconds < MAX_MOVE_TIME_IN_SECONDS:
+			raise HandlerException("Cannot forcefully end the current turn yet")
+
+		if game_state.active_player in self.game.bots():
+			raise HandlerException("Can only end turns of human players")
 
 	async def update_state_until_blocked(self, game_state):
 		turn_state_transitions = []
@@ -88,7 +97,15 @@ class GamePlayHandler(GameHandler):
 		else:
 			bot_move = action_selector.should_stop(turn_state)
 
+		game_state = self.game.state()
 		await self.handle_move(game_state, bot_move)
+
+	async def end_turn(self):
+		game_state = self.game.state()
+
+		self.check_can_end_turn(game_state)
+
+		await self.handle_move(game_state, "end-turn")
 
 	async def start_game(self):
 		self.check_can_configure_game("start game")
@@ -110,5 +127,8 @@ class GamePlayHandler(GameHandler):
 
 		if cmd == "bot-move":
 			return await self.bot_move()
+
+		if cmd == "end-turn":
+			return await self.end_turn()
 
 		logger.warn(f"Urecognized command {cmd}")

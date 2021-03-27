@@ -154,21 +154,23 @@ class TurnState:
 	def next(self, input_value = None, config = DEFAULT_CONFIG):
 		assert(self.awaitsInput != (input_value is None))
 
+		if input_value == "end-turn":
+			return self._end_turn("Turn forcefully ended")
 		if self.phase == TurnPhase.Throwing:
 			throw = config["throw_fun"](self.side_dice)
 			return self._set_throw(throw)
-		elif self.phase == TurnPhase.Thrown:
+		if self.phase == TurnPhase.Thrown:
 			return self._move_tanks()
-		elif self.phase == TurnPhase.MovedTanks:
+		if self.phase == TurnPhase.MovedTanks:
 			return self._check_post_throw_exit()
-		elif self.phase == TurnPhase.PickDice:
+		if self.phase == TurnPhase.PickDice:
 			return self._handle_pick(input_value)
-		elif self.phase == TurnPhase.PickedDice:
+		if self.phase == TurnPhase.PickedDice:
 			return self._check_post_pick_exit()
-		elif self.phase == TurnPhase.CheckPass:
+		if self.phase == TurnPhase.CheckPass:
 			return self._check_player_exit(input_value)
-		else:
-			assert(False)
+
+		assert(False)
 
 	def _end_turn(self, end_cause, clear_throw = True):
 		new_state = TurnState(

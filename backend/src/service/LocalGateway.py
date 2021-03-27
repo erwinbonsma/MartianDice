@@ -41,7 +41,7 @@ class LocalGateway:
 
 				if cmd == "create-room":
 					cmd_handler = RegistrationHandler(self.db, self.comms, socket_id)
-				elif cmd == "start-game" or cmd == "move" or cmd == "bot-move":
+				elif cmd == "start-game" or cmd == "move" or cmd == "bot-move" or cmd == "end-turn":
 					cmd_handler = GamePlayHandler(self.db, self.comms, socket_id)
 				else:
 					cmd_handler = MetaGameHandler(self.db, self.comms, socket_id)

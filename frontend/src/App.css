@@ -57,6 +57,10 @@ h5 {
 	color: #802020
 }
 
+.Warning {
+	color: #b0b020
+}
+
 .Chat {
 	font-size: medium;
 	flex: 1 2;

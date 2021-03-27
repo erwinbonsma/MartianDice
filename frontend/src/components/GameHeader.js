@@ -1,20 +1,19 @@
-export function GameHeader(props) {
+export function GameHeader( {game, turnState, slowResponse} ) {
 	let left, right, header;
-	if (props.game) {
-		const game = props.game;
+	if (game) {
 		if (game.winner) {
 			header = "Game completed";
 		} else {
-			if (props.turnState?.phase === 'PickDice') {
+			if (turnState?.phase === 'PickDice') {
 				header = `${game.active_player} to pick a die`;
-			} else if (props.turnState?.phase === 'CheckPass') {
+			} else if (turnState?.phase === 'CheckPass') {
 				header = `${game.active_player} to pass?`;
 			} else {
 				header = `${game.active_player}'s turn`;
 			}
 			left = `Round ${game.round}`;
-			if (props.turnState?.throw_count > 0) {
-				right = `Throw ${props.turnState.throw_count}`;
+			if (turnState?.throw_count > 0) {
+				right = `Throw ${turnState.throw_count}`;
 			}
 		}
 	} else {
@@ -23,9 +22,9 @@ export function GameHeader(props) {
 
 	return (
 		<div className="GameHeader" style={{display: "flex", padding: "0 1em"}}>
-			<h4 style={{textAlign:"left", flex: "2 0"}}>{left}</h4>
-			<h4 style={{textAlign: "center", flex: "5 1"}}>{header}</h4>
-			<h4 style={{textAlign:"right", flex: "2 0"}}>{right}</h4>
+			<h4 style={{textAlign: "left", flex: "2 0"}}>{left}</h4>
+			<h4 style={{textAlign: "center", flex: "5 1"}} className={slowResponse ? "Warning" : ""} >{header}</h4>
+			<h4 style={{textAlign: "right", flex: "2 0"}}>{right}</h4>
 		</div>
 	)
 }

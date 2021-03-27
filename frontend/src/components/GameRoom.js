@@ -15,6 +15,9 @@ const FAST_TRANSITION_DELAY = 100;
 const SLOW_TRANSITION_DELAY = 2500;
 const TRANSITION_DELAY = 1000;
 
+// Period of inactivity after which a turn-end can be forced
+const MAX_MOVE_TIME_IN_SECONDS = 30;
+
 export class GameRoom extends React.Component {
 
 	constructor(props) {
@@ -29,7 +32,9 @@ export class GameRoom extends React.Component {
 			clients: [],
 			bots: [],
 			transitionTurns: [],
-			isAnimating: false
+			isAnimating: false,
+			lastUpdate: Date.now(),
+			slowUpdate: false
 		};
 
 		this.handleAddBot = this.handleAddBot.bind(this);
@@ -92,7 +97,7 @@ export class GameRoom extends React.Component {
 
 	handleMessage(event) {
 		const msg = JSON.parse(event.data);
-		console.log(msg);
+		console.log("Message:", msg);
 		switch (msg.type) {
 			case "clients":
 				this.setState({
@@ -106,13 +111,21 @@ export class GameRoom extends React.Component {
 				});
 				break;
 			case "game-state":
-				console.log("setting transition turns");
+				this.clearWatchdog();
 				this.setState({
 					transitionTurns: msg.turn_state_transitions,
 					futureGame: msg.state,
 					// Ensure game state is always set when there is a turn state
-					game: this.state.game || msg.state
+					game: this.state.game || msg.state,
+					slowUpdate: false
 				});
+				break;
+			case "response":
+				if (msg.status === "error") {
+					console.error(msg.details);
+				} else {
+					console.info(msg.details);
+				}
 				break;
 			default:
 				console.log("Unknown message", msg);
@@ -147,7 +160,8 @@ export class GameRoom extends React.Component {
 			// Finished animating current transition. Move to the next
 			this.setState((state) => {
 				return {
-					transitionTurns: state.transitionTurns.slice(1)
+					transitionTurns: state.transitionTurns.slice(1),
+					lastUpdate: Date.now()
 				};
 			});
 		}, transitionDelay);
@@ -176,6 +190,28 @@ export class GameRoom extends React.Component {
 				game_id: this.props.roomId
 			}));
 		}, 2000);
+	}
+
+	setWatchdog() {
+		if (this.watchdog || this.isReplaying || this.state.slowUpdate) {
+			return;
+		}
+
+		this.watchdog = setTimeout(() => {
+			console.log("Watchdog expired");
+			this.watchdog = undefined;
+
+			this.setState({
+				slowUpdate: true
+			});
+		}, MAX_MOVE_TIME_IN_SECONDS * 1000);
+	}
+
+	clearWatchdog() {
+		if (this.watchdog) {
+			clearTimeout(this.watchdog);
+			this.watchdog = undefined;
+		}
 	}
 
 	updateGame() {
@@ -217,12 +253,15 @@ export class GameRoom extends React.Component {
 			clearTimeout(this.botMoveTrigger);
 			this.botMoveTrigger = undefined;
 		}
+
+		this.clearWatchdog();
 	}
 
 	componentDidUpdate() {
 		this.animateTransitions();
 		this.triggerBotMove();
 		this.updateGame();
+		this.setWatchdog();
 	}
 
 	render() {
@@ -245,13 +284,13 @@ export class GameRoom extends React.Component {
 			<div>
 				<Container className="Room"><Row>
 					<Col className="GameAreaBorder" xs={12} lg={8} ><div className="GameArea">
-						<GameHeader game={game} turnState={turnState} />
+						<GameHeader game={game} turnState={turnState} slowResponse={this.state.slowUpdate} />
 						{ turnState &&
 							<PlayArea gameId={this.props.roomId} instanceId={this.props.instanceId}
 								game={game} turnState={turnState} myTurn={this.myTurn}
 								onAnimationChange={this.handleAnimationChange}
 								audioTracks={this.props.audioTracks} enableSound={this.props.enableSound}
-								websocket={this.props.websocket} />
+								websocket={this.props.websocket} slowResponse={this.state.slowUpdate} />
 						}
 						{ (game && !turnState) && <GameResult game={game} />}
 						{ (this.isHost && !turnState) && (<div className="TableBody">

@@ -3,6 +3,7 @@ import { AbductionZone } from './AbductionZone';
 import { BattleZone } from './BattleZone';
 import { PassCheck } from './PassCheck';
 import { DiceThrow } from './DiceThrow';
+import { SlowMoveWarning } from './SlowMoveWarning';
 import { TurnResult } from './TurnResult';
 import { applyDieDelta, isDictionaryEmpty, shuffle } from '../utils';
 import Measure from 'react-measure';
@@ -47,6 +48,7 @@ export class PlayArea extends React.Component {
 
 		this.handleDiceClick = this.handleDiceClick.bind(this);
 		this.handlePassAnswer = this.handlePassAnswer.bind(this);
+		this.handleEndTurn = this.handleEndTurn.bind(this);
 		this.handleDiceThrowAreaResize = this.handleDiceThrowAreaResize.bind(this);
 	}
 
@@ -88,6 +90,13 @@ export class PlayArea extends React.Component {
 			action: "move",
 			game_id: this.props.gameId,
 			pass: event.target.id === "yes"
+		}));
+	}
+
+	handleEndTurn() {
+		this.props.websocket.send(JSON.stringify({
+			action: "end-turn",
+			game_id: this.props.gameId,
 		}));
 	}
 
@@ -369,6 +378,9 @@ export class PlayArea extends React.Component {
 				{ this.acceptPassAnswer
 					? (<div style={{ minHeight: this.state.throwArea.height }}>
 						<PassCheck onAnswer={this.handlePassAnswer} />
+						{ this.props.slowResponse &&
+							<SlowMoveWarning myTurn={this.props.myTurn} onEndTurn={this.handleEndTurn}/>
+						}
 					</div>)
 					: (<Measure bounds onResize={this.handleDiceThrowAreaResize}>
 							{({ measureRef }) => (<div style={{ minHeight: this.state.throwArea.height }}>
@@ -382,6 +394,9 @@ export class PlayArea extends React.Component {
 								</div>
 								{ turnDone &&
 									<TurnResult score={turnState.score} end_cause={turnState.end_cause} />
+								}
+								{ this.props.slowResponse &&
+									<SlowMoveWarning myTurn={this.props.myTurn} onEndTurn={this.handleEndTurn} />
 								}
 							</div>)}
 					</Measure>)
