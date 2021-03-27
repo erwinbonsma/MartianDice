@@ -25,7 +25,10 @@ function App(props) {
 				setWebsocket(socket);
 			});
 
-			const unsetSocket = () => { setWebsocket(undefined); }
+			const unsetSocket = () => {
+				setErrorMessage("Connection to server lost");
+				setWebsocket(undefined);
+			}
 			socket.addEventListener('close', unsetSocket);
 			socket.addEventListener('error', unsetSocket);
 		}
@@ -34,6 +37,7 @@ function App(props) {
 			if (websocket) {
 				console.log("Closing websocket");
 				websocket.close();
+				setWebsocket(undefined);
 			}
 		}
 	}, [websocket]);
@@ -91,31 +95,33 @@ function App(props) {
 					</Col>
 				</Row>
 			</Container>
-			{ playerName ? (
-				<JoinRoom websocket={websocket} playerName={playerName} roomId={roomId}
-					onRoomJoined={handleRoomEntry} />
-			) : (
-				<Container><Row>
-					<Col lg={3} md={2} sm={1} />
-					<Col lg={6} md={8} sm={10} >
-						<center>
-						<h4>Registration</h4>
-						<p>Who will be captaining your Martian fleet?</p>
-						<form onSubmit={handleRegistration} style={{ display: "flex" }}>
-							<div>Name:</div>
-							<div style={{flex: "1"}} />
-							<input size={20} type="text" value={nameInput} onChange={handleInputChange} />
-							<div style={{flex: "2"}} />
-							<Button type="submit" disabled={nameInput === '' || nameInput.length > 12} >OK</Button>
-						</form>
-						{ errorMessage &&
-							<p className="Error">{errorMessage}</p>
-						}
-						</center>
-					</Col>
-					<Col lg={3} md={2} sm={1} />
-				</Row></Container>
-			)}
+			{ websocket ?
+				playerName ? (
+					<JoinRoom websocket={websocket} playerName={playerName} roomId={roomId}
+						onRoomJoined={handleRoomEntry} />
+				) : (
+					<Container><Row>
+						<Col lg={3} md={2} sm={1} />
+						<Col lg={6} md={8} sm={10} >
+							<center>
+							<h4>Registration</h4>
+							<p>Who will be captaining your Martian fleet?</p>
+							<form onSubmit={handleRegistration} style={{ display: "flex" }}>
+								<div>Name:</div>
+								<div style={{flex: "1"}} />
+								<input size={20} type="text" value={nameInput} onChange={handleInputChange} />
+								<div style={{flex: "2"}} />
+								<Button type="submit" disabled={nameInput === '' || nameInput.length > 12} >OK</Button>
+							</form>
+							{ errorMessage &&
+								<p className="Error">{errorMessage}</p>
+							}
+							</center>
+						</Col>
+						<Col lg={3} md={2} sm={1} />
+					</Row></Container>
+				) : <center><p className="Error">Failed to connect to server</p></center>
+			}
 		</div>
 		</center>
 	);
