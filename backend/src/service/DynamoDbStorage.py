@@ -1,4 +1,5 @@
 import boto3
+from datetime import datetime, timedelta
 import jsonpickle
 import hashlib
 import logging
@@ -8,6 +9,10 @@ logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 DEFAULT_CLIENT = boto3.client('dynamodb')
+ROOM_EXPIRATION = timedelta(days = 1)
+
+def room_ttl():
+	return str(int((datetime.now() + ROOM_EXPIRATION).timestamp()))
 
 class DynamoDbStorage:
 
@@ -27,7 +32,8 @@ class DynamoDbStorage:
 				TableName = "rooms",
 				Item = {
 					"PKEY": { "S": f"Room#{room_id}" },
-					"SKEY": { "S": "Instance" }
+					"SKEY": { "S": "Instance" },
+					"TTL": { "N": room_ttl() }
 				},
 				ConditionExpression = "attribute_not_exists(PKEY)"
 			)
@@ -214,7 +220,8 @@ class DynamoDbRoom:
 				Item = {
 					"PKEY": { "S": f"Room#{self.room_id}" },
 					"SKEY": { "S": f"Bot#{bot_name}" },
-					"Behaviour": { "S": bot_behaviour }
+					"Behaviour": { "S": bot_behaviour },
+					"TTL": { "N": room_ttl() }
 				},
 				ConditionExpression = "attribute_not_exists(PKEY)"
 			)
@@ -261,7 +268,8 @@ class DynamoDbRoom:
 				Item = {
 					"PKEY": { "S": f"Room#{self.room_id}" },
 					"SKEY": { "S": f"Conn#{connection}" },
-					"ClientId": { "S": client_id }
+					"ClientId": { "S": client_id },
+					"TTL": { "N": room_ttl() }
 				},
 				ConditionExpression = "attribute_not_exists(PKEY)"
 			)

@@ -24,7 +24,8 @@ class BackendStack(core.Stack):
 			sort_key = dynamodb.Attribute(
 				name = "SKEY",
 				type = dynamodb.AttributeType.STRING
-            )
+            ),
+			time_to_live_attribute = "TTL"
         )
 
 		games_table = dynamodb.Table(
