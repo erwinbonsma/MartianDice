@@ -1,6 +1,7 @@
 import './App.css';
 import { Die } from './components/Die';
 import { JoinRoom } from './components/JoinRoom';
+import config from './utils/config';
 import { useState, useEffect } from 'react';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
@@ -21,8 +22,7 @@ function App() {
 		}
 
 		// Create WebSocket connection.
-		//const socket = new WebSocket('wss://gv9b6yzx3j.execute-api.eu-west-1.amazonaws.com/dev');
-		const socket = new WebSocket('ws://127.0.0.1:8765');
+		const socket = new WebSocket(config.SERVICE_ENDPOINT);
 
 		// Connection opened
 		socket.addEventListener('open', function (event) {

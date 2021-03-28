@@ -6,12 +6,9 @@ import { DiceThrow } from './DiceThrow';
 import { SlowMoveWarning } from './SlowMoveWarning';
 import { TurnResult } from './TurnResult';
 import { applyDieDelta, isDictionaryEmpty, shuffle } from '../utils';
+import config from '../utils/config';
 import Measure from 'react-measure';
 import React from 'react';
-
-const THROW_DELAY = 500;
-const FIRST_MOVE_DELAY = 100;
-const MOVE_DELAY = 750;
 
 function shuffleDice(diceDict) {
 	const diceList = Object.entries(diceDict).map(
@@ -207,7 +204,7 @@ export class PlayArea extends React.Component {
 
 				this.throwAnimation = undefined;
 				this.animateThrow();
-			}, THROW_DELAY);
+			}, config.THROW_DELAY);
 		} else {
 			this.props.onAnimationChange(false);
 		}
@@ -320,7 +317,7 @@ export class PlayArea extends React.Component {
 
 				this.moveAnimation = undefined;
 				this.animateDiceMoves();
-			}, isFirst ? FIRST_MOVE_DELAY : MOVE_DELAY);
+			}, isFirst ? config.FIRST_MOVE_DELAY : config.MOVE_DELAY);
 		} else {
 			this.props.onAnimationChange(false);
 			this.setState({

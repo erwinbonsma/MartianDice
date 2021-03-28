@@ -5,18 +5,12 @@ import { GameRules } from './GameRules';
 import { GameSetup } from './GameSetup';
 import { PlayArea } from './PlayArea';
 import { PlayerList } from './PlayerList';
+import config from '../utils/config';
 import React from 'react';
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
-
-const FAST_TRANSITION_DELAY = 100;
-const SLOW_TRANSITION_DELAY = 2500;
-const TRANSITION_DELAY = 1000;
-
-// Period of inactivity after which a turn-end can be forced
-const MAX_MOVE_TIME_IN_SECONDS = 10;
 
 export class GameRoom extends React.Component {
 
@@ -144,17 +138,17 @@ export class GameRoom extends React.Component {
 			return;
 		}
 
-		let transitionDelay = TRANSITION_DELAY; // Default
+		let transitionDelay = config.TRANSITION_DELAY; // Default
 
 		if (
 			this.state.transitionTurns.length === 1 &&
 			this.state.futureGame.turn_state?.phase === "PickDice"
 		) {
 			// Do not make player wait unnecessarily before picking a die
-			transitionDelay = FAST_TRANSITION_DELAY;
+			transitionDelay = config.FAST_TRANSITION_DELAY;
 		} else if (this.state.transitionTurns[0].phase === "Done") {
 			// Show turn result for a bit longer 
-			transitionDelay = SLOW_TRANSITION_DELAY;
+			transitionDelay = config.SLOW_TRANSITION_DELAY;
 		}
 
 		this.turnAnimation = setTimeout(() => {
@@ -212,7 +206,7 @@ export class GameRoom extends React.Component {
 					slowUpdate: true
 				});
 			}
-		}, MAX_MOVE_TIME_IN_SECONDS * 1000);
+		}, config.MAX_MOVE_TIME_IN_SECONDS * 1000);
 	}
 
 	clearWatchdog() {
