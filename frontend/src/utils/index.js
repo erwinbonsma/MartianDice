@@ -1,4 +1,5 @@
 export function isDictionaryEmpty(dict) {
+	// eslint-disable-next-line
 	for (let key of Object.keys(dict)) {
 		return false;
 	}
