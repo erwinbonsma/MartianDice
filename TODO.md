@@ -59,10 +59,6 @@ Done:
 -	Fix coloring of title in header
 -	Only set-up websocket during registration
 -	Enable local run with homepage setting
+-	Add license + credits
 
 TODO:
--	Improve watchdog logic
--	Improve disconnection detection
--	Improve server logging
--	Clean up client logging
--	Add license + credits
