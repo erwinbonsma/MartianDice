@@ -14,7 +14,7 @@ const AUDIO_URLS = {
 	Fail: "die.mp3"
 };
 
-export function JoinRoom(props) {
+export function JoinRoom({ roomId, playerName, websocket, onRoomJoined }) {
 	const [roomInput, setRoomInput] = useState('');
 	const [enableSound, setEnableSound] = useState(true);
 	const [errorMessage, setErrorMessage] = useState();
@@ -26,30 +26,30 @@ export function JoinRoom(props) {
 		setErrorMessage('');
 	};
 
-	const joinRoom = (roomId) => {
+	const joinRoom = (roomToJoin) => {
 		const handleMessage = (event) => {
 			const msg = JSON.parse(event.data);
 
-			if (msg.type === "clients" && msg.game_id === roomId) {
-				props.onRoomJoined(msg.game_id);
+			if (msg.type === "clients" && msg.game_id === roomToJoin) {
+				onRoomJoined(msg.game_id);
 			}
 			if (msg.type === "response" && msg.status === "error") {
 				setErrorMessage(msg.details);
 			}
 
-			props.websocket.removeEventListener('message', handleMessage);
+			websocket.removeEventListener('message', handleMessage);
 		};
-		props.websocket.addEventListener('message', handleMessage);
+		websocket.addEventListener('message', handleMessage);
 
 		// Clear any lingering error message from previous attempt
 		setErrorMessage('');
 
 		setJoinCount(joinCount + 1);
 
-		props.websocket.send(JSON.stringify({
+		websocket.send(JSON.stringify({
 			action: "join-room",
-			game_id: roomId,
-			client_id: props.playerName
+			game_id: roomToJoin,
+			client_id: playerName
 		}));
 	}
 
@@ -107,19 +107,19 @@ export function JoinRoom(props) {
 				joinRoom(msg.room_id);
 			}
 
-			props.websocket.removeEventListener('message', handleMessage);
+			websocket.removeEventListener('message', handleMessage);
 		};
-		props.websocket.addEventListener('message', handleMessage);
+		websocket.addEventListener('message', handleMessage);
 
-		props.websocket.send(JSON.stringify({
+		websocket.send(JSON.stringify({
 			action: "create-room",
 		}));
 	}
 
 	return (
-		props.roomId ? (
-			<GameRoom roomId={props.roomId} playerName={props.playerName} instanceId={joinCount}
-				audioTracks={audioTracks} enableSound={enableSound} websocket={props.websocket} />
+		roomId ? (
+			<GameRoom roomId={roomId} playerName={playerName} instanceId={joinCount}
+				audioTracks={audioTracks} enableSound={enableSound} websocket={websocket} />
 		) : (
 		<Container><Row>
 			<Col lg={3} md={2} />

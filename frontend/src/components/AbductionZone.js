@@ -1,10 +1,10 @@
 import { DiceRow } from './DiceRow';
 
-export function AbductionZone(props) {
+export function AbductionZone({ earthlings, instanceId }) {
 	return (
 		<div className="AbductionZone">
 			<h4>Abduction Zone</h4>
-			<DiceRow dice={props.earthlings} padLength={7} instanceId={props.instanceId} />
+			<DiceRow dice={earthlings} padLength={7} instanceId={instanceId} />
 		</div>		
 	)
 }

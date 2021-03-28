@@ -1,4 +1,4 @@
-export function GameHeader( {game, turnState, slowResponse} ) {
+export function GameHeader({ game, turnState, slowResponse }) {
 	let left, right, header;
 	let headerClass;
 	if (game) {

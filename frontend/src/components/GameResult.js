@@ -1,6 +1,6 @@
 
-export function GameResult(props) {
-	const ranked = Object.entries(props.game.scores).sort(
+export function GameResult({ game }) {
+	const ranked = Object.entries(game.scores).sort(
 		(a, b) => b[1] - a[1]
 	);
 	const maxScore = ranked[0][1];

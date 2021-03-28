@@ -1,8 +1,8 @@
-export function Die(props) {
-	const imageFile = props.face.toLowerCase() + ".png";
+export function Die({ face, onClick }) {
+	const imageFile = face.toLowerCase() + ".png";
 	return (
 		<div className="Die">
-			<img src={imageFile} alt="{props.face}" onClick={props.onClick} id={props.face}></img>
+			<img src={imageFile} alt="{face}" onClick={onClick} id={face}></img>
 		</div>
 	)
 }

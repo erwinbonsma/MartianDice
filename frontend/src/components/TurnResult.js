@@ -6,9 +6,9 @@ const reasons ={
 	"Player choice": "Player ended turn"
 };
 
-export function TurnResult(props) {
+export function TurnResult({ score, endCause }) {
 	return (<center>
-		{ reasons[props.end_cause] || props.end_cause }
-		{ props.score > 0 && (<>. Scored {props.score} point{props.score && "s"}</>) }
+		{ reasons[endCause] || endCause }
+		{ score > 0 && (<>. Scored {score} point{score && "s"}</>) }
 	</center>);
 }

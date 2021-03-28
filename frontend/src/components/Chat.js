@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Button from 'react-bootstrap/Button';
 
-export function Chat(props) {
+export function Chat({ roomId, websocket }) {
 	const [messageInput, setMessageInput] = useState('');
 	const [chatLog, setChatLog] = useState([]);
 
@@ -14,9 +14,9 @@ export function Chat(props) {
 
 	const onSendMessage = (e) => {
 		e.preventDefault();
-		props.websocket.send(JSON.stringify({
+		websocket.send(JSON.stringify({
 			action: "chat",
-			game_id: props.roomId,
+			game_id: roomId,
 			message: messageInput
 		}));
 
@@ -37,12 +37,12 @@ export function Chat(props) {
 			}
 		};
 
-		props.websocket.addEventListener('message', onMessage);
+		websocket.addEventListener('message', onMessage);
 
 		return function cleanup() {
-			props.websocket.removeEventListener('message', onMessage);
+			websocket.removeEventListener('message', onMessage);
 		}
-	}, [props.websocket, chatLog]);
+	}, [websocket, chatLog]);
 
 	// Not sure why flex for ChatMessageArea cannot be specified in style sheet
 	return (

@@ -390,7 +390,7 @@ export class PlayArea extends React.Component {
 									}
 								</div>
 								{ turnDone &&
-									<TurnResult score={turnState.score} end_cause={turnState.end_cause} />
+									<TurnResult score={turnState.score} endCause={turnState.end_cause} />
 								}
 								{ this.props.slowResponse &&
 									<SlowMoveWarning myTurn={this.props.myTurn} onEndTurn={this.handleEndTurn} />

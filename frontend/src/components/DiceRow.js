@@ -38,24 +38,24 @@ function updateDiceRow(oldList, targetState) {
 	return updated ? newList : oldList;
 }
 
-export function DiceRow(props) {
-	const [instanceId, setInstanceId] = useState();
+export function DiceRow({ dice, padLength, instanceId, onDiceClick }) {
+	const [prevInstanceId, setPrevInstanceId] = useState();
 
 	// Maintain array of dice. It is used to keep the dice positions fixed despite dice additions
-	// and removals, as long as the instanceId remains the same.
+	// and removals, as long as the prevInstanceId remains the same.
 	const [diceRow, setDiceRow] = useState([]);
 
 	useEffect(() => {
-		if (props.instanceId !== instanceId) {
-			setDiceRow(createDiceRow(props.dice));
-			setInstanceId(props.instanceId);
+		if (instanceId !== prevInstanceId) {
+			setDiceRow(createDiceRow(dice));
+			setPrevInstanceId(instanceId);
 		} else {
-			setDiceRow(updateDiceRow(diceRow, props.dice));
+			setDiceRow(updateDiceRow(diceRow, dice));
 		}
-	}, [props.instanceId, props.dice, instanceId, diceRow]);
+	}, [instanceId, dice, prevInstanceId, diceRow]);
 
 	const numDice = diceRow.length;
-	const padDice = props.padLength ? Math.max(0, props.padLength - numDice) : 0;
+	const padDice = padLength ? Math.max(0, padLength - numDice) : 0;
 	const counts = { hidden: 0 };
 
 	return (
@@ -64,7 +64,7 @@ export function DiceRow(props) {
 				const die = d || "hidden";
 				const index = counts[die] || 0;
 				counts[die] = index + 1;
-				return <Die key={`${die}#${index}`} face={die} onClick={props.onDiceClick}></Die>
+				return <Die key={`${die}#${index}`} face={die} onClick={onDiceClick}></Die>
 			})}
 			{ (padDice > 0) && 
 				Array.from({length: padDice}, (_, index) => (
