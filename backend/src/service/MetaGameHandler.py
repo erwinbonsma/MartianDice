@@ -1,11 +1,8 @@
 import json
 from service.BaseHandler import GameHandler, HandlerException, ok_message
+from service.Config import Config
 from service.GamePlayHandler import bot_behaviours
 from service.GameState import GameState
-
-MAX_NAME_LENGTH = 12
-MAX_CLIENTS_PER_ROOM = 6
-MAX_BOTS_PER_ROOM = 6
 
 class MetaGameHandler(GameHandler):
 	"""Handles everything about the game/room, except the game play."""
@@ -48,13 +45,13 @@ class MetaGameHandler(GameHandler):
 		if client_id.startswith("Bot-"):
 			raise HandlerException(f"Name {client_id} is restricted to non-sentients")
 
-		if len(client_id) == 0 or len(client_id) > MAX_NAME_LENGTH:
+		if len(client_id) == 0 or len(client_id) > Config.MAX_NAME_LENGTH:
 			raise HandlerException("Invalid name length")
 
 		if client_id in self.clients.values():
 			raise HandlerException(f"Name {client_id} already present in Room {room_id}")
 
-		if len(self.clients) >= MAX_CLIENTS_PER_ROOM:
+		if len(self.clients) >= Config.MAX_CLIENTS_PER_ROOM:
 			raise HandlerException(f"Room {room_id} is at its player capacity limit")
 
 		if not self.db.set_room_for_connection(self.connection, room_id):
@@ -102,6 +99,16 @@ class MetaGameHandler(GameHandler):
 
 		await self.send_clients_event(host)
 
+	async def switch_host(self):
+		game_state = self.game.state()
+		if game_state is None:
+			raise HandlerException("Can only switch host when game is in progress")
+		if game_state.age_in_seconds < Config.MAX_MOVE_TIME_IN_SECONDS:
+			raise HandlerException("Cannot switch host yet")
+
+		host = self.game.set_host(self.client_id, old_host = self.game.host())
+		await self.send_clients_event(host)
+
 	async def send_status(self):
 		host = self.game.host()
 		await self.send_message(self.clients_message(host))
@@ -122,7 +129,7 @@ class MetaGameHandler(GameHandler):
 	async def add_bot(self, bot_behaviour):
 		self.check_can_configure_game("add bot")
 
-		if len(self.game.bots()) >= MAX_BOTS_PER_ROOM:
+		if len(self.game.bots()) >= Config.MAX_BOTS_PER_ROOM:
 			raise HandlerException(f"Room {self.game.game_id} is at its bot capacity limit")
 
 		if not bot_behaviour in bot_behaviours:
@@ -158,6 +165,9 @@ class MetaGameHandler(GameHandler):
 
 		if cmd == "leave-room":
 			return await self.leave_room()
+
+		if cmd == "switch-host":
+			return await self.switch_host()
 
 		if cmd == "add-bot":
 			return await self.add_bot(cmd_message["bot_behaviour"])

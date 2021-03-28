@@ -16,7 +16,7 @@ const SLOW_TRANSITION_DELAY = 2500;
 const TRANSITION_DELAY = 1000;
 
 // Period of inactivity after which a turn-end can be forced
-const MAX_MOVE_TIME_IN_SECONDS = 30;
+const MAX_MOVE_TIME_IN_SECONDS = 10;
 
 export class GameRoom extends React.Component {
 
@@ -50,8 +50,11 @@ export class GameRoom extends React.Component {
 	get isHost() {
 		return this.props.playerName === this.state.hostName;
 	}
-	get myTurn() {
+	get myMove() {
 		return !this.isReplaying && (this.props.playerName === this.state.futureGame?.active_player);
+	}
+	get botMove() {
+		return !this.isReplaying && this.state.bots.includes(this.state.futureGame?.active_player);
 	}
 	get turnState() {
 		return this.state.transitionTurns.length > 0
@@ -173,11 +176,7 @@ export class GameRoom extends React.Component {
 			return;
 		}
 
-		if (
-			this.isReplaying ||
-			!this.isHost ||
-			!this.state.bots.includes(this.state.futureGame?.active_player)
-		) {
+		if (!this.isHost || !this.botMove) {
 			// Bot move does not require triggering (yet)
 			return;
 		}
@@ -201,9 +200,18 @@ export class GameRoom extends React.Component {
 			console.log("Watchdog expired");
 			this.watchdog = undefined;
 
-			this.setState({
-				slowUpdate: true
-			});
+			if (this.botMove) {
+				console.warn("Bot is not responding - host problem?");
+				this.props.websocket.send(JSON.stringify({
+					action: "switch-host",
+					game_id: this.props.roomId
+				}));
+			} else {
+				// Player is not responding. Enable end-turn button
+				this.setState({
+					slowUpdate: true
+				});
+			}
 		}, MAX_MOVE_TIME_IN_SECONDS * 1000);
 	}
 
@@ -244,7 +252,6 @@ export class GameRoom extends React.Component {
 		this.props.websocket.removeEventListener('message', this.handleMessage);
 
 		if (this.turnAnimation) {
-			console.log("stopping turn animation");
 			clearTimeout(this.turnAnimation);
 			this.turnAnimation = undefined;
 		}
@@ -287,7 +294,7 @@ export class GameRoom extends React.Component {
 						<GameHeader game={game} turnState={turnState} slowResponse={this.state.slowUpdate} />
 						{ turnState &&
 							<PlayArea gameId={this.props.roomId} instanceId={this.props.instanceId}
-								game={game} turnState={turnState} myTurn={this.myTurn}
+								game={game} turnState={turnState} myTurn={this.myMove}
 								onAnimationChange={this.handleAnimationChange}
 								audioTracks={this.props.audioTracks} enableSound={this.props.enableSound}
 								websocket={this.props.websocket} slowResponse={this.state.slowUpdate} />

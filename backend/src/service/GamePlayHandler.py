@@ -1,12 +1,11 @@
 import itertools
 import json
 from service.BaseHandler import GameHandler, HandlerException, ok_message, error_message
+from service.Config import Config
 from service.GameState import GameState
 from game.DataTypes import TurnState, TurnPhase, DieFace
 from game.Game import RandomPlayer, AggressivePlayer, DefensivePlayer
 from game.OptimalPlay import OptimalActionSelector
-
-MAX_MOVE_TIME_IN_SECONDS = 30
 
 bot_behaviours = {
 	"random": RandomPlayer(),
@@ -40,7 +39,7 @@ class GamePlayHandler(GameHandler):
 			raise HandlerException("Bot move initiated while it's not a bot's turn")
 
 	def check_can_end_turn(self, game_state):
-		if game_state.age_in_seconds < MAX_MOVE_TIME_IN_SECONDS:
+		if game_state.age_in_seconds < Config.MAX_MOVE_TIME_IN_SECONDS:
 			raise HandlerException("Cannot forcefully end the current turn yet")
 
 		if game_state.active_player in self.game.bots():
