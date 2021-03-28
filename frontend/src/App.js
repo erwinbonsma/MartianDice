@@ -7,7 +7,7 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
 
-function App(props) {
+function App() {
 	const [websocket, setWebsocket] = useState();
 	const [nameInput, setNameInput] = useState('');
 	const [playerName, setPlayerName] = useState();
@@ -15,32 +15,36 @@ function App(props) {
 	const [errorMessage, setErrorMessage] = useState();
 
 	useEffect(() => {
-		if (!websocket) {
-			// Create WebSocket connection.
-			//const socket = new WebSocket('wss://gv9b6yzx3j.execute-api.eu-west-1.amazonaws.com/dev');
-			const socket = new WebSocket('ws://127.0.0.1:8765');
-
-			// Connection opened
-			socket.addEventListener('open', function (event) {
-				setWebsocket(socket);
-			});
-
-			const unsetSocket = () => {
-				setErrorMessage("Connection to server lost");
-				setWebsocket(undefined);
-			}
-			socket.addEventListener('close', unsetSocket);
-			socket.addEventListener('error', unsetSocket);
+		if (websocket || !playerName) {
+			// Only set up websocket after registration
+			return
 		}
+
+		// Create WebSocket connection.
+		//const socket = new WebSocket('wss://gv9b6yzx3j.execute-api.eu-west-1.amazonaws.com/dev');
+		const socket = new WebSocket('ws://127.0.0.1:8765');
+
+		// Connection opened
+		socket.addEventListener('open', function (event) {
+			console.log("Opened websocket");
+			setWebsocket(socket);
+		});
+
+		const unsetSocket = () => {
+			setErrorMessage("Disconnected from server");
+			setWebsocket(undefined);
+		}
+		socket.addEventListener('close', unsetSocket);
+		socket.addEventListener('error', unsetSocket);
     
 		return function cleanup() {
 			if (websocket) {
 				console.log("Closing websocket");
-				websocket.close();
 				setWebsocket(undefined);
+				websocket.close();
 			}
 		}
-	}, [websocket]);
+	}, [websocket, playerName]);
 
 	const handleInputChange = (event) => {
 		setNameInput(event.target.value);
@@ -59,7 +63,11 @@ function App(props) {
 		}
 
 		setPlayerName(undefined);
-	}
+
+		// Few lines of duplicated code with useEffect, but seems hard/awkward to avoid 
+		console.log("Closing websocket");
+		setWebsocket(undefined);
+		websocket.close();	}
 
 	const handleRoomEntry = (roomId) => {
 		setRoomId(roomId);
@@ -95,33 +103,33 @@ function App(props) {
 					</Col>
 				</Row>
 			</Container>
-			{ websocket ?
-				playerName ? (
+			{ playerName ? (
+				websocket ? (
 					<JoinRoom websocket={websocket} playerName={playerName} roomId={roomId}
 						onRoomJoined={handleRoomEntry} />
-				) : (
-					<Container><Row>
-						<Col lg={3} md={2} sm={1} />
-						<Col lg={6} md={8} sm={10} >
-							<center>
-							<h4>Registration</h4>
-							<p>Who will be captaining your Martian fleet?</p>
-							<form onSubmit={handleRegistration} style={{ display: "flex" }}>
-								<div>Name:</div>
-								<div style={{flex: "1"}} />
-								<input size={20} type="text" value={nameInput} onChange={handleInputChange} />
-								<div style={{flex: "2"}} />
-								<Button type="submit" disabled={nameInput === '' || nameInput.length > 12} >OK</Button>
-							</form>
-							{ errorMessage &&
-								<p className="Error">{errorMessage}</p>
-							}
-							</center>
-						</Col>
-						<Col lg={3} md={2} sm={1} />
-					</Row></Container>
 				) : <center><p className="Error">Failed to connect to server</p></center>
-			}
+			) : (
+				<Container><Row>
+					<Col lg={3} md={2} sm={1} />
+					<Col lg={6} md={8} sm={10} >
+						<center>
+						<h4>Registration</h4>
+						<p>Who will be captaining your Martian fleet?</p>
+						<form onSubmit={handleRegistration} style={{ display: "flex" }}>
+							<div>Name:</div>
+							<div style={{flex: "1"}} />
+							<input size={20} type="text" value={nameInput} onChange={handleInputChange} />
+							<div style={{flex: "2"}} />
+							<Button type="submit" disabled={nameInput === '' || nameInput.length > 12} >OK</Button>
+						</form>
+						{ errorMessage &&
+							<p className="Error">{errorMessage}</p>
+						}
+						</center>
+					</Col>
+					<Col lg={3} md={2} sm={1} />
+				</Row></Container>
+			)}
 		</div>
 		</center>
 	);
