@@ -1,13 +1,20 @@
 export function GameHeader( {game, turnState, slowResponse} ) {
 	let left, right, header;
+	let headerClass;
 	if (game) {
 		if (game.winner) {
 			header = "Game completed";
 		} else {
 			if (turnState?.phase === 'PickDice') {
 				header = `${game.active_player} to pick a die`;
+				if (slowResponse) {
+					headerClass = "Warning"; 
+				}
 			} else if (turnState?.phase === 'CheckPass') {
 				header = `${game.active_player} to pass?`;
+				if (slowResponse) {
+					headerClass = "Warning"; 
+				}
 			} else {
 				header = `${game.active_player}'s turn`;
 			}
@@ -23,7 +30,7 @@ export function GameHeader( {game, turnState, slowResponse} ) {
 	return (
 		<div className="GameHeader" style={{display: "flex", padding: "0 1em"}}>
 			<h4 style={{textAlign: "left", flex: "2 0"}}>{left}</h4>
-			<h4 style={{textAlign: "center", flex: "5 1"}} className={slowResponse ? "Warning" : ""} >{header}</h4>
+			<h4 style={{textAlign: "center", flex: "5 1"}} className={headerClass} >{header}</h4>
 			<h4 style={{textAlign: "right", flex: "2 0"}}>{right}</h4>
 		</div>
 	)
