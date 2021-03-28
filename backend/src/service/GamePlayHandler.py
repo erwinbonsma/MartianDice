@@ -26,7 +26,7 @@ class GamePlayHandler(GameHandler):
 	"""Handles game play."""
 
 	def check_expect_move(self, game_state):
-		if game_state is None or not game_state.awaitsInput:
+		if game_state is None or not game_state.awaits_input:
 			raise HandlerException(f"Not awaiting a move")
 
 	def check_my_move(self, game_state):
@@ -48,7 +48,7 @@ class GamePlayHandler(GameHandler):
 
 	async def update_state_until_blocked(self, game_state):
 		turn_state_transitions = []
-		while not (game_state.done or game_state.awaitsInput):
+		while not (game_state.done or game_state.awaits_input):
 			if not hasattr(game_state.turn_state, "skip_when_animating"):
 				turn_state_transitions.append(game_state.turn_state)
 			game_state.next()

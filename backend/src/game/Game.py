@@ -112,7 +112,7 @@ def play_turn(action_selector, throw_fun = random_throw, ini_side_dice = None, s
 	turn_config = { "throw_fun": throw_fun }
 
 	while not state.done:
-		if state.awaitsInput:
+		if state.awaits_input:
 			if state.phase == TurnPhase.PickDice:
 				selected_die = action_selector.select_die(state)
 				state = state.next(selected_die)

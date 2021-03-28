@@ -30,9 +30,9 @@ class GameState:
 		return self.players[self.active_player_index]
 
 	@property
-	def awaitsInput(self):
+	def awaits_input(self):
 		assert(not self.done)
-		return (not self.turn_state.done) and self.turn_state.awaitsInput
+		return (not self.turn_state.done) and self.turn_state.awaits_input
 
 	@property
 	def age_in_seconds(self):

@@ -138,7 +138,7 @@ class TurnState:
 		return self.phase == TurnPhase.Done
 
 	@property
-	def awaitsInput(self):
+	def awaits_input(self):
 		assert(not self.done)
 		return self.phase == TurnPhase.PickDice or self.phase == TurnPhase.CheckPass
 
@@ -152,7 +152,7 @@ class TurnState:
 		return die in self.selectable_earthlings
 
 	def next(self, input_value = None, config = DEFAULT_CONFIG):
-		assert(self.awaitsInput != (input_value is None))
+		assert(self.awaits_input != (input_value is None))
 
 		if input_value == "end-turn":
 			return self._end_turn("Turn forcefully ended")
