@@ -210,7 +210,6 @@ class DynamoDbRoom:
 				if skey.startswith("Bot#"):
 					self.__bots[skey[4:]] = item["Behaviour"]["S"]
 
-			print("bots =", self.__bots)
 		return self.__bots
 
 	def add_bot(self, bot_name, bot_behaviour):
@@ -231,7 +230,7 @@ class DynamoDbRoom:
 
 			return bots
 		except Exception as e:
-			logger.warn(f"Failed to add bot {bot_name} in room {self.room_id}: {e}")
+			logger.warn(f"Failed to add Bot {bot_name} to Room {self.room_id}: {e}")
 
 	def remove_bot(self, bot_name):
 		try:
@@ -248,7 +247,7 @@ class DynamoDbRoom:
 
 			return bots
 		except Exception as e:
-			logger.warn(f"Failed to remove bot {bot_name} from room {self.room_id}: {e}")
+			logger.warn(f"Failed to remove Bot {bot_name} from Room {self.room_id}: {e}")
 
 	def clients(self):
 		if self.__clients is None:
@@ -258,7 +257,6 @@ class DynamoDbRoom:
 				if skey.startswith("Conn#"):
 					self.__clients[skey[5:]] = item["ClientId"]["S"]
 
-			print("clients =", self.__clients)
 		return self.__clients
 
 	def add_client(self, connection, client_id):
@@ -279,7 +277,7 @@ class DynamoDbRoom:
 
 			return clients
 		except Exception as e:
-			logger.warn(f"Failed to add client {client_id} to Room {self.room_id}: {e}")
+			logger.warn(f"Failed to add Client {client_id} to Room {self.room_id}: {e}")
 
 	def remove_client(self, connection):
 		try:
@@ -296,7 +294,7 @@ class DynamoDbRoom:
 
 			return clients
 		except Exception as e:
-			logger.warn(f"Failed to remove client {client_id} from room {self.room_id}: {e}")
+			logger.warn(f"Failed to remove Connection {connection} from Room {self.room_id}: {e}")
 
 	def __fetch_game_state(self):
 		if self.__game_state_hash is not None:
@@ -321,7 +319,7 @@ class DynamoDbRoom:
 			self.__game_state = jsonpickle.decode(pickled)
 
 		except Exception as e:
-			logger.warn(f"Failed to get game state {self.__game_state_hash} for room {self.room_id}: {e}")
+			logger.warn(f"Failed to get game state {self.__game_state_hash} for Room {self.room_id}: {e}")
 
 	def set_state(self, game_state):
 		old_hash = self.__game_state_hash
