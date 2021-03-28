@@ -59,7 +59,7 @@ export class GameRoom extends React.Component {
 	handleAddBot(event) {
 		this.props.websocket.send(JSON.stringify({
 			action: "add-bot",
-			game_id: this.props.roomId,
+			room_id: this.props.roomId,
 			bot_behaviour: event
 		}));
 	}
@@ -67,7 +67,7 @@ export class GameRoom extends React.Component {
 	handleRemoveBot(event) {
 		this.props.websocket.send(JSON.stringify({
 			action: "remove-bot",
-			game_id: this.props.roomId,
+			room_id: this.props.roomId,
 			bot_name: event.target.id
 		}));
 	}
@@ -75,7 +75,7 @@ export class GameRoom extends React.Component {
 	handleStartGame() {
 		this.props.websocket.send(JSON.stringify({
 			action: "start-game",
-			game_id: this.props.roomId
+			room_id: this.props.roomId
 		}));
 	}
 
@@ -125,7 +125,7 @@ export class GameRoom extends React.Component {
 				}
 				break;
 			default:
-				console.log("Unknown message", msg);
+				// May be handled elsewhere
 		}
 	}
 
@@ -198,7 +198,7 @@ export class GameRoom extends React.Component {
 				console.warn("Bot is not responding - host problem?");
 				this.props.websocket.send(JSON.stringify({
 					action: "switch-host",
-					game_id: this.props.roomId
+					room_id: this.props.roomId
 				}));
 			} else {
 				// Player is not responding. Enable end-turn button
@@ -238,7 +238,7 @@ export class GameRoom extends React.Component {
 
 		this.props.websocket.send(JSON.stringify({
 			action: "send-status",
-			game_id: this.props.roomId
+			room_id: this.props.roomId
 		}));
 	}
   

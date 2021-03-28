@@ -42,7 +42,7 @@ class GamePlayHandler(GameHandler):
 		if game_state.age_in_seconds < Config.MAX_MOVE_TIME_IN_SECONDS:
 			raise HandlerException("Cannot forcefully end the current turn yet")
 
-		if game_state.active_player in self.game.bots():
+		if game_state.active_player in self.room.bots():
 			raise HandlerException("Can only end turns of human players")
 
 	async def update_state_until_blocked(self, game_state):
@@ -52,7 +52,7 @@ class GamePlayHandler(GameHandler):
 				turn_state_transitions.append(game_state.turn_state)
 			game_state.next()
 
-		if self.game.set_state(game_state):
+		if self.room.set_game_state(game_state):
 			await self.broadcast(self.game_state_message(game_state, turn_state_transitions))
 
 	async def handle_move(self, game_state, input_value):
@@ -61,7 +61,7 @@ class GamePlayHandler(GameHandler):
 		await self.update_state_until_blocked(game_state)
 
 	async def player_move(self, cmd_message):
-		game_state = self.game.state()
+		game_state = self.room.game_state()
 		self.check_my_move(game_state)
 
 		if "pick_die" in cmd_message:
@@ -84,8 +84,8 @@ class GamePlayHandler(GameHandler):
 	async def bot_move(self):
 		self.check_is_host("initiate bot move")
 
-		game_state = self.game.state()
-		bots = self.game.bots()
+		game_state = self.room.game_state()
+		bots = self.room.bots()
 		self.check_bot_move(game_state, bots)
 		
 		action_selector = bot_behaviours[bots[game_state.active_player]]
@@ -96,11 +96,11 @@ class GamePlayHandler(GameHandler):
 		else:
 			bot_move = action_selector.should_stop(turn_state)
 
-		game_state = self.game.state()
+		game_state = self.room.game_state()
 		await self.handle_move(game_state, bot_move)
 
 	async def end_turn(self):
-		game_state = self.game.state()
+		game_state = self.room.game_state()
 
 		self.check_can_end_turn(game_state)
 
@@ -110,7 +110,7 @@ class GamePlayHandler(GameHandler):
 		self.check_can_configure_game("start game")
 
 		self.logger.info("Starting game")
-		bots = self.game.bots()
+		bots = self.room.bots()
 		game_state = GameState( itertools.chain(self.clients.values(), bots.keys()) )
 
 		await self.update_state_until_blocked(game_state)

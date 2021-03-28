@@ -42,7 +42,7 @@ class GameHandler(BaseHandler):
 
 	def game_state_message(self, game_state, turn_state_transitions):
 		return jsonpickle.encode({
-			"game_id": self.game.game_id,
+			"game_id": self.room.game_id,
 			"type": "game-state",
 			"state": game_state,
 			"turn_state_transitions": turn_state_transitions
@@ -54,15 +54,13 @@ class GameHandler(BaseHandler):
 			await asyncio.wait([self.comms.send(ws, message) for ws in self.clients])
 
 	def check_is_host(self, action):
-		# Fetch here. It should not be needed elsewhere
-		host = self.game.host()
+		host = self.room.host()
 
 		if host != self.client_id:
 			raise HandlerException(f"{self.client_id} tried to {action}, but {host} is the host")
 
 	def check_is_recruiting(self, action):
-		# Fetch here. It should be unset, so will not be re-used elsewhere
-		game_state = self.game.state()
+		game_state = self.room.game_state()
 
 		if game_state and not game_state.done:
 			raise HandlerException(f"Can only {action} when no game is in progress")
@@ -74,18 +72,19 @@ class GameHandler(BaseHandler):
 	async def handle_game_command(self, cmd_message):
 		pass
 
-	def fetch_game(self, game_id):
-		self.game = self.db.room_access(game_id)
+	def fetch_room(self, room_id):
+		self.room = self.db.room_access(room_id)
 
-		if self.game.exists():
-			self.clients = self.game.clients()
+		if self.room.exists():
+			self.clients = self.room.clients()
 			self.client_id = self.clients.get(self.connection, None)
 			return True
 
 	async def handle_command(self, cmd_message):
+		room_id = cmd_message["room_id"] if "room_id" in cmd_message else cmd_message["game_id"]
 		try:
-			if not self.fetch_game(cmd_message["game_id"]):
-				return await self.send_error_message("Room not found")
+			if not self.fetch_room(room_id):
+				return await self.send_error_message(f"Room {room_id} not found")
 
 			await self.handle_game_command(cmd_message)
 		except HandlerException as e:

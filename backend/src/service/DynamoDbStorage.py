@@ -321,7 +321,7 @@ class DynamoDbRoom:
 		except Exception as e:
 			logger.warn(f"Failed to get game state {self.__game_state_hash} for Room {self.room_id}: {e}")
 
-	def set_state(self, game_state):
+	def set_game_state(self, game_state):
 		old_hash = self.__game_state_hash
 		opt_values = {}
 
@@ -362,7 +362,7 @@ class DynamoDbRoom:
 		except Exception as e:
 			logger.warn(f"Failed to update game state from {old_hash} to {new_hash} for Room {self.room_id}: {e}")
 
-	def state(self):
+	def game_state(self):
 		self.__fetch_game_state()
 		
 		return self.__game_state

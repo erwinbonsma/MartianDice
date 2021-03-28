@@ -9,7 +9,7 @@ class MetaGameHandler(GameHandler):
 
 	def clients_message(self, host):
 		return json.dumps({
-			"game_id": self.game.game_id,
+			"room_id": self.room.room_id,
 			"type": "clients",
 			"clients": list(self.clients.values()),
 			"host": host
@@ -22,7 +22,7 @@ class MetaGameHandler(GameHandler):
 
 	def bots_message(self, bots):
 		return json.dumps({
-			"game_id": self.game.game_id,
+			"room_id": self.room.room_id,
 			"type": "bots",
 			"bots": list(bots.keys()),
 		})
@@ -57,15 +57,15 @@ class MetaGameHandler(GameHandler):
 		if not self.db.set_room_for_connection(self.connection, room_id):
 			raise HandlerException(f"Failed to link connection to Room {room_id}")
 
-		updated_clients = self.game.add_client(self.connection, client_id)
+		updated_clients = self.room.add_client(self.connection, client_id)
 		if updated_clients is None:
 			raise HandlerException("Failed to join game. Please try again")
 		self.clients = updated_clients
 
-		host = self.game.host()
+		host = self.room.host()
 		if host is None:
 			host = client_id
-			self.game.set_host(host)
+			self.room.set_host(host)
 
 		await self.send_clients_event(host)
 
@@ -76,52 +76,52 @@ class MetaGameHandler(GameHandler):
 		# succeed. Note, in contrast to join_game, cannot make client responsible for retrying, as
 		# it will typically have disconnected.
 		while attempts < 4:
-			updated_clients = self.game.remove_client(self.connection)
+			updated_clients = self.room.remove_client(self.connection)
 			if updated_clients is not None:
 				break
 			attempts += 1
 			await asyncio.sleep(random.random() * attempts)
 
 		if updated_clients is None:
-			return self.logger.error(f"Failed to remove {self.client_id} from game {self.game.game_id}")
+			return self.logger.error(f"Failed to remove {self.client_id} from Room {self.room.room_id}")
 		self.clients = updated_clients
 
 		self.db.clear_room_for_connection(self.connection)
 
-		host = self.game.host()
+		host = self.room.host()
 		if self.client_id == host:
 			if self.clients:
 				# Assign an (arbitrary) new host
-				host = self.game.set_host(list(self.clients.values())[0], old_host = host)
+				host = self.room.set_host(list(self.clients.values())[0], old_host = host)
 			else:
 				host = None
-				self.game.clear_host()
+				self.room.clear_host()
 
 		await self.send_clients_event(host)
 
 	async def switch_host(self):
-		game_state = self.game.state()
+		game_state = self.room.game_state()
 		if game_state is None:
 			raise HandlerException("Can only switch host when game is in progress")
 		if game_state.age_in_seconds < Config.MAX_MOVE_TIME_IN_SECONDS:
 			raise HandlerException("Cannot switch host yet")
 
-		host = self.game.set_host(self.client_id, old_host = self.game.host())
+		host = self.room.set_host(self.client_id, old_host = self.room.host())
 		await self.send_clients_event(host)
 
 	async def send_status(self):
-		host = self.game.host()
+		host = self.room.host()
 		await self.send_message(self.clients_message(host))
 
-		bots = self.game.bots()
+		bots = self.room.bots()
 		await self.send_message(self.bots_message(bots))
 
-		game_state = self.game.state()
+		game_state = self.room.game_state()
 		if game_state:
 			await self.send_message(self.game_state_message(game_state, []))
 
 	def next_bot_name(self):
-		next_bot_id = self.game.next_bot_id()
+		next_bot_id = self.room.next_bot_id()
 		bot_name = f"Bot #{next_bot_id}"
 
 		return bot_name
@@ -129,14 +129,14 @@ class MetaGameHandler(GameHandler):
 	async def add_bot(self, bot_behaviour):
 		self.check_can_configure_game("add bot")
 
-		if len(self.game.bots()) >= Config.MAX_BOTS_PER_ROOM:
-			raise HandlerException(f"Room {self.game.game_id} is at its bot capacity limit")
+		if len(self.room.bots()) >= Config.MAX_BOTS_PER_ROOM:
+			raise HandlerException(f"Room {self.room.room_id} is at its bot capacity limit")
 
 		if not bot_behaviour in bot_behaviours:
 			raise HandlerException(f"Unknown bot behaviour '{bot_behaviour}'")
 
 		bot_name = self.next_bot_name()
-		bots = self.game.add_bot(bot_name, bot_behaviour)
+		bots = self.room.add_bot(bot_name, bot_behaviour)
 
 		if bots is not None:
 			self.logger.info(f"Added bot {bot_name}")
@@ -145,7 +145,7 @@ class MetaGameHandler(GameHandler):
 	async def remove_bot(self, bot_name):
 		self.check_can_configure_game("remove bot")
 
-		bots = self.game.remove_bot(bot_name)
+		bots = self.room.remove_bot(bot_name)
 
 		if bots is not None:
 			self.logger.info(f"Removed bot {bot_name}")
@@ -161,7 +161,7 @@ class MetaGameHandler(GameHandler):
 			return await self.send_status()
 
 		if cmd == "join-room":
-			return await self.join_room(cmd_message["game_id"], cmd_message["client_id"])
+			return await self.join_room(cmd_message["room_id"], cmd_message["client_id"])
 
 		if cmd == "leave-room":
 			return await self.leave_room()

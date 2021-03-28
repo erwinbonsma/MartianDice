@@ -16,7 +16,7 @@ export function Chat({ roomId, websocket }) {
 		e.preventDefault();
 		websocket.send(JSON.stringify({
 			action: "chat",
-			game_id: roomId,
+			room_id: roomId,
 			message: messageInput
 		}));
 

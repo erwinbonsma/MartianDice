@@ -30,8 +30,8 @@ export function JoinRoom({ roomId, playerName, websocket, onRoomJoined }) {
 		const handleMessage = (event) => {
 			const msg = JSON.parse(event.data);
 
-			if (msg.type === "clients" && msg.game_id === roomToJoin) {
-				onRoomJoined(msg.game_id);
+			if (msg.type === "clients" && msg.room_id === roomToJoin) {
+				onRoomJoined(msg.room_id);
 			}
 			if (msg.type === "response" && msg.status === "error") {
 				setErrorMessage(msg.details);
@@ -48,7 +48,7 @@ export function JoinRoom({ roomId, playerName, websocket, onRoomJoined }) {
 
 		websocket.send(JSON.stringify({
 			action: "join-room",
-			game_id: roomToJoin,
+			room_id: roomToJoin,
 			client_id: playerName
 		}));
 	}
