@@ -50,13 +50,18 @@ Done:
 -	Updated favicon, logos and metadata
 -	Added audio
 	-	Enable audio on Safari/Chrome on iPad
+	-	Add audio on successful/failed abductions
+-	Enable TTL for Room table
+-	Add Aggressive player
+-	Improve disconnection handling
+	-	Enable players to end turn of unresponsive player
+	-	Enable host-switch when bots do not move in time
+-	Fix coloring of title in header
+-	Only set-up websocket during registration
+-	Enable local run with homepage setting
 
 TODO:
--	Add audio on successful/failed abductions
--	Enable TTL for Room table
--	Handle disconnected players
-	-	Let host/other players force a move
-	-	Let host configure behaviour for disconnect players: auto-pass/wait
+-	Improve watchdog logic
 -	Improve disconnection detection
 -	Improve server logging
 -	Clean up client logging
