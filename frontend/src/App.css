@@ -1,7 +1,7 @@
 h1 {
 	text-align: center;
-	color: #000;
 	font-size: calc(14px + 5vmin);
+	font-weight: bold;
 }
 
 h4 {
@@ -167,6 +167,13 @@ h5 {
 }
 .ScoreBar-Winner {
 	background-color: #ccaa44;
+}
+
+.AppHeader {
+	background-color: #503030;
+	color: #b88;
+	margin: 0;
+	padding: 0.2em
 }
 
 .TableHeader {

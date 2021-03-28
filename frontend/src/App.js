@@ -90,7 +90,7 @@ function App() {
 						{playerName} <br/>
 						<Button variant="outline-secondary" size="xs" onClick={handleLogout}>logout</Button>
 					</center>)}</Col>
-					<Col xs={4} sm={8} className="TableHeader"
+					<Col xs={4} sm={8} className="AppHeader"
 						style={{display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 						<Die face="tank" />
 						<h1 className="d-none d-md-block">Martian Dice</h1>
