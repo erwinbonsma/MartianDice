@@ -1,3 +1,4 @@
+import asyncio
 import json
 from service.BaseHandler import GameHandler, HandlerException, ok_message
 from service.Config import Config
