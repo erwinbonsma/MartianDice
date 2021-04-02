@@ -9,7 +9,7 @@ class DisconnectionHandler(BaseHandler):
 
 			if room_id:
 				handler = MetaGameHandler(self.db, self.comms, self.connection)
-				handler.fetch_game(room_id)
+				handler.fetch_room(room_id)
 				await handler.leave_room()
 
 			self.logger.info(f"Handled disconnect of Connection {self.connection}")
