@@ -110,7 +110,7 @@ class MetaGameHandler(GameHandler):
 		self.room.set_host(self.client_id, old_host = self.room.host())
 		await self.send_clients_event()
 
-	async def send_welcome(self, game_config, game_state, to_clients):
+	async def send_welcome(self, to_clients, game_config, game_state):
 		self.check_is_host("send welcome")
 
 		for client in to_clients:
@@ -146,7 +146,9 @@ class MetaGameHandler(GameHandler):
 
 		if cmd == "send-welcome":
 			return await self.send_welcome(
-				cmd_message["game_config"], self.room.game_state(), cmd_message["to_clients"]
+				cmd_message["to_clients"],
+				cmd_message["game_config"],
+				cmd_message["game_state"] if "game_state" in cmd_message else None, 
 			)
 
 		if cmd == "send-clients":

@@ -242,10 +242,6 @@ export class GameRoom extends React.Component {
 	}
 
 	sendConfigUpdate() {
-		if (!this.isHost) {
-			return;
-		}
-
 		this.props.websocket.send(JSON.stringify({
 			action: "update-config",
 			room_id: this.props.roomId,
@@ -254,6 +250,29 @@ export class GameRoom extends React.Component {
 				next_bot_id: this.state.nextBotId
 			}
 		}));
+	}
+
+	welcomeNewClients(prevClients) {
+		const newClients = new Set(this.state.clients);
+		prevClients.forEach(oldClient => { newClients.delete(oldClient); });
+		newClients.delete(this.props.playerName);
+
+		if (newClients.size > 0) {
+			const optGameConfig = this.state.futureGame ? {
+				game_state: this.state.futureGame
+			} : {};
+
+			this.props.websocket.send(JSON.stringify({
+				action: "send-welcome",
+				room_id: this.props.roomId,
+				to_clients: [...newClients],
+				game_config: {
+					bots: this.state.bots,
+					next_bot_id: this.state.nextBotId
+				},
+				...optGameConfig
+			}));
+		}
 	}
 
 	componentDidMount() {
@@ -286,8 +305,14 @@ export class GameRoom extends React.Component {
 		this.triggerBotMove();
 		this.updateGame();
 		this.setWatchdog();
-		if (prevState.bots !== this.state.bots) {
-			this.sendConfigUpdate();
+
+		if (this.isHost) {
+			if (prevState.bots !== this.state.bots) {
+				this.sendConfigUpdate();
+			}
+			if (prevState.clients !== this.state.clients) {
+				this.welcomeNewClients(prevState.clients);
+			}
 		}
 	}
 
