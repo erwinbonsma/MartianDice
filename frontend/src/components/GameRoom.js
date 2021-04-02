@@ -24,7 +24,8 @@ export class GameRoom extends React.Component {
 			game: undefined,
 			hostName: undefined,
 			clients: [],
-			bots: [],
+			bots: {},
+			nextBotId: 1,
 			transitionTurns: [],
 			isAnimating: false,
 			lastUpdate: Date.now(),
@@ -48,7 +49,7 @@ export class GameRoom extends React.Component {
 		return !this.isReplaying && (this.props.playerName === this.state.futureGame?.active_player);
 	}
 	get botMove() {
-		return !this.isReplaying && this.state.bots.includes(this.state.futureGame?.active_player);
+		return !this.isReplaying && this.state.bots[this.state.futureGame?.active_player];
 	}
 	get turnState() {
 		return this.state.transitionTurns.length > 0
@@ -56,20 +57,22 @@ export class GameRoom extends React.Component {
 			: this.state.futureGame?.turn_state;
 	}
 
-	handleAddBot(event) {
-		this.props.websocket.send(JSON.stringify({
-			action: "add-bot",
-			room_id: this.props.roomId,
-			bot_behaviour: event
-		}));
+	handleAddBot(botBehaviour) {
+		this.setState((state) => {
+			const botName = `Bot-${state.nextBotId}`;
+			return {
+				bots: { ...state.bots, [botName]: botBehaviour},
+				nextBotId: state.nextBotId + 1
+			}
+		});
 	}
 
 	handleRemoveBot(event) {
-		this.props.websocket.send(JSON.stringify({
-			action: "remove-bot",
-			room_id: this.props.roomId,
-			bot_name: event.target.id
-		}));
+		const botName = event.target.id;
+		this.setState((state) => {
+			const { [botName]: _, ...bots } = state.bots;
+			return { bots };
+		});
 	}
 
 	handleStartGame() {
@@ -102,20 +105,25 @@ export class GameRoom extends React.Component {
 					clients: msg.clients
 				});
 				break;
-			case "bots":
-				this.setState({
-					bots: msg.bots
+			case "game-config":
+				this.setState((state, props) => {
+					if (this.props.playerName !== this.state.hostName) {
+						return {
+							bots: msg.game_config.bots,
+							nextBotId: msg.game_config.next_bot_id
+						}
+					}
 				});
 				break;
 			case "game-state":
 				this.clearWatchdog();
-				this.setState({
+				this.setState((state) => ({
 					transitionTurns: msg.turn_state_transitions,
 					futureGame: msg.state,
 					// Ensure game state is always set when there is a turn state
-					game: this.state.game || msg.state,
+					game: state.game || msg.state,
 					slowUpdate: false
-				});
+				}));
 				break;
 			case "response":
 				if (msg.status === "error") {
@@ -233,11 +241,22 @@ export class GameRoom extends React.Component {
 		}
 	}
 
+	sendConfigUpdate() {
+		this.props.websocket.send(JSON.stringify({
+			action: "update-config",
+			room_id: this.props.roomId,
+			game_config: {
+				bots: this.state.bots,
+				next_bot_id: this.state.nextBotId
+			}
+		}));
+	}
+
 	componentDidMount() {
 		this.props.websocket.addEventListener('message', this.handleMessage);
 
 		this.props.websocket.send(JSON.stringify({
-			action: "send-status",
+			action: "send-clients",
 			room_id: this.props.roomId
 		}));
 	}
@@ -258,11 +277,14 @@ export class GameRoom extends React.Component {
 		this.clearWatchdog();
 	}
 
-	componentDidUpdate() {
+	componentDidUpdate(prevProps, prevState) {
 		this.animateTransitions();
 		this.triggerBotMove();
 		this.updateGame();
 		this.setWatchdog();
+		if (prevState.bots !== this.state.bots) {
+			this.sendConfigUpdate();
+		}
 	}
 
 	render() {

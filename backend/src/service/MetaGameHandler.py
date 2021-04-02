@@ -8,17 +8,17 @@ from service.GameState import GameState
 class MetaGameHandler(GameHandler):
 	"""Handles everything about the game/room, except the game play."""
 
-	def clients_message(self, host):
+	def clients_message(self):
 		return json.dumps({
 			"room_id": self.room.room_id,
 			"type": "clients",
 			"clients": list(self.clients.values()),
-			"host": host
+			"host": self.room.host()
 		})
 
-	async def send_clients_event(self, host):
+	async def send_clients_event(self):
 		"""Sends event with all connected clients (human players and observers)"""
-		message = self.clients_message(host)
+		message = self.clients_message()
 		await self.broadcast(message)
 
 	def game_config_message(self, game_config):
@@ -68,7 +68,7 @@ class MetaGameHandler(GameHandler):
 			host = client_id
 			self.room.set_host(host)
 
-		await self.send_clients_event(host)
+		await self.send_clients_event()
 
 	async def leave_room(self):
 		attempts = 0
@@ -98,7 +98,7 @@ class MetaGameHandler(GameHandler):
 				host = None
 				self.room.clear_host()
 
-		await self.send_clients_event(host)
+		await self.send_clients_event()
 
 	async def switch_host(self):
 		game_state = self.room.game_state()
@@ -107,8 +107,8 @@ class MetaGameHandler(GameHandler):
 		if game_state.age_in_seconds < Config.MAX_MOVE_TIME_IN_SECONDS:
 			raise HandlerException("Cannot switch host yet")
 
-		host = self.room.set_host(self.client_id, old_host = self.room.host())
-		await self.send_clients_event(host)
+		self.room.set_host(self.client_id, old_host = self.room.host())
+		await self.send_clients_event()
 
 	async def send_welcome(self, game_config, game_state, to_clients):
 		self.check_is_host("send welcome")
@@ -117,6 +117,9 @@ class MetaGameHandler(GameHandler):
 			await self.send_message(self.game_config_message(game_config), dest_client = client)
 			if game_state is not None:
 				await self.send_message(self.game_state_message(game_state), dest_client = client)
+
+	async def send_clients(self):
+		await self.send_message(self.clients_message())
 
 	async def update_config(self, game_config):
 		self.check_can_configure_game("update game config")
@@ -145,6 +148,9 @@ class MetaGameHandler(GameHandler):
 			return await self.send_welcome(
 				cmd_message["game_config"], self.room.game_state(), cmd_message["to_clients"]
 			)
+
+		if cmd == "send-clients":
+			return await self.send_clients()
 
 		if cmd == "join-room":
 			return await self.join_room(cmd_message["room_id"], cmd_message["client_id"])

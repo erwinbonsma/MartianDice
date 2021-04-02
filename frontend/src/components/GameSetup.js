@@ -22,7 +22,7 @@ export function GameSetup({ clients, bots, host, isHost, onAddBot, onRemoveBot }
 				<div className="BotsTable">
 					<h4 className="TableHeader">Bots</h4>
 					<div className="TableBody">
-					{ bots.map(bot => (
+					{ Object.keys(bots).map(bot => (
 						<div key={bot} style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
 							<div>{bot}</div>
 							<div style={{textAlign: "right"}}>{ isHost && (
