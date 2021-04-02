@@ -2,6 +2,7 @@ import asyncio
 import json
 import jsonpickle
 import logging
+import traceback
 
 logger = logging.getLogger('handlers')
 logger.setLevel(logging.INFO)
@@ -100,4 +101,5 @@ class GameHandler(BaseHandler):
 			return await self.send_error_message(e.message)
 		except Exception as e:
 			self.logger.warn(e)
+			traceback.print_exc()
 			raise e

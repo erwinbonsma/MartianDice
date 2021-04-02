@@ -23,10 +23,37 @@ class TurnPhase(IntEnum):
 	CheckPass = 5
 	Done = 6
 
-class SideDiceState:
+class Dice:
 
 	def __init__(self, counts = {}):
-		self.__counts = counts
+		self._counts = counts
+
+	@classmethod 
+	def from_dict(cls, dict):
+		self = cls.__new__(cls)
+		self.__setstate__(dict)
+		return self
+
+	def to_dict(self):
+		return self.__getstate__()
+
+	def __getitem__(self, die_face):
+		return self._counts.get(die_face, 0)
+
+	@property
+	def num_dice(self):
+		return sum(self._counts.values())
+
+	def __str__(self):
+		return str(self._counts)
+
+	def __getstate__(self):
+		return dict((die.name, self._counts[die]) for die in sorted(self._counts.keys()))
+
+	def __setstate__(self, state):
+		self._counts = dict((DieFace[die_name], count) for die_name, count in state.items())
+
+class SideDiceState(Dice):
 
 	@property
 	def score(self):
@@ -34,9 +61,6 @@ class SideDiceState:
 			return 0
 		bonus = 3 if sum(1 for key in EARTHLINGS if self[key] > 0) == 3 else 0
 		return self.num_earthlings + bonus
-
-	def __getitem__(self, die_face):
-		return self.__counts.get(die_face, 0)
 
 	@property
 	def num_earthlings(self):
@@ -48,26 +72,17 @@ class SideDiceState:
 
 	@property
 	def total_collected(self):
-		return sum(self.__counts.values())
+		return self.num_dice
 
 	def add(self, die_face, number):
-		new_counts = dict(self.__counts)
+		new_counts = dict(self._counts)
 		new_counts[die_face] = new_counts.get(die_face, 0) + number
 		return SideDiceState(new_counts)
 
 	def update_tanks(self, num_tanks):
 		return self.add(DieFace.Tank, num_tanks)
 
-	def __str__(self):
-		return str(self.__counts)
-
-	def __getstate__(self):
-		return dict((die.name, count) for die, count in self.__counts.items())
-
-	def __setstate__(self, state):
-		self.__counts = dict((DieFace[die_name], count) for die_name, count in state.items())
-
-class DiceThrow:
+class DiceThrow(Dice):
 
 	@staticmethod
 	def random_throw(num_dice):
@@ -82,18 +97,8 @@ class DiceThrow:
 
 		return DiceThrow(counts)
 
-	def __init__(self, counts):
-		self.__counts = counts
-
-	@property
-	def num_dice(self):
-		return sum(self.__counts.values())
-
-	def __getitem__(self, die_face):
-		return self.__counts.get(die_face, 0)
-
 	def remove(self, die_face):
-		new_counts = dict(self.__counts)
+		new_counts = dict(self._counts)
 		del new_counts[die_face]
 		return DiceThrow(new_counts)
 
@@ -101,18 +106,9 @@ class DiceThrow:
 		if count == 0:
 			return self.remove(die_face)
 		else:
-			new_counts = dict(self.__counts)
+			new_counts = dict(self._counts)
 			new_counts[die_face] = count
 			return DiceThrow(new_counts)
-
-	def __str__(self):
-		return str(self.__counts)
-
-	def __getstate__(self):
-		return dict((die.name, count) for die, count in self.__counts.items())
-
-	def __setstate__(self, state):
-		self.__counts = dict((DieFace[die_name], count) for die_name, count in state.items())
 
 def random_throw(state):
 	return DiceThrow.random_throw(NUM_DICE - state.total_collected)
@@ -128,6 +124,15 @@ class TurnState:
 		self.phase = phase
 		self.throw = throw
 		self.throw_count = throw_count
+
+	@classmethod 
+	def from_dict(cls, dict):
+		self = cls.__new__(cls)
+		self.__setstate__(dict)
+		return self
+
+	def to_dict(self):
+		return self.__getstate__()
 
 	@property
 	def score(self):
@@ -291,11 +296,11 @@ class TurnState:
 		state = {
 			"throw_count": self.throw_count,
 			"phase": self.phase.name,
-			"side_dice": self.side_dice,
+			"side_dice": self.side_dice.to_dict(),
 		}
 
 		if self.throw:
-			state["throw"] = self.throw
+			state["throw"] = self.throw.to_dict()
 		if self.phase == TurnPhase.Done:
 			state["score"] = self.score
 			state["end_cause"] = self.end_cause
@@ -306,7 +311,10 @@ class TurnState:
 
 	def __setstate__(self, state):
 		state["phase"] = TurnPhase[state["phase"]]
-		if not "throw" in state:
+		state["side_dice"] = SideDiceState.from_dict(state["side_dice"])
+		if "throw" in state:
+			state["throw"] = DiceThrow.from_dict(state["throw"])
+		else:
 			state["throw"] = None
 		self.__dict__.update(state)
 

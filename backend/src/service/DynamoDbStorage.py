@@ -1,8 +1,9 @@
 import boto3
 from datetime import datetime, timedelta
-import jsonpickle
 import hashlib
 import logging
+import traceback
+from service.GameState import GameState
 
 logger = logging.getLogger('dynamodb')
 logger.setLevel(logging.INFO)
@@ -250,7 +251,7 @@ class DynamoDbRoom:
 			)
 
 			pickled = response["Item"]["GameState"]["S"]
-			self.__game_state = jsonpickle.decode(pickled)
+			self.__game_state = GameState.from_json(pickled)
 
 		except Exception as e:
 			logger.warn(f"Failed to get game state {self.__game_state_hash} for Room {self.room_id}: {e}")
@@ -263,7 +264,7 @@ class DynamoDbRoom:
 			game_state.set_from_hash(old_hash)
 			opt_values = { ":old_hash": { "S": old_hash } }
 
-		pickled = jsonpickle.encode(game_state)
+		pickled = game_state.as_json()
 		new_hash = hashlib.md5(pickled.encode('utf-8')).hexdigest()
 
 		try:

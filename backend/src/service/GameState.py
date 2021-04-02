@@ -1,10 +1,26 @@
 from enum import IntEnum
-import jsonpickle
+import hashlib
+import json
 import random
 import time
+import traceback
 from game.DataTypes import TurnState, TurnPhase
 
 TARGET_SCORE = 25
+
+class ChecksumMismatchException(Exception):
+	def __init__(self, message):
+		self.message = message
+
+def game_state_id(game_state):
+	if "id" in game_state:
+		# game_state already contains "id", so apparently this is an integrity check. Remove "id"
+		# so that the state equals that which was used to originally set the id.
+		game_state = dict(game_state)
+		del game_state["id"]
+
+	s = json.dumps(game_state)
+	return hashlib.md5(s.encode('utf-8')).hexdigest()
 
 class GameState:
 
@@ -75,29 +91,45 @@ class GameState:
 			"last_update": int(self.last_update)
 		}
 		if not self.done:
-			state["turn_state"] = self.turn_state
+			state["turn_state"] = self.turn_state.to_dict()
 			state["active_player"] = self.active_player
 		if self.from_hash:
 			state["from_hash"] = self.from_hash
 		if self.winner:
 			state["winner"] = self.winner
+		state["id"] = game_state_id(state)
 
 		return state
 
 	def __setstate__(self, state):
+		chksum = game_state_id(state)
+		if state["id"] != chksum:
+			raise ChecksumMismatchException(f'{state["id"]} != {chksum}')
+
 		# Set defaults for optional variables
 		self.from_hash = None
 		self.winner = None
 		self.turn_state = None
 
+		turn_state_dict = state.get("turn_state", None)
+		if turn_state_dict:
+			state["turn_state"] = TurnState.from_dict(turn_state_dict)
+
 		active_player = state.get("active_player", None)
 		if active_player:
 			state["active_player_index"] = state["players"].index(active_player)
 			del state["active_player"]
+
 		self.__dict__.update(state)
 
 	def __str__(self):
 		return str(self.__getstate__())
 
 	def as_json(self):
-		return jsonpickle.encode(self, unpicklable = False)
+		return json.dumps(self.__getstate__())
+
+	@classmethod 
+	def from_json(cls, json_string):
+		self = cls.__new__(cls)
+		self.__setstate__(json.loads(json_string))
+		return self
