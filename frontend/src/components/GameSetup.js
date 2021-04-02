@@ -1,3 +1,4 @@
+import { isDictionaryEmpty } from '../utils';
 import { Separator } from './Separator';
 import Button from 'react-bootstrap/Button';
 import DropdownButton from 'react-bootstrap/DropdownButton';
@@ -18,7 +19,7 @@ export function GameSetup({ clients, bots, host, isHost, onAddBot, onRemoveBot }
 				</div>
 				<Separator />
 			</div>
-			{ (bots?.length > 0 || isHost) && (
+			{ (!isDictionaryEmpty(bots) || isHost) && (
 				<div className="BotsTable">
 					<h4 className="TableHeader">Bots</h4>
 					<div className="TableBody">
