@@ -242,6 +242,10 @@ export class GameRoom extends React.Component {
 	}
 
 	sendConfigUpdate() {
+		if (!this.isHost) {
+			return;
+		}
+
 		this.props.websocket.send(JSON.stringify({
 			action: "update-config",
 			room_id: this.props.roomId,
