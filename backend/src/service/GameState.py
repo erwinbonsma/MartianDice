@@ -32,7 +32,6 @@ class GameState:
 		self.active_player_index = 0
 		self.scores = dict((id, 0) for id in self.players)
 		self.turn_state = TurnState()
-		self.from_hash = None
 		self.winner = None
 		self.last_update = time.time()
 		self.prev_id = None
@@ -55,9 +54,6 @@ class GameState:
 	@property
 	def age_in_seconds(self):
 		return time.time() - self.last_update
-
-	def set_from_hash(self, from_hash):
-		self.from_hash = from_hash
 
 	def next(self, input = None):
 		assert(not self.done)
@@ -99,8 +95,6 @@ class GameState:
 		if not self.done:
 			state["turn_state"] = self.turn_state.to_dict()
 			state["active_player"] = self.active_player
-		if self.from_hash:
-			state["from_hash"] = self.from_hash
 		if self.prev_id:
 			state["prev_id"] = self.prev_id
 		if self.winner:
@@ -115,7 +109,6 @@ class GameState:
 			raise ChecksumMismatchException(f'{state["id"]} != {chksum}')
 
 		# Set defaults for optional variables
-		self.from_hash = None
 		self.winner = None
 		self.turn_state = None
 
