@@ -32,8 +32,9 @@ class BaseHandler:
 		self.connection = connection
 		self.logger = logger
 
-	async def send_message(self, message):
-		return await self.comms.send(self.connection, message)
+	async def send_message(self, message, destination = None):
+		destination = destination or self.connection
+		return await self.comms.send(destination, message)
 
 	async def send_error_message(self, details):
 		return await self.send_message(error_message(details))

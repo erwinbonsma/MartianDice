@@ -33,16 +33,16 @@ class GamePlayHandler(GameHandler):
 		if game_state.active_player != self.client_id:
 			raise HandlerException(f"{self.client_id} tried to move while it's not their turn")
 
-	def check_bot_move(self, game_state, bots):
+	def check_bot_move(self, game_state):
 		self.check_expect_move(game_state)
-		if not game_state.active_player in bots:
+		if not game_state.active_player.startswith("Bot-"):
 			raise HandlerException("Bot move initiated while it's not a bot's turn")
 
 	def check_can_end_turn(self, game_state):
 		if game_state.age_in_seconds < Config.MAX_MOVE_TIME_IN_SECONDS:
 			raise HandlerException("Cannot forcefully end the current turn yet")
 
-		if game_state.active_player in self.room.bots():
+		if game_state.active_player.startswith("Bot-"):
 			raise HandlerException("Can only end turns of human players")
 
 	async def update_state_until_blocked(self, game_state):
@@ -81,14 +81,13 @@ class GamePlayHandler(GameHandler):
 
 		await self.handle_move(game_state, player_move)
 
-	async def bot_move(self):
+	async def bot_move(self, bot_behaviour):
 		self.check_is_host("initiate bot move")
 
 		game_state = self.room.game_state()
-		bots = self.room.bots()
-		self.check_bot_move(game_state, bots)
+		self.check_bot_move(game_state)
 		
-		action_selector = bot_behaviours[bots[game_state.active_player]]
+		action_selector = bot_behaviours[bot_behaviour]
 
 		turn_state = game_state.turn_state
 		if turn_state.phase == TurnPhase.PickDice:
@@ -106,11 +105,11 @@ class GamePlayHandler(GameHandler):
 
 		await self.handle_move(game_state, "end-turn")
 
-	async def start_game(self):
+	async def start_game(self, game_config):
 		self.check_can_configure_game("start game")
 
 		self.logger.info("Starting game")
-		bots = self.room.bots()
+		bots = game_config["bots"]
 		game_state = GameState( itertools.chain(self.clients.values(), bots.keys()) )
 
 		await self.update_state_until_blocked(game_state)
@@ -119,15 +118,15 @@ class GamePlayHandler(GameHandler):
 		cmd = cmd_message["action"]
 
 		if cmd == "start-game":
-			return await self.start_game()
+			return await self.start_game(cmd_message["game_config"])
 
 		if cmd == "move":
 			return await self.player_move(cmd_message)
 
 		if cmd == "bot-move":
-			return await self.bot_move()
+			return await self.bot_move(cmd_message["bot_behaviour"])
 
 		if cmd == "end-turn":
 			return await self.end_turn()
 
-		logger.warn(f"Urecognized command {cmd}")
+		logger.warn(f"Unrecognized command {cmd}")

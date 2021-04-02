@@ -43,53 +43,67 @@ def check_exit(game_id):
 				"pass": choice == "Y"
 			})
 
-def bot_move(game_id):
+def bot_move(game_id, bot_behaviour):
 	return json.dumps({
 		"action": "bot-move",
-		"game_id": game_id
+		"game_id": game_id,
+		"bot_behaviour": bot_behaviour
 	})
 
 async def add_bots(ws, game_id, bots):
-	for bot in bots:
-		await ws.send(json.dumps({
-			"action": "add-bot",
-			"game_id": game_id,
-			"bot_behaviour": bot
-		}))
+	game_config = {
+		"bots": { f"Bot-{i+1}": behaviour for i, behaviour in enumerate(bots) }
+	}
+	await ws.send(json.dumps({
+		"action": "update-config",
+		"game_id": game_id,
+		"game_config": game_config
+	}))
 
-async def play_game(args):
-	async with websockets.connect(args.url) as websocket:
-		if args.game_id:
-			game_id = args.game_id
-		else:
+async def start_game(ws, game_id, bots):
+	await ws.send(json.dumps({
+		"action": "start-game",
+		"game_id": game_id,
+		"game_config": {
+			"bots": bots
+		}
+	}))
+
+async def play_game(url, client_id, game_id = None, num_clients = 1, bot_behaviours = None):
+	async with websockets.connect(url) as websocket:
+		if game_id is None:
 			await websocket.send(json.dumps({ "action": "create-room" }))
 			response = json.loads(await websocket.recv())
 			game_id = response["room_id"]
 
 		await websocket.send(json.dumps({
 			"action": "join-room",
-			"game_id": game_id,
-			"client_id": args.name
+			"room_id": game_id,
+			"client_id": client_id
 		}))
 
+		if bot_behaviours:
+			await add_bots(websocket, game_id, bot_behaviours)
+		
 		bots = set()
 		is_host = False
-		if args.bots:
-			await add_bots(websocket, game_id, args.bots)
-		
 		while True:
 			raw_message = await websocket.recv()
 			print(raw_message)
 			message = json.loads(raw_message)
 
 			if message["type"] == "clients":
-				is_host = message["host"] == args.name
+				is_host = message["host"] == client_id
 
-				if len(message["clients"]) == args.num_clients:
-					await websocket.send(json.dumps({ "action": "start-game", "game_id": game_id }))
+				if len(message["clients"]) == num_clients and (
+					num_clients > 1 or not bot_behaviours
+				):
+					await start_game(websocket, game_id, bots)
 
-			if message["type"] == "bots":
-				bots = set(message["bots"])
+			if message["type"] == "game-config":
+				bots = message["game_config"]["bots"]
+				if num_clients == 1:
+					await start_game(websocket, game_id, bots)
 
 			if message["type"] == "game-state":
 				for turn_state in message["turn_state_transitions"]:
@@ -100,17 +114,18 @@ async def play_game(args):
 					print(f"{state[winner]} has won!")
 					break
 				print(state["turn_state"])
-				if state["active_player"] == args.name:
+				if state["active_player"] == client_id:
 					if state["turn_state"]["phase"] == "PickDice":
 						await websocket.send(pick_dice(game_id, state["turn_state"]))
 					elif state["turn_state"]["phase"] == "CheckPass":
 						await websocket.send(check_exit(game_id))
 				if is_host and state["active_player"] in bots:
-					await websocket.send(bot_move(game_id))
+					bot_behaviour = bots[state["active_player"]]
+					await websocket.send(bot_move(game_id, bot_behaviour))
 
 parser = argparse.ArgumentParser(description='Basic Martian Dice client')
 parser.add_argument('--num-clients', type=int, help='Number of clients (host only)', default=1)
-parser.add_argument('--bots', nargs='*', choices=["smart", "random", "defensive"], help='Adds bot(s) (host only)')
+parser.add_argument('--bots', nargs='*', choices=["smart", "random", "defensive", "aggressive"], help='Adds bot(s) (host only)')
 parser.add_argument('--name', help='Player name')
 parser.add_argument('--url', help='Game service endpoint', default='ws://127.0.0.1:8765')
 parser.add_argument('--join-game', dest="game_id", metavar="Game ID", help="Join existing game")

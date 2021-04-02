@@ -21,16 +21,16 @@ class MetaGameHandler(GameHandler):
 		message = self.clients_message(host)
 		await self.broadcast(message)
 
-	def bots_message(self, bots):
+	def game_config_message(self, game_config):
 		return json.dumps({
 			"room_id": self.room.room_id,
-			"type": "bots",
-			"bots": list(bots.keys()),
+			"type": "game-config",
+			"game_config": game_config,
 		})
 
-	async def send_bots_event(self, bots):
-		"""Sends event with all bots"""
-		message = self.bots_message(bots)
+	async def send_game_config_event(self, game_config):
+		"""Sends event with game configuration"""
+		message = self.game_config_message(game_config)
 		await self.broadcast(message)
 
 	async def send_chat(self, message):
@@ -110,47 +110,29 @@ class MetaGameHandler(GameHandler):
 		host = self.room.set_host(self.client_id, old_host = self.room.host())
 		await self.send_clients_event(host)
 
-	async def send_status(self):
-		host = self.room.host()
-		await self.send_message(self.clients_message(host))
+	async def forward_status(self, game_config, game_state, to_client):
+		self.check_is_host("forward status")
 
-		bots = self.room.bots()
-		await self.send_message(self.bots_message(bots))
+		self.send_message(self.game_config_message(game_config), destination = to_client)
+		if game_state is not None:
+			self.send_message(self.game_state_message(game_state), destination = to_client)
 
-		game_state = self.room.game_state()
-		if game_state:
-			await self.send_message(self.game_state_message(game_state, []))
+	async def update_config(self, game_config):
+		self.check_can_configure_game("update game config")
 
-	def next_bot_name(self):
-		next_bot_id = self.room.next_bot_id()
-		bot_name = f"Bot #{next_bot_id}"
+		# Sanity checks on configuration
+		bots = game_config["bots"]
+		if len(bots) > Config.MAX_BOTS_PER_ROOM:
+			raise HandlerException(f"Room {self.room.room_id} cannot exceed bot capacity limit")
 
-		return bot_name
+		for name, behaviour in bots.items():
+			if not name.startswith("Bot-"):
+				raise HandlerException(f"Invalid bot name '{name}'")
+			if not behaviour in bot_behaviours:
+				raise HandlerException(f"Unknown bot behaviour '{behaviour}'")
 
-	async def add_bot(self, bot_behaviour):
-		self.check_can_configure_game("add bot")
-
-		if len(self.room.bots()) >= Config.MAX_BOTS_PER_ROOM:
-			raise HandlerException(f"Room {self.room.room_id} is at its bot capacity limit")
-
-		if not bot_behaviour in bot_behaviours:
-			raise HandlerException(f"Unknown bot behaviour '{bot_behaviour}'")
-
-		bot_name = self.next_bot_name()
-		bots = self.room.add_bot(bot_name, bot_behaviour)
-
-		if bots is not None:
-			self.logger.info(f"Added bot {bot_name}")
-			await self.send_bots_event(bots)
-
-	async def remove_bot(self, bot_name):
-		self.check_can_configure_game("remove bot")
-
-		bots = self.room.remove_bot(bot_name)
-
-		if bots is not None:
-			self.logger.info(f"Removed bot {bot_name}")
-			await self.send_bots_event(bots)
+		# Share with other clients
+		await self.send_game_config_event(game_config)
 
 	async def handle_game_command(self, cmd_message):
 		cmd = cmd_message["action"]
@@ -158,8 +140,10 @@ class MetaGameHandler(GameHandler):
 		if cmd == "chat":
 			return await self.send_chat(cmd_message["message"])
 
-		if cmd == "send-status":
-			return await self.send_status()
+		if cmd == "forward-status":
+			return await self.forward_status(
+				cmd_message["game_config"], self.room.game_state(), cmd_message["to_client"]
+			)
 
 		if cmd == "join-room":
 			return await self.join_room(cmd_message["room_id"], cmd_message["client_id"])
@@ -170,10 +154,7 @@ class MetaGameHandler(GameHandler):
 		if cmd == "switch-host":
 			return await self.switch_host()
 
-		if cmd == "add-bot":
-			return await self.add_bot(cmd_message["bot_behaviour"])
+		if cmd == "update-config":
+			return await self.update_config(cmd_message["game_config"])
 
-		if cmd == "remove-bot":
-			return await self.remove_bot(cmd_message["bot_name"])
-
-		self.logger.warn(f"Urecognized command {cmd}")
+		self.logger.warn(f"Unrecognized command {cmd}")
