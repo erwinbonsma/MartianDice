@@ -32,8 +32,15 @@ class BaseHandler:
 		self.connection = connection
 		self.logger = logger
 
-	async def send_message(self, message, destination = None):
-		destination = destination or self.connection
+	async def send_message(self, message, dest_client = None):
+		if dest_client:
+			connection = [conn for conn, name in self.clients.items() if name == dest_client]
+			if len(connection) == 0:
+				self.logger.warn(f"No connection found for client {dest_client}")
+				return
+			destination = connection[0]
+		else:
+			destination = self.connection
 		return await self.comms.send(destination, message)
 
 	async def send_error_message(self, details):
@@ -41,7 +48,7 @@ class BaseHandler:
 
 class GameHandler(BaseHandler):
 
-	def game_state_message(self, game_state, turn_state_transitions):
+	def game_state_message(self, game_state, turn_state_transitions = []):
 		return jsonpickle.encode({
 			"game_id": self.room.game_id,
 			"type": "game-state",

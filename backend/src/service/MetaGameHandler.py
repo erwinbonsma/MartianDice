@@ -110,12 +110,13 @@ class MetaGameHandler(GameHandler):
 		host = self.room.set_host(self.client_id, old_host = self.room.host())
 		await self.send_clients_event(host)
 
-	async def forward_status(self, game_config, game_state, to_client):
-		self.check_is_host("forward status")
+	async def send_welcome(self, game_config, game_state, to_clients):
+		self.check_is_host("send welcome")
 
-		self.send_message(self.game_config_message(game_config), destination = to_client)
-		if game_state is not None:
-			self.send_message(self.game_state_message(game_state), destination = to_client)
+		for client in to_clients:
+			await self.send_message(self.game_config_message(game_config), dest_client = client)
+			if game_state is not None:
+				await self.send_message(self.game_state_message(game_state), dest_client = client)
 
 	async def update_config(self, game_config):
 		self.check_can_configure_game("update game config")
@@ -140,9 +141,9 @@ class MetaGameHandler(GameHandler):
 		if cmd == "chat":
 			return await self.send_chat(cmd_message["message"])
 
-		if cmd == "forward-status":
-			return await self.forward_status(
-				cmd_message["game_config"], self.room.game_state(), cmd_message["to_client"]
+		if cmd == "send-welcome":
+			return await self.send_welcome(
+				cmd_message["game_config"], self.room.game_state(), cmd_message["to_clients"]
 			)
 
 		if cmd == "join-room":
