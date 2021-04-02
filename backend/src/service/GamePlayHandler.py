@@ -52,16 +52,14 @@ class GamePlayHandler(GameHandler):
 				turn_state_transitions.append(game_state.turn_state)
 			game_state.next()
 
-		if self.room.set_game_state(game_state):
-			await self.broadcast(self.game_state_message(game_state, turn_state_transitions))
+		await self.broadcast(self.game_state_message(game_state, turn_state_transitions))
 
 	async def handle_move(self, game_state, input_value):
 		game_state.next(input_value)
 
 		await self.update_state_until_blocked(game_state)
 
-	async def player_move(self, cmd_message):
-		game_state = self.room.game_state()
+	async def player_move(self, game_state, cmd_message):
 		self.check_my_move(game_state)
 
 		if "pick_die" in cmd_message:
@@ -81,10 +79,8 @@ class GamePlayHandler(GameHandler):
 
 		await self.handle_move(game_state, player_move)
 
-	async def bot_move(self, bot_behaviour):
+	async def bot_move(self, game_state, bot_behaviour):
 		self.check_is_host("initiate bot move")
-
-		game_state = self.room.game_state()
 		self.check_bot_move(game_state)
 		
 		action_selector = bot_behaviours[bot_behaviour]
@@ -97,9 +93,7 @@ class GamePlayHandler(GameHandler):
 
 		await self.handle_move(game_state, bot_move)
 
-	async def end_turn(self):
-		game_state = self.room.game_state()
-
+	async def end_turn(self, game_state):
 		self.check_can_end_turn(game_state)
 
 		await self.handle_move(game_state, "end-turn")
@@ -119,13 +113,14 @@ class GamePlayHandler(GameHandler):
 		if cmd == "start-game":
 			return await self.start_game(cmd_message["game_config"])
 
+		game_state = GameState.from_dict(cmd_message["game_state"])
 		if cmd == "move":
-			return await self.player_move(cmd_message)
+			return await self.player_move(game_state, cmd_message)
 
 		if cmd == "bot-move":
-			return await self.bot_move(cmd_message["bot_behaviour"])
+			return await self.bot_move(game_state, cmd_message["bot_behaviour"])
 
 		if cmd == "end-turn":
-			return await self.end_turn()
+			return await self.end_turn(game_state)
 
 		logger.warn(f"Unrecognized command {cmd}")

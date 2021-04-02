@@ -14,7 +14,8 @@ key2die = {
 	"M": DieFace.Cow
 }
 
-def pick_dice(game_id, turn_state):
+def pick_dice(game_id, game_state):
+	turn_state = game_state["turn_state"]
 	while True:
 		key = input("Your choice : ").upper()
 		if not key in key2die:
@@ -30,23 +31,26 @@ def pick_dice(game_id, turn_state):
 		return json.dumps({
 			"action": "move",
 			"game_id": game_id,
+			"game_state": game_state,
 			"pick_die": die.name
 		})
 
-def check_exit(game_id):
+def check_exit(game_id, game_state):
 	while True:
 		choice = input("Pass (Y/N)? : ").upper()
 		if choice == "Y" or choice == "N":
 			return json.dumps({
 				"action": "move",
 				"game_id": game_id,
+				"game_state": game_state,
 				"pass": choice == "Y"
 			})
 
-def bot_move(game_id, bot_behaviour):
+def bot_move(game_id, game_state, bot_behaviour):
 	return json.dumps({
 		"action": "bot-move",
 		"game_id": game_id,
+		"game_state": game_state,
 		"bot_behaviour": bot_behaviour
 	})
 
@@ -136,15 +140,15 @@ async def play_game(url, client_id, room_id = None, num_clients = 1, bot_behavio
 				if "winner" in game_state:
 					print(f"{game_state[winner]} has won!")
 					break
-				print(game_state["turn_state"])
+
 				if game_state["active_player"] == client_id:
 					if game_state["turn_state"]["phase"] == "PickDice":
-						await websocket.send(pick_dice(room_id, game_state["turn_state"]))
+						await websocket.send(pick_dice(room_id, game_state))
 					elif game_state["turn_state"]["phase"] == "CheckPass":
-						await websocket.send(check_exit(room_id))
+						await websocket.send(check_exit(room_id, game_state))
 				if is_host and game_state["active_player"] in bots:
 					bot_behaviour = bots[game_state["active_player"]]
-					await websocket.send(bot_move(room_id, bot_behaviour))
+					await websocket.send(bot_move(room_id, game_state, bot_behaviour))
 
 parser = argparse.ArgumentParser(description='Basic Martian Dice client')
 parser.add_argument('--num-clients', type=int, help='Number of clients (host only)', default=1)

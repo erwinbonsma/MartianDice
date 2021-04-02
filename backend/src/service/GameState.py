@@ -138,6 +138,10 @@ class GameState:
 
 	@classmethod 
 	def from_json(cls, json_string):
+		return cls.from_dict(json.loads(json_string))
+
+	@classmethod 
+	def from_dict(cls, dict):
 		self = cls.__new__(cls)
-		self.__setstate__(json.loads(json_string))
+		self.__setstate__(dict)
 		return self

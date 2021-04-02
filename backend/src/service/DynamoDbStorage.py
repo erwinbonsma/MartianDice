@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 import hashlib
 import logging
 import traceback
-from service.GameState import GameState
 
 logger = logging.getLogger('dynamodb')
 logger.setLevel(logging.INFO)
@@ -230,74 +229,3 @@ class DynamoDbRoom:
 			return clients
 		except Exception as e:
 			logger.warn(f"Failed to remove Connection {connection} from Room {self.room_id}: {e}")
-
-	def __fetch_game_state(self):
-		if self.__game_state_hash is not None:
-			return # Already fetched it
-
-		instance = self.__instance_item()
-
-		if not "GameState" in instance:
-			self.__game_state = None
-			return # Nothing to fetch
-
-		self.__game_state_hash = instance["GameState"]["S"]
-		try:
-			response = self.client.get_item(
-				TableName = "games",
-				Key = {
-					"PKEY": { "S": self.__game_state_hash }
-				},
-			)
-
-			pickled = response["Item"]["GameState"]["S"]
-			self.__game_state = GameState.from_json(pickled)
-
-		except Exception as e:
-			logger.warn(f"Failed to get game state {self.__game_state_hash} for Room {self.room_id}: {e}")
-
-	def set_game_state(self, game_state):
-		old_hash = self.__game_state_hash
-		opt_values = {}
-
-		if old_hash is not None:
-			game_state.set_from_hash(old_hash)
-			opt_values = { ":old_hash": { "S": old_hash } }
-
-		pickled = game_state.as_json()
-		new_hash = hashlib.md5(pickled.encode('utf-8')).hexdigest()
-
-		try:
-			self.client.put_item(
-				TableName = "games",
-				Item = {
-					"PKEY": { "S": new_hash },
-					"GameState": { "S": pickled }
-				}
-			)
-
-			self.client.update_item(
-				TableName = "rooms",
-				Key = {
-					"PKEY": { "S": f"Room#{self.room_id}" },
-					"SKEY": { "S": "Instance" }
-				},
-				UpdateExpression = "SET GameState = :new_hash",
-				ExpressionAttributeValues = {
-					":new_hash": { "S": new_hash },
-					**opt_values
-				},
-				ConditionExpression = "GameState = :old_hash" if old_hash else "attribute_not_exists(GameState)"
-			)
-
-			self.__game_state = game_state
-			self.__game_state_hash = new_hash
-
-			return game_state
-		except Exception as e:
-			logger.warn(f"Failed to update game state from {old_hash} to {new_hash} for Room {self.room_id}: {e}")
-
-	def game_state(self):
-		self.__fetch_game_state()
-		
-		return self.__game_state

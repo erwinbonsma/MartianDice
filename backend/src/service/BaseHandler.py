@@ -69,10 +69,7 @@ class GameHandler(BaseHandler):
 			raise HandlerException(f"{self.client_id} tried to {action}, but {host} is the host")
 
 	def check_is_recruiting(self, action):
-		game_state = self.room.game_state()
-
-		if game_state and not game_state.done:
-			raise HandlerException(f"Can only {action} when no game is in progress")
+		pass
 
 	def check_can_configure_game(self, action):
 		self.check_is_host(action)
