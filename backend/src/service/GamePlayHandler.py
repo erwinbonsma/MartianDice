@@ -95,7 +95,6 @@ class GamePlayHandler(GameHandler):
 		else:
 			bot_move = action_selector.should_stop(turn_state)
 
-		game_state = self.room.game_state()
 		await self.handle_move(game_state, bot_move)
 
 	async def end_turn(self):

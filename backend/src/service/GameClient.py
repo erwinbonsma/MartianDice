@@ -96,6 +96,7 @@ async def play_game(url, client_id, room_id = None, num_clients = 1, bot_behavio
 		bots = {}
 		clients = set([client_id])
 		is_host = False
+		game_state = None
 		while True:
 			raw_message = await websocket.recv()
 			print(raw_message)
@@ -128,18 +129,21 @@ async def play_game(url, client_id, room_id = None, num_clients = 1, bot_behavio
 				for turn_state in message["turn_state_transitions"]:
 					print(turn_state)
 					await asyncio.sleep(1)
-				state = message["state"]
-				if "winner" in state:
-					print(f"{state[winner]} has won!")
+				prev_game_state, game_state = game_state, message["state"]
+				if prev_game_state:
+					assert(prev_game_state["id"] == game_state["prev_id"])
+				
+				if "winner" in game_state:
+					print(f"{game_state[winner]} has won!")
 					break
-				print(state["turn_state"])
-				if state["active_player"] == client_id:
-					if state["turn_state"]["phase"] == "PickDice":
-						await websocket.send(pick_dice(room_id, state["turn_state"]))
-					elif state["turn_state"]["phase"] == "CheckPass":
+				print(game_state["turn_state"])
+				if game_state["active_player"] == client_id:
+					if game_state["turn_state"]["phase"] == "PickDice":
+						await websocket.send(pick_dice(room_id, game_state["turn_state"]))
+					elif game_state["turn_state"]["phase"] == "CheckPass":
 						await websocket.send(check_exit(room_id))
-				if is_host and state["active_player"] in bots:
-					bot_behaviour = bots[state["active_player"]]
+				if is_host and game_state["active_player"] in bots:
+					bot_behaviour = bots[game_state["active_player"]]
 					await websocket.send(bot_move(room_id, bot_behaviour))
 
 parser = argparse.ArgumentParser(description='Basic Martian Dice client')

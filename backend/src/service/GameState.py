@@ -20,7 +20,7 @@ def game_state_id(game_state):
 		del game_state["id"]
 
 	s = json.dumps(game_state)
-	return hashlib.md5(s.encode('utf-8')).hexdigest()
+	return hashlib.md5(s.encode('utf-8')).hexdigest()[:8]
 
 class GameState:
 
@@ -35,6 +35,8 @@ class GameState:
 		self.from_hash = None
 		self.winner = None
 		self.last_update = time.time()
+		self.prev_id = None
+		self.id = None
 
 	@property
 	def done(self):
@@ -59,6 +61,10 @@ class GameState:
 
 	def next(self, input = None):
 		assert(not self.done)
+
+		if self.id:
+			self.prev_id = self.id
+			self.id = None
 
 		if not self.turn_state.done:
 			self.turn_state = self.turn_state.next(input)
@@ -95,6 +101,8 @@ class GameState:
 			state["active_player"] = self.active_player
 		if self.from_hash:
 			state["from_hash"] = self.from_hash
+		if self.prev_id:
+			state["prev_id"] = self.prev_id
 		if self.winner:
 			state["winner"] = self.winner
 		state["id"] = game_state_id(state)
