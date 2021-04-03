@@ -34,7 +34,10 @@ export function PlayerList({ players, offlinePlayers, activePlayer, scores, obse
 				<h4 className="TableHeader">Observers</h4>
 				<div className="TableBody">
 				{ observers.map(observer =>
-					(<div key={observer}>{observer}</div>)
+					(<div key={observer} style={{display: "flex", alignItems: "center"}}>
+						<div style={{padding: "0 4px 0 0"}}><PlayerAvatar /></div>
+						<>{observer}</>
+					</div>)
 				)}
 				</div>
 				<Separator />
