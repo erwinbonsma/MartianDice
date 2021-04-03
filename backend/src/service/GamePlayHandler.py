@@ -52,6 +52,9 @@ class GamePlayHandler(GameHandler):
 				turn_state_transitions.append(game_state.turn_state)
 			game_state.next()
 
+		if game_state.done:
+			self.db.log_game_end(self.room.room_id, game_state)
+
 		await self.broadcast(self.game_state_message(game_state, turn_state_transitions))
 
 	async def handle_move(self, game_state, input_value):
@@ -104,6 +107,8 @@ class GamePlayHandler(GameHandler):
 		self.logger.info("Starting game")
 		bots = game_config["bots"]
 		game_state = GameState( itertools.chain(self.clients.values(), bots.keys()) )
+
+		self.db.log_game_start(self.room.room_id, game_state)
 
 		await self.update_state_until_blocked(game_state)
 

@@ -1,18 +1,19 @@
 import boto3
-from datetime import datetime, timedelta
+from datetime import datetime
 import hashlib
 import logging
+import time
 import traceback
+from service.Config import Config
 
 logger = logging.getLogger('dynamodb')
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 DEFAULT_CLIENT = boto3.client('dynamodb')
-ROOM_EXPIRATION = timedelta(days = 1)
 
 def room_ttl():
-	return str(int((datetime.now() + ROOM_EXPIRATION).timestamp()))
+	return str(int((datetime.now() + Config.ROOM_EXPIRATION).timestamp()))
 
 class DynamoDbStorage:
 
@@ -29,7 +30,7 @@ class DynamoDbStorage:
 		"""
 		try:
 			self.client.put_item(
-				TableName = "rooms",
+				TableName = Config.ROOMS_TABLE,
 				Item = {
 					"PKEY": { "S": f"Room#{room_id}" },
 					"SKEY": { "S": "Instance" },
@@ -44,7 +45,7 @@ class DynamoDbStorage:
 	def set_room_for_connection(self, connection, room_id):
 		try:
 			response = self.client.put_item(
-				TableName = "rooms",
+				TableName = Config.ROOMS_TABLE,
 				Item = {
 					"PKEY": { "S": f"Conn#{connection}" },
 					"SKEY": { "S": "Instance" },
@@ -63,7 +64,7 @@ class DynamoDbStorage:
 	def room_for_connection(self, connection):
 		try:
 			response = self.client.get_item(
-				TableName = "rooms",
+				TableName = Config.ROOMS_TABLE,
 				Key = {
 					"PKEY": { "S": f"Conn#{connection}" },
 					"SKEY": { "S": "Instance" }
@@ -78,7 +79,7 @@ class DynamoDbStorage:
 	def clear_room_for_connection(self, connection):
 		try:
 			response = self.client.delete_item(
-				TableName = "rooms",
+				TableName = Config.ROOMS_TABLE,
 				Key = {
 					"PKEY": { "S": f"Conn#{connection}" },
 					"SKEY": { "S": "Instance" }
@@ -86,6 +87,28 @@ class DynamoDbStorage:
 			)
 		except Exception as e:
 			logger.warn(f"Failed to clear room for connection {connection}: {e}")
+
+	def _log_game_event(self, room_id, game_state, event):
+		try:
+			self.client.put_item(
+				TableName = Config.GAMES_TABLE,
+				Item = {
+					"PKEY": { "S": f"Room#{room_id}" },
+					"SKEY": { "S": f"Time={int(time.time())}" },
+					"GameState": { "S": game_state.as_json() },
+					"Event": { "S": event },
+					"DateTime": { "S": datetime.now().isoformat() }
+				}
+			)
+			return DynamoDbRoom(room_id, self.client)
+		except Exception as e:
+			logger.warn(f"Failed to create Room {room_id}: {e}")
+
+	def log_game_start(self, room_id, game_state):
+		self._log_game_event(room_id, game_state, "Start")
+
+	def log_game_end(self, room_id, game_state):
+		self._log_game_event(room_id, game_state, "End")
 
 class DynamoDbRoom:
 
@@ -114,7 +137,7 @@ class DynamoDbRoom:
 		"""
 		try:
 			response = self.client.query(
-				TableName = "rooms",
+				TableName = Config.ROOMS_TABLE,
 				KeyConditionExpression = "PKEY = :pkey",
 				ExpressionAttributeValues = {
 					":pkey": { "S": f"Room#{self.room_id}" }
@@ -137,7 +160,7 @@ class DynamoDbRoom:
 		logger.info(f"Clearing host for Room {self.room_id}")
 		try:
 			self.client.update_item(
-				TableName = "rooms",
+				TableName = Config.ROOMS_TABLE,
 				Key = {
 					"PKEY": { "S": f"Room#{self.room_id}" },
 					"SKEY": { "S": "Instance" }
@@ -162,7 +185,7 @@ class DynamoDbRoom:
 
 		try:
 			self.client.update_item(
-				TableName = "rooms",
+				TableName = Config.ROOMS_TABLE,
 				Key = {
 					"PKEY": { "S": f"Room#{self.room_id}" },
 					"SKEY": { "S": "Instance" }
@@ -196,7 +219,7 @@ class DynamoDbRoom:
 	def add_client(self, connection, client_id):
 		try:
 			self.client.put_item(
-				TableName = "rooms",
+				TableName = Config.ROOMS_TABLE,
 				Item = {
 					"PKEY": { "S": f"Room#{self.room_id}" },
 					"SKEY": { "S": f"Conn#{connection}" },
@@ -216,7 +239,7 @@ class DynamoDbRoom:
 	def remove_client(self, connection):
 		try:
 			response = self.client.delete_item(
-				TableName = "rooms",
+				TableName = Config.ROOMS_TABLE,
 				Key = {
 					"PKEY": { "S": f"Room#{self.room_id}" },
 					"SKEY": { "S": f"Conn#{connection}" }

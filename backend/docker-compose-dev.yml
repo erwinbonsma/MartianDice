@@ -1,9 +1,6 @@
 version: "3.7"
 
 services:
-  memcached:
-    image: memcached:1.6
-
   dynamodb:
     image: amazon/dynamodb-local:latest
     container_name: dynamodb
@@ -41,7 +38,6 @@ services:
     ports:
       - 8765:8765
     depends_on:
-      - memcached
       - dynamodb
     environment:
       AWS_ACCESS_KEY_ID: 'DUMMYIDEXAMPLE'

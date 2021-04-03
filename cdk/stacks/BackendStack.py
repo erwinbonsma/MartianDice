@@ -16,7 +16,7 @@ class BackendStack(core.Stack):
 
 		rooms_table = dynamodb.Table(
 			self, "RoomsTable",
-			table_name = "rooms",
+			table_name = f"MartianDice-Rooms-{stage_name}",
 			partition_key = dynamodb.Attribute(
 				name = "PKEY",
 				type = dynamodb.AttributeType.STRING
@@ -30,11 +30,15 @@ class BackendStack(core.Stack):
 
 		games_table = dynamodb.Table(
 			self, "GamesTable",
-			table_name = "games",
+			table_name = f"MartianDice-Games-{stage_name}",
 			partition_key = dynamodb.Attribute(
 				name = "PKEY",
 				type = dynamodb.AttributeType.STRING
-			)
+			),
+			sort_key = dynamodb.Attribute(
+				name = "SKEY",
+				type = dynamodb.AttributeType.STRING
+            ),
         )
 
 		main_layer = _lambda.LayerVersion(
