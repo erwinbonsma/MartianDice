@@ -60,5 +60,15 @@ Done:
 -	Only set-up websocket during registration
 -	Enable local run with homepage setting
 -	Add license + credits
+-	Reduce DynamoDb writes
+	-	Let clients manage game config
+	-	Let clients manage game state
+-	Update CDK deployment
+-	Store game statistics
+	- Game starts
+	- Game completion + results
+-	Add avatars for players and bots
 
 TODO:
+-	Add die movement animations
+-	Add PICO-8 client
