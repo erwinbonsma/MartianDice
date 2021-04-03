@@ -39,22 +39,29 @@ export class GameRoom extends React.Component {
 		this.handleMessage = this.handleMessage.bind(this);
 	}
 
-	get isReplaying() {
-		return this.state.transitionTurns.length > 0;
+	isReplaying(state) {
+		state = state || this.state;
+		return state.transitionTurns.length > 0;
 	}
-	get isHost() {
-		return this.props.playerName === this.state.hostName;
+	isHost(state, props) {
+		state = state || this.state;
+		props = props || this.props;
+		return props.playerName === state.hostName;
 	}
-	get myMove() {
-		return !this.isReplaying && (this.props.playerName === this.state.futureGame?.active_player);
+	myMove(state, props) {
+		state = state || this.state;
+		props = props || this.props;
+		return !this.isReplaying(state) && (props.playerName === state.futureGame?.active_player);
 	}
-	get botMove() {
-		return !this.isReplaying && this.state.bots[this.state.futureGame?.active_player];
+	botMove(state) {
+		state = state || this.state;
+		return !this.isReplaying(state) && state.bots[state.futureGame?.active_player];
 	}
-	get turnState() {
-		return this.state.transitionTurns.length > 0
-			? this.state.transitionTurns[0]
-			: this.state.futureGame?.turn_state;
+	turnState(state) {
+		state = state || this.state;
+		return state.transitionTurns.length > 0
+			? state.transitionTurns[0]
+			: state.futureGame?.turn_state;
 	}
 
 	handleAddBot(botBehaviour) {
@@ -186,7 +193,7 @@ export class GameRoom extends React.Component {
 			return;
 		}
 
-		if (!this.isHost || !this.botMove) {
+		if (!this.isHost() || !this.botMove()) {
 			// Bot move does not require triggering (yet)
 			return;
 		}
@@ -206,7 +213,7 @@ export class GameRoom extends React.Component {
 	}
 
 	setWatchdog() {
-		if (this.watchdog || this.isReplaying || this.state.slowUpdate) {
+		if (this.watchdog || !this.game || this.isReplaying() || this.state.slowUpdate) {
 			return;
 		}
 
@@ -214,7 +221,7 @@ export class GameRoom extends React.Component {
 			console.log("Watchdog expired");
 			this.watchdog = undefined;
 
-			if (this.botMove) {
+			if (this.botMove()) {
 				console.warn("Bot is not responding - host problem?");
 				this.props.websocket.send(JSON.stringify({
 					action: "switch-host",
@@ -241,16 +248,17 @@ export class GameRoom extends React.Component {
 			return;
 		}
 
-		if (
-			// Update game state when replay animations have caught up
-			!this.isReplaying ||
-			// or after the active player changed (so that scores and turn meta-data are accurate)
-			(this.turnState?.throw_count === 0 && this.turnState?.phase === "Throwing")
-		) {
-			this.setState({
-				game: this.state.futureGame
-			});
-		}
+		this.setState((state) => {
+			const turnState = this.turnState(state);
+			if (
+				// Update game state when replay animations have caught up
+				!this.isReplaying(state) ||
+				// or after the active player changed (so that scores and turn meta-data are accurate)
+				(turnState?.throw_count === 0 && turnState?.phase === "Throwing")
+			) {
+				return { game: state.futureGame };
+			}
+		});
 	}
 
 	sendConfigUpdate() {
@@ -314,11 +322,11 @@ export class GameRoom extends React.Component {
 
 	componentDidUpdate(prevProps, prevState) {
 		this.animateTransitions();
-		this.triggerBotMove();
 		this.updateGame();
+		this.triggerBotMove();
 		this.setWatchdog();
 
-		if (this.isHost) {
+		if (this.isHost()) {
 			if (prevState.bots !== this.state.bots) {
 				this.sendConfigUpdate();
 			}
@@ -330,7 +338,8 @@ export class GameRoom extends React.Component {
 
 	render() {
 		const game = this.state.game;
-		const turnState = this.turnState;
+		const turnState = this.turnState();
+		const isHost = this.isHost();
 
 		console.log("turnState =", turnState);
 		console.log("game =", game);
@@ -351,13 +360,13 @@ export class GameRoom extends React.Component {
 						<GameHeader game={game} turnState={turnState} slowResponse={this.state.slowUpdate} />
 						{ turnState &&
 							<PlayArea gameId={this.props.roomId} instanceId={this.props.instanceId}
-								game={game} turnState={turnState} myTurn={this.myMove}
+								game={game} turnState={turnState} myTurn={this.myMove()}
 								onAnimationChange={this.handleAnimationChange}
 								audioTracks={this.props.audioTracks} enableSound={this.props.enableSound}
 								websocket={this.props.websocket} slowResponse={this.state.slowUpdate} />
 						}
 						{ (game && !turnState) && <GameResult game={game} />}
-						{ (this.isHost && !turnState) && (<div className="TableBody">
+						{ (isHost && !turnState) && (<div className="TableBody">
 							<center><Button variant="primary" onClick={this.handleStartGame}>
 								{game ? "New game" : "Start game"}
 							</Button></center>
@@ -369,7 +378,7 @@ export class GameRoom extends React.Component {
 							<PlayerList players={game.players} scores={game.scores} activePlayer={game.active_player}
 								offlinePlayers={offlinePlayers} observers={observers} /> :
 							<GameSetup clients={this.state.clients} bots={this.state.bots} 
-								host={this.state.hostName} isHost={this.isHost}
+								host={this.state.hostName} isHost={isHost}
 								onAddBot={this.handleAddBot} onRemoveBot={this.handleRemoveBot} />
 						}
 						<Chat websocket={this.props.websocket} roomId={this.props.roomId} />
