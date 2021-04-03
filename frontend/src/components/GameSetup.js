@@ -1,4 +1,6 @@
 import { isDictionaryEmpty } from '../utils';
+import { BotAvatar } from './BotAvatar';
+import { PlayerAvatar } from './PlayerAvatar';
 import { Separator } from './Separator';
 import Button from 'react-bootstrap/Button';
 import DropdownButton from 'react-bootstrap/DropdownButton';
@@ -12,7 +14,7 @@ export function GameSetup({ clients, bots, host, isHost, onAddBot, onRemoveBot }
 				<div className="TableBody">
 				{ clients.map(client => (
 					<div key={client} style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
-						<div >{client}</div>
+						<div><PlayerAvatar />{client}</div>
 						<div style={{textAlign: "right"}}>{ (client === host) && "Host"}</div>
 					</div>
 				))}
@@ -23,11 +25,11 @@ export function GameSetup({ clients, bots, host, isHost, onAddBot, onRemoveBot }
 				<div className="BotsTable">
 					<h4 className="TableHeader">Bots</h4>
 					<div className="TableBody">
-					{ Object.keys(bots).map(bot => (
-						<div key={bot} style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
-							<div>{bot}</div>
+					{ Object.entries(bots).map(([name, behaviour]) => (
+						<div key={name} style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+							<div><BotAvatar botBehaviour={behaviour} />{name}</div>
 							<div style={{textAlign: "right"}}>{ isHost && (
-								<Button className="Button" variant="secondary" size="sm" onClick={onRemoveBot} id={bot}>Remove</Button>
+								<Button className="Button" variant="secondary" size="sm" onClick={onRemoveBot} id={name}>Remove</Button>
 							)}</div>
 						</div>
 					))}

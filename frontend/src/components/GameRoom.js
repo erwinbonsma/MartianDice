@@ -376,7 +376,7 @@ export class GameRoom extends React.Component {
 					<Col className="PlayersAreaBorder" xs={12} lg={4} style={{height: "80vh"}}><div className="PlayersArea">
 						{ (game && turnState) ? 
 							<PlayerList players={game.players} scores={game.scores} activePlayer={game.active_player}
-								offlinePlayers={offlinePlayers} observers={observers} /> :
+								offlinePlayers={offlinePlayers} observers={observers} bots={this.state.bots} /> :
 							<GameSetup clients={this.state.clients} bots={this.state.bots} 
 								host={this.state.hostName} isHost={isHost}
 								onAddBot={this.handleAddBot} onRemoveBot={this.handleRemoveBot} />
