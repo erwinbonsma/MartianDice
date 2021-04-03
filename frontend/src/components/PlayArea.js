@@ -78,6 +78,7 @@ export class PlayArea extends React.Component {
 		this.props.websocket.send(JSON.stringify({
 			action: "move",
 			game_id: this.props.gameId,
+			game_state: this.props.game,
 			pick_die: event.target.id
 		}));
 	}
@@ -86,6 +87,7 @@ export class PlayArea extends React.Component {
 		this.props.websocket.send(JSON.stringify({
 			action: "move",
 			game_id: this.props.gameId,
+			game_state: this.props.game,
 			pass: event.target.id === "yes"
 		}));
 	}
@@ -94,6 +96,7 @@ export class PlayArea extends React.Component {
 		this.props.websocket.send(JSON.stringify({
 			action: "end-turn",
 			game_id: this.props.gameId,
+			game_state: this.props.game
 		}));
 	}
 

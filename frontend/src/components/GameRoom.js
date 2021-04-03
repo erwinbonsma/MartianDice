@@ -78,7 +78,10 @@ export class GameRoom extends React.Component {
 	handleStartGame() {
 		this.props.websocket.send(JSON.stringify({
 			action: "start-game",
-			room_id: this.props.roomId
+			room_id: this.props.roomId,
+			game_config: {
+				bots: this.state.bots
+			}
 		}));
 	}
 
@@ -117,13 +120,18 @@ export class GameRoom extends React.Component {
 				break;
 			case "game-state":
 				this.clearWatchdog();
-				this.setState((state) => ({
-					transitionTurns: msg.turn_state_transitions,
-					futureGame: msg.state,
-					// Ensure game state is always set when there is a turn state
-					game: state.game || msg.state,
-					slowUpdate: false
-				}));
+				this.setState((state) => {
+					if (state.game && state.game.id !== msg.state.prev_id) {
+						console.warn(`Unexpected state transition: ${state.game.id} != ${msg.state.prev_id}`);
+					}
+					return {
+						transitionTurns: msg.turn_state_transitions,
+						futureGame: msg.state,
+						// Ensure game state is always set when there is a turn state
+						game: state.game || msg.state,
+						slowUpdate: false
+					}
+				});
 				break;
 			case "response":
 				if (msg.status === "error") {
@@ -185,10 +193,14 @@ export class GameRoom extends React.Component {
 		
 		this.botMoveTrigger = setTimeout(() => {
 			this.botMoveTrigger = undefined;
+			const activePlayer = this.state.game.active_player;
+			const behaviour = this.state.bots[activePlayer];
 
 			this.props.websocket.send(JSON.stringify({
 				action: "bot-move",
-				game_id: this.props.roomId
+				game_id: this.props.roomId,
+				game_state: this.state.game,
+				bot_behaviour: behaviour
 			}));
 		}, 2000);
 	}
@@ -325,7 +337,7 @@ export class GameRoom extends React.Component {
 
 		const offlinePlayers = game
 			? game.players.filter(
-				player => !(this.state.bots.includes(player) || this.state.clients.includes(player))
+				player => !(this.state.bots[player] || this.state.clients.includes(player))
 			)
 			: [];
 		const observers = game
