@@ -19,6 +19,10 @@ ${DYNAMODB_CMD} create-table \
 	--key-schema AttributeName=PKEY,KeyType=HASH AttributeName=SKEY,KeyType=RANGE \
 	--provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
 
+${DYNAMODB_CMD} put-item \
+	--table-name MartianDice-Rooms-${STAGE_NAME} \
+	--item '{ "PKEY": { "S": "Room#PICO" }, "SKEY": { "S": "Instance" } }'
+
 echo "Done"
 
 # Sleep so that container can be used to interactively inspect tables
