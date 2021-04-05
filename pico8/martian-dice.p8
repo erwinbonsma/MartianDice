@@ -1,7 +1,29 @@
 pico-8 cartridge // http://www.pico-8.com
 version 32
 __lua__
-function draw_throw()
+phase={
+ throwing=1,
+ thrown=2,
+ movedtanks=3,
+ pickdice=4,
+ pickeddice=5,
+ checkpass=6,
+ done=7
+}
+
+function shuffle(l)
+ for i=1,#l do
+  local j=flr(rnd(#l-i+1))+i
+  if i!=j then
+   local tmp=l[i]
+   l[i]=l[j]
+   l[j]=tmp
+  end
+ end
+ return l
+end
+
+function draw_throw(throw)
  for i=1,#throw do
   if throw[i]>0 then
    local x=((i-1)%7)*16+8
@@ -11,7 +33,7 @@ function draw_throw()
  end
 end
 
-function draw_battlezone()
+function draw_battle(battle)
  for i=1,#battle do
   for j=1,battle[i] do
    spr(2+i*2,j*16-8,32+i*16,2,2)
@@ -19,7 +41,7 @@ function draw_battlezone()
  end
 end
 
-function draw_collected()
+function draw_collected(collected)
  local n=0
  for p in all(collected) do
   local typ=p[1]
@@ -43,15 +65,28 @@ function title_draw()
  end
 end
 
-function room_draw()
+function game_draw()
  cls(0)
  palt(0,false)
  palt(1,true)
  pal(0,1)
- draw_throw()
- draw_battlezone()
- draw_collected()
- print("turn 1    player-one    throw 3")
+ 
+ if game==nil then
+  return
+ end
+
+ color(3)
+ print("round "..game.round,0,0)
+ print("player #"..game.turn,46,0)
+ print("throw "..game.thrownum,100,0)
+
+ draw_throw(game.throw)
+ draw_battle(game.battle)
+ draw_collected(game.collected)
+end
+
+function room_draw()
+ game_draw()
 end
 
 -->8
@@ -60,77 +95,183 @@ end
 a_ctrl_in_game=0x5f80
 a_ctrl_in_room=0x5f81
 a_ctrl_out=0x5f82
+a_ctrl_dump=0x5f83
 
 --0:none
 --1:initiate join (set by p8)
---2:joined
---3:initiate exit (set by p8)
-a_room=0x5f83
+--2:initiating join
+--3:joined
+--4:initiate exit (set by p8)
+a_room=0x5f88
 
-a_thrw=0x5f90 -- 13 bytes
-a_side=0x5f9c --  5 bytes
+a_thrw=0x5f90 -- 5 bytes
+a_side=0x5f95 -- 5 bytes
+
+--round/turn/throw/phase counters
+a_crou=0x5fa0
+a_ctur=a_crou+1
+a_cthr=a_ctur+1
+a_cpha=a_cthr+1
 
 function pop_gpio()
- local l={5,4,3,2,1,0,5,4,3,2,1}
- for i=1,#l do
-  poke(a_thrw+i-1,l[i])
- end
+ poke(a_thrw,1)
+ poke(a_thrw+1,2)
+ poke(a_thrw+2,3)
+ poke(a_thrw+3,4)
+ poke(a_thrw+4,3)
+
  poke(a_side,4)
  poke(a_side+1,3)
  poke(a_side+2,3)
  poke(a_side+3,2)
  poke(a_side+4,1)
+
+ poke(a_crou,3)
+ poke(a_ctur,1)
+ poke(a_cthr,2)
+ poke(a_cpha,2)
+
+ poke(a_ctrl_in_game,1)
+end
+
+function start_game()
+ --ready for write
  poke(a_ctrl_in_game,0)
+
+ game=nil
+ game_gpio_read_delay=0
+end
+
+function new_collected(dice)
+ local l={}
+
+ for tp,num in pairs(dice) do
+  add(l,{tp,num})
+ end
+
+ return l 
 end
 
 --updates collected while
---preserving order
-function update_collected(cnew)
- local ordered={}
+--preserving order.
+--old is list, new is dict.
+function update_collected(
+ old,new
+)
+ local l={}
 
- for old in all(collected) do
-  local tp=old[1]
-  if cnew[tp]>0 then
-   add(ordered,{tp,cnew[tp]})
-   cnew[tp]=0
+ for tuple in all(old) do
+  local tp=tuple[1]
+  if new[tp]>0 then
+   add(l,{tp,new[tp]})
+   new[tp]=0
   end
  end
 
- for tp,num in pairs(cnew) do
+ for tp,num in pairs(new) do
   if num>0 then
-   add(ordered,{tp,num})
+   add(l,{tp,num})
   end
  end
 
- collected=ordered
+ return l
 end
 
-function read_gpio()
+function new_throw(dice)
+ local l={}
+ for tp,num in pairs(dice) do
+  for i=1,num do
+   add(l,tp)
+  end
+ end
+
+ return shuffle(l)
+end
+
+--old is list, new is dict
+function update_throw(old,new)
+ local l={}
+ for tp in all(old) do
+  if tp!=0 and new[tp]>0 then
+   add(l,tp)
+   new[tp]-=1
+  else
+   add(l,0)
+  end
+ end
+
+ if false then
+ --just in case, add new dice
+ local i=1
+ for tp,num in pairs(new) do
+  while num>0 do
+   while l[i]!=0 and i<13 do
+    i+=1
+   end
+   l[i]=tp
+   num-=1
+  end
+ end
+ end
+
+ return l
+end
+
+game_gpio_read_delay=0
+function read_gpio_game()
  if peek(a_ctrl_in_game)!=1 then
   return
  end
- throw={}
- for i=0,12 do
-  add(throw,peek(a_thrw+i))
+ if game_gpio_read_delay>0 then
+  game_gpio_read_delay-=1
+  return
  end
- battle={}
- add(battle,peek(a_side))
- add(battle,peek(a_side+1))
- local col_new={}
+ 
+ local g={}
+ g.round=peek(a_crou)
+ g.turn=peek(a_ctur)
+ g.thrownum=peek(a_cthr)
+ g.phase=peek(a_cpha)
+
+ local dice={}
+ for i=1,5 do
+  dice[i]=peek(a_thrw+i-1)
+ end
+ if (
+  g.phase==phase.thrown or
+  game==nil
+ ) then
+  g.throw=new_throw(dice)
+ else
+  g.throw=update_throw(
+   game.throw,dice
+  )
+ end
+
+ g.battle={}
+ add(g.battle,peek(a_side))
+ add(g.battle,peek(a_side+1))
+
+ dice={}
  for i=3,5 do
-  col_new[i]=peek(a_side+i-1)
+  dice[i]=peek(a_side+i-1)
  end
- update_collected(col_new)
+ if game==nil then
+  g.collected=new_collected(dice)
+ else
+  g.collected=update_collected(
+   game.collected,dice
+  )
+ end
+
+ game=g 
+ game_gpio_read_delay=60
+ poke(a_ctrl_in_game,0)
 end
 
-function test_update()
- read_gpio()
- if refresh_count>0 then
-  refresh_count-=1
-  if refresh_count==0 then
-   poke(a_ctrl_in_game,1)
-  end
- end
+function read_gpio()
+ read_gpio_game()
+ --todo: read_gpio_room()
 end
 
 function room_update()
@@ -140,26 +281,41 @@ function room_update()
   _draw=title_draw
  end
 
- if btnp(4) or btnp(5) then
-  if peek(a_room)==2 then
+ if btnp(4) then
+  if peek(a_room)==3 then
    --initiate room exit
-   poke(a_room,3)
+   poke(a_room,4)
   end
+ end
+
+ read_gpio()
+
+ --tmp:debug 
+ if btnp(5) then
+  poke(a_ctrl_dump,1)
  end
 end
 
 function title_update()
- if peek(a_room)==2 then
+ if peek(a_room)==3 then
   --entered room
   _update=room_update
   _draw=room_draw
+
+  start_game()
  end
 
  if btnp(4) or btnp(5) then
   if peek(a_room)==0 then
    --initiate room entry
    poke(a_room,1)
+   --poke(a_room,2) --tmp
   end
+ end
+
+ --tmp:debug 
+ if btnp(5) then
+  poke(a_ctrl_dump,1)
  end
 end
 
@@ -179,19 +335,19 @@ end
 
 __gfx__
 00000000bbbbbbb00000000007777770100000000000001110000000000000111000000000000011100000000000001110000000000000110000000000000000
-00000000b00000b0000000807777777700000000000000010000000000000001000000000000000100000000000000010000000aa00000010000000000000000
-00700700b0bbb0b0888888887707707700000000000000010000000000000001007770777077700100000ccccc000001000000a00a0000010000000000000000
-00077000b0bbb0b008800080777777770000000000000001000000000000000100700700070070010000c00000c00001000aa0aaaa0aa0010000000000000000
-00077000b0bbb0b00880000077777777000000bbb000000100000088800880010007700000770001000c0000000c000100a00a0000a00a010000000000000000
-007007000b0b0b00880000007707707700000b000b0000010000080008800001000070707070000100c00c000c00c00100a0a000000a0a010000000000000000
-000000000bb0bb00880000007777777700000b000b0000010000088888000001000070707070000100c00c000c00c001000a00000000a0010000000000000000
-0000000000bbb000000000000777777000bbbbbbbbbbb0010088888888888001000070000070000100c000000000c001000a0a000000a0010000000000000000
-0000000000cccc00aa00a0aa000000000b00000000000b010800000000000801000077777770000100c0c00000c0c00100aa00000000a0010000000000000000
-000000000cccccc0aaaa00aa000000000b00000000000b010808000000080801000700000007000100c00c000c00c0010aaa00000000a0010000000000000000
-00000000cc0cc0cc00000a00000000000b00000000000b0108000000000008010070007070007001000c00ccc00c00010000a000000a00010000000000000000
-00000000cc0cc0cc00a0a00a0000000000bbbbbbbbbbb001008888888888800100700000000070010000c00000c0000100000a0000a000010000000000000000
-00000000cccccccc00a0a0a00000000000000000000000010000000000000001000700000007000100000ccccc000001000000aaaa0000010000000000000000
-00000000cc0cc0cc00a0a0a000000000000000000000000100000000000000010000777777700001000000000000000100000000000000010000000000000000
+00000000b00000b00000008077777777000000000000000100000000000000010000000aa0000001000000000000000100000000000000010000000000000000
+00700700b0bbb0b0888888887707707700000000000000010000000000000001000000a00a000001007770777077700100000ccccc0000010000000000000000
+00077000b0bbb0b0088000807777777700000000000000010000000000000001000aa0aaaa0aa00100700700070070010000c00000c000010000000000000000
+00077000b0bbb0b00880000077777777000000bbb0000001000000888008800100a00a0000a00a010007700000770001000c0000000c00010000000000000000
+007007000b0b0b00880000007707707700000b000b000001000008000880000100a0a000000a0a01000070707070000100c00c000c00c0010000000000000000
+000000000bb0bb00880000007777777700000b000b0000010000088888000001000a00000000a001000070707070000100c00c000c00c0010000000000000000
+0000000000bbb000000000000777777000bbbbbbbbbbb0010088888888888001000a0a000000a001000070000070000100c000000000c0010000000000000000
+0000000000cccc00aa00a0aa000000000b00000000000b01080000000000080100aa00000000a001000077777770000100c0c00000c0c0010000000000000000
+000000000cccccc0aaaa00aa000000000b00000000000b0108080000000808010aaa00000000a001000700000007000100c00c000c00c0010000000000000000
+00000000cc0cc0cc00000a00000000000b00000000000b0108000000000008010000a000000a00010070007070007001000c00ccc00c00010000000000000000
+00000000cc0cc0cc00a0a00a0000000000bbbbbbbbbbb001008888888888800100000a0000a0000100700000000070010000c00000c000010000000000000000
+00000000cccccccc00a0a0a00000000000000000000000010000000000000001000000aaaa000001000700000007000100000ccccc0000010000000000000000
+00000000cc0cc0cc00a0a0a000000000000000000000000100000000000000010000000000000001000077777770000100000000000000010000000000000000
 000000000cc00cc0aa00a0aa00000000100000000000001110000000000000111000000000000011100000000000001110000000000000110000000000000000
 0000000000cccc00aa00a0aa00000000111111111111111111111111111111111111111111111111111111111111111111111111111111110000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
