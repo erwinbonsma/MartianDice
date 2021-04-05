@@ -65,10 +65,28 @@ Done:
 	-	Let clients manage game state
 -	Update CDK deployment
 -	Store game statistics
-	- Game starts
-	- Game completion + results
+	-	Game starts
+	-	Game completion + results
 -	Add avatars for players and bots
+-	Manually create some eternal rooms (no TTL), e.g. PICO
+-	Add initial Pico-8 client
+	-	Join fixed room ("PICO") with generated name ("P8-4638")
+	-	Observe in-progress game
 
 TODO:
 -	Add die movement animations
--	Add PICO-8 client
+-	Add public rooms
+	-	Add public/private toggle
+	-	Show available public rooms
+	-	Limit chat in public rooms
+		-	Messages: Hi, Yes, No, Thanks, Wow, Good Game, Play?
+-	Extend PICO-8 client
+	-	Let JS handle host duties
+	-	Show active player name
+	-	Show scores
+	-	Play
+	-	Simple chat
+	-	Enable creating/joining private room
+-	Remove memcache dependency
+	-	From Dockerfile
+	-	From layer
