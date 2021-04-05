@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "Waiting for DynamoDB to start up"
-sleep 10
+sleep 4
 
 echo "Creating tables"
 DYNAMODB_CMD="aws dynamodb --endpoint-url http://dynamodb:8000 --region eu-west-1"
