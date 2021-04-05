@@ -67,14 +67,18 @@ function handleMessage(event) {
 			md_nextBotId = msg.game_config.next_bot_id;
 			break;
 		case "game-state":
+			if (md_gameNext && md_gameNext.id !== msg.state.prev_id) {
+				console.warn(`Unexpected state transition: ${md_gameNext.id} != ${msg.state.prev_id}`);
+			}
+
 			md_gameNext = msg.state;
 			if (!md_game) {
 				md_game = md_gameNext;
-			} else if (md_game.id !== md_gameNext.prev_id) {
-				console.warn(`Unexpected state transition: ${md_game.id} != ${md_gameNext.prev_id}`);
 			}
+
 			md_turnStates = msg.turn_state_transitions;
 			md_turnStates.push(md_gameNext.turn_state);
+
 			break;
 		case "response":
 			if (msg.status === "error") {
