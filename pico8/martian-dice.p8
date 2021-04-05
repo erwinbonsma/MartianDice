@@ -33,12 +33,17 @@ function draw_collected()
  end
 end
 
-function draw_title()
+function title_draw()
  cls(0)
- spr(128,32,48,9,4)
+ spr(128,32,40,9,4)
+ print("v0.1")
+ 
+ if peek(a_room)==1 then
+  print("joining room...",36,80,3)
+ end
 end
 
-function draw_game()
+function room_draw()
  cls(0)
  palt(0,false)
  palt(1,true)
@@ -49,7 +54,6 @@ function draw_game()
  print("turn 1    player-one    throw 3")
 end
 
-_draw=draw_title
 -->8
 --0:ready for write
 --1:ready for read
@@ -57,8 +61,14 @@ a_ctrl_in_game=0x5f80
 a_ctrl_in_room=0x5f81
 a_ctrl_out=0x5f82
 
-a_thrw=0x5f83 -- 13 bytes
-a_side=0x5f90 --  5 bytes
+--0:none
+--1:initiate join (set by p8)
+--2:joined
+--3:initiate exit (set by p8)
+a_room=0x5f83
+
+a_thrw=0x5f90 -- 13 bytes
+a_side=0x5f9c --  5 bytes
 
 function pop_gpio()
  local l={5,4,3,2,1,0,5,4,3,2,1}
@@ -113,7 +123,7 @@ function read_gpio()
  update_collected(col_new)
 end
 
-function _update()
+function test_update()
  read_gpio()
  if refresh_count>0 then
   refresh_count-=1
@@ -122,14 +132,49 @@ function _update()
   end
  end
 end
+
+function room_update()
+ if peek(a_room)==0 then
+  --exited room
+  _update=title_update
+  _draw=title_draw
+ end
+
+ if btnp(4) or btnp(5) then
+  if peek(a_room)==2 then
+   --initiate room exit
+   poke(a_room,3)
+  end
+ end
+end
+
+function title_update()
+ if peek(a_room)==2 then
+  --entered room
+  _update=room_update
+  _draw=room_draw
+ end
+
+ if btnp(4) or btnp(5) then
+  if peek(a_room)==0 then
+   --initiate room entry
+   poke(a_room,1)
+  end
+ end
+end
+
+_draw=title_draw
+_update=title_update
 -->8
 function _init()
  throw={1,0,1,2,0,2,3,3,4,4,5,5}
  battle={2,8}
  collected={{4,2},{5,1}}
 
- pop_gpio()
- refresh_count=60
+ --pop_gpio()
+ --refresh_count=60
+ 
+ poke(a_room,0)
 end
 
 __gfx__
