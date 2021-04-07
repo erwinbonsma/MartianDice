@@ -27,11 +27,13 @@ const PHASE_IDS = {
 	"Done": 7
 };
 
+var md_myName;
+
 // Room status
 var md_socket;
 var md_joinAttempts = 0;
 var md_host;
-var md_clients;
+var md_clients = [];
 var md_bots = {};
 var md_nextBotId = 0;
 
@@ -39,6 +41,7 @@ var md_nextBotId = 0;
 var md_game;
 var md_gameNext;
 var md_turnStates = [];
+var md_botMoveTriggered;
 
 function playerId(playerName) {
 	const players = md_game.players;
@@ -50,16 +53,73 @@ function playerId(playerName) {
 	return 0;
 }
 
+function isHost() {
+	return md_myName === md_host;
+}
+
+function isAwaitingMove() {
+	return md_turnStates.length == 0 && md_game;
+}
+
+function isBotMove() {
+	return isAwaitingMove() && md_bots[md_game.active_player];
+}
+
+function welcomeNewClients(prevClients) {
+	const newClients = new Set(md_clients);
+	prevClients.forEach(oldClient => { newClients.delete(oldClient); });
+	newClients.delete(md_myName);
+
+	if (newClients.size > 0) {
+		console.log("Welcoming new clients:", newClients);
+		const optGameConfig = md_gameNext ? {
+			game_state: md_gameNext
+		} : {};
+
+		md_socket.send(JSON.stringify({
+			action: "send-welcome",
+			room_id: md_roomId,
+			to_clients: [...newClients],
+			game_config: {
+				bots: md_bots,
+				next_bot_id: md_nextBotId
+			},
+			...optGameConfig
+		}));
+	}
+}
+
+function triggerBotMove() {
+	if (md_botMoveTriggered || !isHost() || !isBotMove()) {
+		return
+	}
+
+	const activePlayer = md_game.active_player;
+	const behaviour = md_bots[activePlayer];
+
+	md_socket.send(JSON.stringify({
+		action: "bot-move",
+		game_id: md_roomId,
+		game_state: md_game,
+		bot_behaviour: behaviour
+	}));
+	md_botMoveTriggered = true;
+}
+
 function handleMessage(event) {
 	const msg = JSON.parse(event.data);
 	console.log("Message:", msg);
 	switch (msg.type) {
 		case "clients":
+			const prevClients = md_clients;
 			md_clients = msg.clients;
 			md_host = msg.host;
 			if (pico8_gpio[gpio_RoomStatus] == 2) {
 				// Signal that room was joined successfully;
 				pico8_gpio[gpio_RoomStatus] = 3;
+			}
+			if (isHost()) {
+				welcomeNewClients(prevClients);
 			}
 			break;
 		case "game-config":
@@ -78,6 +138,7 @@ function handleMessage(event) {
 
 			md_turnStates = msg.turn_state_transitions;
 			md_turnStates.push(md_gameNext.turn_state);
+			md_botMoveTriggered = false;
 
 			break;
 		case "response":
@@ -91,12 +152,12 @@ function handleMessage(event) {
 }
 
 function joinRoom() {
-	const playerName = `PICO-8${String.fromCharCode(65 + md_joinAttempts)}`;
+	md_myName = `PICO-8${String.fromCharCode(65 + md_joinAttempts)}`;
 
 	md_socket.send(JSON.stringify({
 		action: "join-room",
 		room_id: md_roomId,
-		client_id: playerName
+		client_id: md_myName
 	}));
 	md_joinAttempts += 1;
 
@@ -153,7 +214,7 @@ function gpioUpdateDice(dice, gpioAddress) {
 function gpioUpdateTurn(turn) {
 	console.log("Writing new turn status:", turn);
 
-	if (turn.phase == "Throwing" && turn.throw_count == 1) {
+	if (turn.phase === "Throwing" && turn.throw_count === 0) {
 		md_game = md_gameNext;
 	}
 
@@ -203,9 +264,18 @@ function gpioUpdate() {
 		if (md_turnStates.length > 0) {
 			gpioUpdateTurn(md_turnStates[0]);
 			md_turnStates = md_turnStates.slice(1);
+
+			if (md_turnStates.length === 0) {
+				md_game = md_gameNext;
+			}
 		}
 	}
 }
 
-window.setInterval(gpioUpdate, 30);
+function md_update() {
+	gpioUpdate();
+	triggerBotMove();
+}
+
+window.setInterval(md_update, 30);
 console.log("Loaded martian-dice.js");
