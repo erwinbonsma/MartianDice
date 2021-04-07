@@ -72,6 +72,8 @@ Done:
 -	Add initial Pico-8 client
 	-	Join fixed room ("PICO") with generated name ("P8-4638")
 	-	Observe in-progress game
+	-	Let JS handle host duties
+	-	Show end of turn reason
 
 TODO:
 -	Add die movement animations
@@ -81,9 +83,8 @@ TODO:
 	-	Limit chat in public rooms
 		-	Messages: Hi, Yes, No, Thanks, Wow, Good Game, Play?
 -	Extend PICO-8 client
-	-	Let JS handle host duties
 	-	Show active player name
-	-	Show scores
+	-	Show game result
 	-	Play
 	-	Simple chat
 	-	Enable creating/joining private room
