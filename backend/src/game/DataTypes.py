@@ -23,6 +23,23 @@ class TurnPhase(IntEnum):
 	CheckPass = 5
 	Done = 6
 
+class EndTurnReason(IntEnum):
+	CannotImproveScore = 1
+	PlayerChoice = 2
+	NoMoreDiceRemain = 3
+	CannotSelectDice = 4
+	Defeated = 5
+	ForcedEnd = 6
+
+END_TURN_MESSAGES = {
+	EndTurnReason.CannotImproveScore: "Cannot improve score",
+	EndTurnReason.PlayerChoice: "Player choice",
+	EndTurnReason.NoMoreDiceRemain: "No more dice",
+	EndTurnReason.CannotSelectDice: "No selectable dice",
+	EndTurnReason.Defeated: "Defeated",
+	EndTurnReason.ForcedEnd: "Turn forcefully ended"
+}
+
 class Dice:
 
 	def __init__(self, counts = {}):
@@ -160,7 +177,7 @@ class TurnState:
 		assert(self.awaits_input != (input_value is None))
 
 		if input_value == "end-turn":
-			return self._end_turn("Turn forcefully ended")
+			return self._end_turn(EndTurnReason.ForcedEnd)
 		if self.phase == TurnPhase.Throwing:
 			throw = config["throw_fun"](self.side_dice)
 			return self._set_throw(throw)
@@ -234,12 +251,12 @@ class TurnState:
 		max_rays = NUM_DICE - tanks - self.side_dice.num_earthlings - forced_earthlings
 
 		if tanks > max_rays:
-			return self._end_turn("Defeated", clear_throw = False)
+			return self._end_turn(EndTurnReason.Defeated, clear_throw = False)
 		elif len(selectable_earthlings) == 0 and rays == 0:
 			if tanks > self.side_dice[DieFace.Ray]:
-				return self._end_turn("Defeated", clear_throw = False)
+				return self._end_turn(EndTurnReason.Defeated, clear_throw = False)
 			else:
-				return self._end_turn("No selectable dice", clear_throw = False)
+				return self._end_turn(EndTurnReason.CannotSelectDice, clear_throw = False)
 
 		return TurnState(
 			throw = self.throw,
@@ -267,10 +284,10 @@ class TurnState:
 		assert(self.phase == TurnPhase.PickedDice)
 
 		if self.side_dice.total_collected == NUM_DICE:
-			return self._end_turn("No more dice")
+			return self._end_turn(EndTurnReason.NoMoreDiceRemain)
 
 		if self.score > 0 and len(self.side_dice.collected_earthlings) == 3:
-			return self._end_turn("Cannot improve score")
+			return self._end_turn(EndTurnReason.CannotImproveScore)
 
 		return TurnState(
 			throw = None,
@@ -283,7 +300,7 @@ class TurnState:
 		assert(self.phase == TurnPhase.CheckPass)
 
 		if stop:
-			return self._end_turn("Player choice")
+			return self._end_turn(EndTurnReason.PlayerChoice)
 
 		return TurnState(
 			throw = None,
@@ -303,7 +320,8 @@ class TurnState:
 			state["throw"] = self.throw.to_dict()
 		if self.phase == TurnPhase.Done:
 			state["score"] = self.score
-			state["end_cause"] = self.end_cause
+			state["end_cause_id"] = int(self.end_cause)
+			state["end_cause"] = END_TURN_MESSAGES[self.end_cause]
 		if self.phase == TurnPhase.PickedDice:
 			state['picked'] = self.picked.name
 

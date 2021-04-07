@@ -7,6 +7,10 @@ const gpio_Dump = 3;
 const gpio_RoomStatus = 8;
 const gpio_Throw = 16;
 const gpio_SideDice = 21;
+const gpio_EndCause = 26;
+const gpio_TurnScore = 27; // Only valid when EndCause != 0
+const gpio_TotalScore = 28;
+const gpio_CurrentPos = 29; // Only valid when EndCause != 0
 const gpio_TurnCounters = 32;
 
 const DIE_IDS = {
@@ -211,6 +215,25 @@ function gpioUpdateDice(dice, gpioAddress) {
 	});
 }
 
+function gpioUpdateScore(turn) {
+	var totalScore = md_game.scores[md_game.active_player]
+
+	pico8_gpio[gpio_EndCause] = turn.end_cause_id || 0;
+
+	if (turn.end_cause_id) {
+		totalScore += turn.score;
+
+		const currentPos = Object.values(md_game.scores).filter(
+			score => (score > totalScore)
+		).length + 1;
+
+		pico8_gpio[gpio_TurnScore] = turn.score;
+		pico8_gpio[gpio_CurrentPos] = currentPos;
+	}
+
+	pico8_gpio[gpio_TotalScore] = totalScore;
+}
+
 function gpioUpdateTurn(turn) {
 	console.log("Writing new turn status:", turn);
 
@@ -220,6 +243,7 @@ function gpioUpdateTurn(turn) {
 
 	gpioUpdateDice(turn.throw || {}, gpio_Throw);
 	gpioUpdateDice(turn.side_dice || {}, gpio_SideDice);
+	gpioUpdateScore(turn);
 
 	pico8_gpio[gpio_TurnCounters] = md_game.round;
 	pico8_gpio[gpio_TurnCounters + 1] = playerId(md_game.active_player);
