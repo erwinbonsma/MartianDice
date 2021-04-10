@@ -29,9 +29,9 @@ menuitems={
 }
 
 menu={
- index=1,
+ ypos=1, --menu-item
+ xpos=0, --pos in text entry
  room="****",
- xpos=0,
  blink=0,
 }
 
@@ -133,7 +133,7 @@ function menu_draw()
 
  for i=1,3 do
   local y=60+i*10
-  if menu.index==i then
+  if menu.ypos==i then
    print_outlined(
     menuitems[i],30,y,11,3,0
    )
@@ -146,9 +146,9 @@ function menu_draw()
  color(3)
  print("room code: \0",34,54)
  local room
- if menu.index==1 then
+ if menu.ypos==1 then
   print("pico")
- elseif menu.index==2 then
+ elseif menu.ypos==2 then
   print("????")
  else
   local showroom=menu.room
@@ -173,7 +173,7 @@ function menu_draw()
   end
  end
 
- if menu.index==1 then
+ if menu.ypos==1 then
   spr(49,22,52)
  else
   spr(48,22,52)
@@ -469,14 +469,14 @@ end
 
 function menu_itemselect()
  if btnp(⬇️) then
-  menu.index=menu.index%3+1
+  menu.ypos=menu.ypos%3+1
  elseif btnp(⬆️) then
-  menu.index=(menu.index+1)%3+1
+  menu.ypos=(menu.ypos+1)%3+1
  elseif btnp(🅾️) or btnp(❎) then
-  if menu.index==1 then
+  if menu.ypos==1 then
    --initiate room entry
    poke(a_room,1)
-  elseif menu.index==3 then
+  elseif menu.ypos==3 then
    menu.xpos=1
   end
  end
