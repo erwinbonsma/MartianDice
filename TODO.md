@@ -74,6 +74,8 @@ Done:
 	-	Observe in-progress game
 	-	Let JS handle host duties
 	-	Show end of turn reason
+	-	Enable creating/joining private room
+	-	Play
 
 TODO:
 -	Add die movement animations
@@ -83,11 +85,17 @@ TODO:
 	-	Limit chat in public rooms
 		-	Messages: Hi, Yes, No, Thanks, Wow, Good Game, Play?
 -	Extend PICO-8 client
+	-	Show errors on room join failure
+	-	Enable game start
+		-	Auto-add smart bot when only player
 	-	Show active player name
 	-	Show game result
-	-	Play
 	-	Simple chat
-	-	Enable creating/joining private room
+	-	Animations
+		-	Throw
+		-	Die selection
+	-	Sounds
+	-	Enable player name entry
 -	Remove memcache dependency
 	-	From Dockerfile
 	-	From layer
