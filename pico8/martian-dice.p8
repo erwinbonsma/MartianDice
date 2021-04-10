@@ -28,11 +28,17 @@ menuitems={
  "enter private room"
 }
 
+vector={
+ {1,0},{0,1},{-1,0},{0,-1}
+}
+
 menu={
  ypos=1, --menu-item
  xpos=0, --pos in text entry
  room="****",
  blink=0,
+ --flying saucer movement
+ delta={{0,0},{0,0}}
 }
 
 function shuffle(l)
@@ -146,10 +152,16 @@ end
 
 function menu_draw()
  cls(0)
- spr(128,32,16,9,4)
+ spr(128,32,16,9,4) --title
+
+ --flying saucers
  palt(1,true)
- spr(4,14,18,2,2)
- spr(4,100,18,2,2)
+ for i=1,2 do
+  local d=menu.delta[i]
+  local x=86*i-72+d[1]
+  local y=18+d[2]
+  spr(4,x,y,2,2)
+ end
 
  for i=1,3 do
   local y=64+i*10
@@ -501,6 +513,18 @@ function menu_itemselect()
  end
 end
 
+function menu_movesaucers()
+ for i=1,2 do
+  if rnd(10)<1 then
+   local d=menu.delta[i]
+   local v=vector[flr(rnd(4))+1]
+   for j=1,2 do
+    d[j]=max(min(d[j]+v[j],1),-1)
+   end
+  end
+ end
+end
+
 function menu_update()
  if peek(a_room)==3 then
   --entered room
@@ -515,6 +539,7 @@ function menu_update()
  else
   menu_itemselect()
  end
+ menu_movesaucers()
 end
 
 _draw=menu_draw
