@@ -95,6 +95,23 @@ function modchar(s,idx,to)
  return snew
 end
 
+function draw_button(
+ label,x,y,w,active
+)
+ rectfill(x+1,y+1,x+w-1,y+7,3)
+ line(x,y+1,x,y+7,11)
+ line(x+1,y,x+w-1,y,11)
+ line(x+w,y+1,x+w,y+7,1)
+ line(x+1,y+8,x+w-1,y+8,1)
+
+ if active then
+  color(11)
+ else
+  color(1)
+ end
+ print(label,x+4,y+2)
+end
+
 function draw_throw(throw)
  for i=1,#throw do
   if throw[i]>0 then
@@ -144,7 +161,7 @@ function menu_draw()
  end
 
  color(3)
- print("room code: \0",34,54)
+ print("room \0",47,54)
  local room
  if menu.ypos==1 then
   print("pico")
@@ -162,21 +179,19 @@ function menu_draw()
     end
    end
   end
-  print(showroom.."\0")
+  print(showroom)
+
   if menu.xpos>0 then
-   if menu.xpos==5 then
-    color(11)
-   else
-    color(3)
-   end
-   print(" go")
+   draw_button(
+    "go",86,52,14,menu.xpos==5
+   )
   end
  end
 
  if menu.ypos==1 then
-  spr(49,22,52)
+  spr(49,35,52)
  else
-  spr(48,22,52)
+  spr(48,35,52)
  end
 
  if peek(a_room)==1 then
