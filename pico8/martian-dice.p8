@@ -1,6 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 32
 __lua__
+--consts,vars,utils
 local_run=false
 version="0.21"
 
@@ -110,6 +111,8 @@ function modchar(s,idx,to)
  return snew
 end
 
+-->8
+--drawing
 function draw_button(
  label,x,y,w,active
 )
@@ -274,6 +277,8 @@ function room_draw()
 end
 
 -->8
+--gpio,update
+
 --0:ready for write
 --1:ready for read
 a_ctrl_in_game=0x5f80
