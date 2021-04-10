@@ -187,6 +187,7 @@ function menu_draw()
   local y=18+d[2]
   spr(4,x,y,2,2)
  end
+ palt()
 
  for i=1,3 do
   local y=64+i*10
@@ -250,10 +251,6 @@ end
 function game_draw()
  cls(0)
  
- if game==nil then
-  return
- end
-
  color(3)
  print("round "..game.round,0,0)
  print("player #"..game.turn,46,0)
@@ -283,8 +280,6 @@ function room_draw()
  color(3)
  print("room: "..room.id)
  print("status:"..peek(a_room_mgmt))
- print("a="..ord("a"))
- print("1="..ord(room.id,1))
 end
 
 -->8
@@ -514,11 +509,36 @@ function gpio_getroom()
  return roomid
 end
 
+function game_update()
+ read_gpio()
+
+ if peek(a_room_mgmt)==0 then
+  --exited room
+  _update=menu_update
+  _draw=menu_draw
+  return
+ end
+
+ if btnp(❎) then
+  if peek(a_room_mgmt)==3 then
+   --initiate room exit
+   poke(a_room_mgmt,4)
+  end
+ end
+end
+
 function room_update()
  if peek(a_room_mgmt)==0 then
   --exited room
   _update=menu_update
   _draw=menu_draw
+  return
+ end
+
+ if game!=nil then
+  _update=game_update
+  _draw=game_draw
+  return
  end
 
  if btnp(❎) then
@@ -534,6 +554,18 @@ function room_update()
  if btnp(🅾️) then
   poke(a_ctrl_dump,1)
  end
+end
+
+function enter_room(room_id)
+ room.id=room_id
+
+ --clear game status
+ game=nil
+ game_gpio_read_delay=0
+ poke(a_ctrl_in_game,0)
+
+ _update=room_update
+ _draw=room_draw
 end
 
 function join_room(room_id)
@@ -621,20 +653,13 @@ end
 
 function menu_update()
  if peek(a_room_mgmt)==3 then
-  --entered room
-  _update=room_update
-  _draw=room_draw
-
-  room.id=gpio_getroom()
-
   --in case room was created
   if room.id!=public_room then
    menu.room=room.id
    menu.ypos=3
   end
 
-  return
-  --start_game()
+  enter_room(gpio_getroom())
  end
 
  if menu.xpos!=0 then
