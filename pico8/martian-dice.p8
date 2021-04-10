@@ -2,6 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 32
 __lua__
 local_run=false
+version="0.21"
 
 phase={
  throwing=1,
@@ -32,6 +33,8 @@ vector={
  {1,0},{0,1},{-1,0},{0,-1}
 }
 
+public_room="pico"
+
 menu={
  ypos=1, --menu-item
  xpos=0, --pos in text entry
@@ -39,6 +42,12 @@ menu={
  blink=0,
  --flying saucer movement
  delta={{0,0},{0,0}}
+}
+
+room={
+ id="",
+ bots={},
+ clients={}
 }
 
 function shuffle(l)
@@ -152,6 +161,9 @@ end
 
 function menu_draw()
  cls(0)
+ color(3)
+ print(version)
+ 
  spr(128,32,16,9,4) --title
 
  --flying saucers
@@ -180,7 +192,7 @@ function menu_draw()
  print("room \0",52,54)
  local room
  if menu.ypos==1 then
-  print("pico")
+  print(public_room)
  elseif menu.ypos==2 then
   print("????")
  else
@@ -210,9 +222,15 @@ function menu_draw()
   spr(48,40,52)
  end
 
- if peek(a_room)==1 then
-  print("joining room...",36,80,3)
+ local status=""
+ local p=peek(a_room_mgmt)
+ if p==1 or p==2 then
+  status="joining room..."
+ elseif p==6 or p==7 then
+  status="creating room..."
  end
+
+ print(status,64-2*#status,120,3)
 end
 
 function game_draw()
@@ -247,7 +265,12 @@ function game_draw()
 end
 
 function room_draw()
- game_draw()
+ cls()
+ color(3)
+ print("room: "..room.id)
+ print("status:"..peek(a_room_mgmt))
+ print("a="..ord("a"))
+ print("1="..ord(room.id,1))
 end
 
 -->8
@@ -263,7 +286,11 @@ a_ctrl_dump=0x5f83
 --2:initiating join
 --3:joined
 --4:initiate exit (set by p8)
-a_room=0x5f88
+--5:initiating exit
+--6:initiate create (set by p8)
+--7:initiating create
+a_room_mgmt=0x5f88
+a_room=0x5f89 -- 4 bytes
 
 a_thrw=0x5f90 -- 5 bytes
 a_side=0x5f95 -- 5 bytes
@@ -451,26 +478,58 @@ function read_gpio()
  --todo: read_gpio_room()
 end
 
+function gpio_setroom(roomid)
+ --pico-8 strings are lowercase,
+ --so subtract 32 to make upper
+ for i=1,4 do
+  poke(
+   a_room+i-1,ord(roomid,i)-32
+  )
+ end
+end
+
+function gpio_getroom()
+ local roomid=""
+ for i=1,4 do
+  roomid=roomid..chr(peek(
+   a_room+i-1
+  )+32)
+ end
+ return roomid
+end
+
 function room_update()
- if peek(a_room)==0 then
+ if peek(a_room_mgmt)==0 then
   --exited room
-  _update=title_update
-  _draw=title_draw
+  _update=menu_update
+  _draw=menu_draw
  end
 
- if btnp(4) then
-  if peek(a_room)==3 then
+ if btnp(❎) then
+  if peek(a_room_mgmt)==3 then
    --initiate room exit
-   poke(a_room,4)
+   poke(a_room_mgmt,4)
   end
  end
 
  read_gpio()
 
  --tmp:debug 
- if btnp(5) then
+ if btnp(🅾️) then
   poke(a_ctrl_dump,1)
  end
+end
+
+function join_room(room_id)
+ gpio_setroom(room_id)
+
+ --initiate join
+ poke(a_room_mgmt,1)
+end
+
+function create_room()
+ --initiate room creation
+ poke(a_room_mgmt,6)
 end
 
 function menu_roomentry()
@@ -480,16 +539,23 @@ function menu_roomentry()
  elseif btnp(⬅️) then
   menu.xpos=(menu.xpos+3)%5+1
   menu.blink=0
- elseif btnp(⬆️) then
+ elseif btnp(⬆️)
+  and menu.xpos<5 then
   menu.room=modchar(
    menu.room,menu.xpos,⬆️)
   menu.blink=0.5
- elseif btnp(⬇️) then
+ elseif btnp(⬇️)
+  and menu.xpos<5 then
   menu.room=modchar(
    menu.room,menu.xpos,⬇️)
   menu.blink=0.5
- elseif btnp(🅾️) then
-  menu.xpos=0
+ elseif btnp(🅾️) or btnp(❎) then
+  if menu.xpos==5 then
+   join_room(menu.room)
+  else
+   --return to menu
+   menu.xpos=0
+  end
  else
   menu.blink+=(1/30)
   if menu.blink>1 then
@@ -505,8 +571,9 @@ function menu_itemselect()
   menu.ypos=(menu.ypos+1)%3+1
  elseif btnp(🅾️) or btnp(❎) then
   if menu.ypos==1 then
-   --initiate room entry
-   poke(a_room,1)
+   join_room(public_room)
+  elseif menu.ypos==2 then
+   create_room()
   elseif menu.ypos==3 then
    menu.xpos=1
   end
@@ -526,12 +593,21 @@ function menu_movesaucers()
 end
 
 function menu_update()
- if peek(a_room)==3 then
+ if peek(a_room_mgmt)==3 then
   --entered room
   _update=room_update
   _draw=room_draw
 
-  start_game()
+  room.id=gpio_getroom()
+
+  --in case room was created
+  if room.id!=public_room then
+   menu.room=room.id
+   menu.ypos=3
+  end
+
+  return
+  --start_game()
  end
 
  if menu.xpos!=0 then
@@ -548,10 +624,10 @@ _update=menu_update
 function _init()
  if local_run then
   pop_gpio()
-  poke(a_room,3)
+  poke(a_room_mgmt,3)
   --refresh_count=60
  else
-  poke(a_room,0)
+  poke(a_room_mgmt,0)
  end
 end
 

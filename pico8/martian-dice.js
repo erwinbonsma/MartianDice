@@ -1,10 +1,9 @@
-const md_roomId = "PICO";
-
 const gpio_GameControl = 0;
 const gpio_RoomControl = 1;
 const gpio_OutControl = 2;
 const gpio_Dump = 3;
 const gpio_RoomStatus = 8;
+const gpio_Room = 9;
 const gpio_Throw = 16;
 const gpio_SideDice = 21;
 const gpio_EndCause = 26;
@@ -34,6 +33,7 @@ const PHASE_IDS = {
 var md_myName;
 
 // Room status
+var md_roomId;
 var md_socket;
 var md_joinAttempts = 0;
 var md_host;
@@ -148,31 +148,70 @@ function handleMessage(event) {
 		case "response":
 			if (msg.status === "error") {
 				console.error(msg.details);
-			} else {
-				console.info(msg.details);
 			}
 			break;
 	}
 }
 
 function joinRoom() {
+	console.assert(pico8_gpio[gpio_RoomStatus] == 2);
+	console.assert(md_joinAttempts > 0);
+
+	const handleResponseMessage = (event) => {
+		const msg = JSON.parse(event.data);
+
+		if (msg.type === "response" && msg.status === "error") {
+			if (md_joinAttempts > 0) {
+				console.warn("Failed to join room. Retrying");
+				joinRoom();
+			} else {
+				// TODO: Signal failure to Pico-8
+			}
+		} else {
+			md_roomId = msg.room_id;			
+		}
+
+		md_socket.removeEventListener('message', handleResponseMessage);
+	};
+
+	md_socket.addEventListener('message', handleResponseMessage);
+
 	md_myName = `PICO-8${String.fromCharCode(65 + md_joinAttempts)}`;
+	const roomId = gpioGetRoomId();
+
+	console.info(`Joining Room ${roomId}`);
 
 	md_socket.send(JSON.stringify({
 		action: "join-room",
-		room_id: md_roomId,
+		room_id: roomId,
 		client_id: md_myName
 	}));
-	md_joinAttempts += 1;
+	md_joinAttempts -= 1;
+}
 
-	if (md_joinAttempts < 8) {
-		setTimeout(() => {
-			if (!md_host) {
-				console.warn("Failed to join room. Retrying");
-				joinRoom();	
-			}
-		}, 2000);
-	}
+function createRoom() {
+	const handleResponseMessage = (event) => {
+		const msg = JSON.parse(event.data);
+
+		if (msg.type === "response" && msg.status === "ok") {
+			pico8_gpio[gpio_RoomStatus] = 2;
+			gpioSetRoomId(msg.room_id);
+
+			// Only one attempt. Joining a fresly created room should always succeed (as there
+			// will never be a client name clash)
+			md_joinAttempts = 1;
+
+			joinRoom();
+		}
+
+		md_socket.removeEventListener('message', handleResponseMessage);
+	};
+
+	md_socket.addEventListener('message', handleResponseMessage);
+
+	md_socket.send(JSON.stringify({
+		action: "create-room",
+	}));
 }
 
 function leaveRoom() {
@@ -207,6 +246,22 @@ function connectToServer(callback) {
 		md_socket = undefined;
 	})
 	socket.addEventListener('message', handleMessage);
+}
+
+function gpioGetRoomId() {
+	var roomId = "";
+
+	for (var i = 0; i < 4; i++) {
+		roomId += String.fromCharCode(pico8_gpio[gpio_Room + i]);
+	}
+
+	return roomId;
+}
+
+function gpioSetRoomId(roomId) {
+	for (var i = 0; i < 4; i++) {
+		pico8_gpio[gpio_Room + i] = roomId.charCodeAt(i);
+	}
 }
 
 function gpioUpdateDice(dice, gpioAddress) {
@@ -258,6 +313,7 @@ function dump() {
 	console.log("CTRL_IN_ROOM  =", pico8_gpio[gpio_RoomControl]);
 	console.log("CTRL_OUT      =", pico8_gpio[gpio_OutControl]);
 	console.log("ROOM_STATUS   =", pico8_gpio[gpio_RoomStatus]);
+	console.log("ROOM          =", gpioGetRoomId());
 
 	console.log("md_game =", md_game);
 	console.log("md_gameNext =", md_gameNext);
@@ -275,11 +331,18 @@ function gpioUpdate() {
 		console.log("Initiating room join");
 		
 		pico8_gpio[gpio_RoomStatus] = 2;
-		md_joinAttempts = 0;
+		md_joinAttempts = 8;
 
 		connectToServer(joinRoom);
 	}
-	if (pico8_gpio[gpio_RoomStatus] == 4) {
+	else if (pico8_gpio[gpio_RoomStatus] == 6) {
+		console.log("Initiating room creation");
+
+		pico8_gpio[gpio_RoomStatus] = 7;
+
+		connectToServer(createRoom);
+	}
+	else if (pico8_gpio[gpio_RoomStatus] == 4) {
 		console.log("Initiating room exit");
 		leaveRoom();
 	}
