@@ -3,7 +3,7 @@ version 32
 __lua__
 --consts,vars,utils
 local_run=false
-version="0.21"
+version="0.22"
 
 phase={
  throwing=1,
@@ -79,6 +79,16 @@ function print_outlined(
  print(msg,x,y)
 end
 
+function print_select(
+ msg,x,y,selected
+)
+ if not selected then
+  print(msg,x,y,3)
+ else
+  print_outlined(msg,x,y,11,3,0)
+ end
+end
+
 function modchar(s,idx,to)
  local ch0=ord("a")
  local from=sub(s,idx,idx)
@@ -121,6 +131,21 @@ function is_roomid_set()
  return true
 end
 
+function roundrect(x0,y0,x1,y1,c)
+ line(x0+2,y0,x1-2,y0,c)
+ line(x0+2,y1,x1-2,y1,c)
+ line(x0,y0+2,x0,y1-2,c)
+ line(x1,y0+2,x1,y1-2,c)
+ pset(x0+1,y0+1,c)
+ pset(x0+1,y1-1,c)
+ pset(x1-1,y0+1,c)
+ pset(x1-1,y1-1,c)
+end
+
+function actionbtnp()
+ return btnp(❎) or btnp(🅾️)
+end
+
 -->8
 --drawing
 function draw_button(
@@ -141,11 +166,23 @@ function draw_button(
 end
 
 function draw_throw(throw)
+ local selected=0
+ if game.pickdie then
+  selected=game.pickdie[
+   game.die_idx
+  ]
+ end
+
  for i=1,#throw do
   if throw[i]>0 then
    local x=((i-1)%7)*16+8
    local y=flr((i-1)/7)*16+8
    spr(2+2*throw[i],x,y,2,2)
+   if throw[i]==selected then
+    roundrect(
+     x-1,y-1,x+15,y+15,3
+    )
+   end
   end
  end
 end
@@ -190,16 +227,12 @@ function menu_draw()
  palt()
 
  for i=1,3 do
-  local y=64+i*10
-  local x=64-2*#menuitems[i]
-  if menu.ypos==i
-  and menu.xpos==0 then
-   print_outlined(
-    menuitems[i],x,y,11,3,0
-   )
-  else
-   print(menuitems[i],x,y,3)
-  end
+  print_select(
+   menuitems[i],
+   64-2*#menuitems[i],
+   64+i*10,
+   menu.ypos==i and menu.xpos==0
+  )
  end
 
  color(3)
@@ -273,6 +306,21 @@ function game_draw()
    msg,64-2*#msg,26,11,1,0
   )
  end
+
+ if game.pickdie then
+  local s=","..#game.pickdie
+  s=s..","..game.die_idx
+  print("pick a die"..s,44,40,3)
+ elseif game.chkpass then
+  rectfill(30,20,97,28,0)
+  print("continue?",32,22,3)
+  print_select(
+   "yes",72,22,not game.pass
+  )
+  print_select(
+   "no",88,22,game.pass
+  )
+ end
 end
 
 function room_draw()
@@ -289,8 +337,12 @@ end
 --1:ready for read
 a_ctrl_in_game=0x5f80
 a_ctrl_in_room=0x5f81
+--2:null
+--3:awaiting input (set by p8)
 a_ctrl_out=0x5f82
 a_ctrl_dump=0x5f83
+
+a_move=0x5f84
 
 --0:none
 --1:initiate join (set by p8)
@@ -344,14 +396,32 @@ function pop_gpio()
  poke(a_ctrl_in_game,1)
 end
 
-function start_game()
- --ready for write
- if not local_run then
-  poke(a_ctrl_in_game,0)
+function die_choices(g)
+ local tp={}
+ 
+ --add dice from throw
+ for d in all(g.throw) do
+  if d>0 then
+   tp[d]=true
+  end
+ end
+ assert(not tp[2])
+
+ --remove collected earthlings
+ for t in all(g.collected) do
+  tp[t[1]]=false
  end
 
- game=nil
- game_gpio_read_delay=0
+ --add in order of throw
+ local l={}
+ for d in all(g.throw) do
+  if tp[d] then
+   add(l,d)
+   tp[d]=false
+  end
+ end
+ 
+ return l
 end
 
 function new_collected(dice)
@@ -479,6 +549,19 @@ function read_gpio_game()
   )
  end
 
+ if peek(a_ctrl_out)==0 then
+  --move expected
+  if g.phase==phase.pickdice then
+   g.pickdie=die_choices(g)
+   g.die_idx=1
+  end
+  if g.phase==phase.checkpass then
+   g.chkpass=true
+   g.pass=false
+  end
+  poke(a_ctrl_out,3)
+ end
+
  game=g 
  game_gpio_read_delay=60
  poke(a_ctrl_in_game,0)
@@ -509,8 +592,53 @@ function gpio_getroom()
  return roomid
 end
 
+function game_pickdie()
+ local n=#game.pickdie
+ if n>1 then
+  if btnp(⬅️) then
+   game.die_idx=(
+    game.die_idx+n-2
+   )%n+1
+  elseif btnp(➡️) then
+   game.die_idx=(
+    game.die_idx%n+1
+   )
+  end
+ end
+
+ if actionbtnp() then
+  poke(
+   a_move,
+   game.pickdie[game.die_idx]
+  )
+  poke(a_ctrl_out,1)
+  game.pickdie=nil
+ end
+end
+
+function game_chkpass()
+ if btnp(⬅️) or btnp(➡️) then
+  game.pass=not game.pass
+ end
+
+ if actionbtnp() then
+  poke(
+   a_move,
+   game.pass and 6
+  )
+  poke(a_ctrl_out,1)
+  game.chkpass=false
+ end
+end
+
 function game_update()
  read_gpio()
+
+ if game.pickdie then
+  game_pickdie()
+ elseif game.chkpass then
+  game_chkpass()
+ end
 
  if peek(a_room_mgmt)==0 then
   --exited room
@@ -524,6 +652,11 @@ function game_update()
    --initiate room exit
    poke(a_room_mgmt,4)
   end
+ end
+
+ --tmp:debug 
+ if btnp(🅾️) then
+  poke(a_ctrl_dump,1)
  end
 end
 
@@ -604,7 +737,7 @@ function menu_roomentry()
   menu.room=modchar(
    menu.room,menu.xpos,⬇️)
   menu.blink=0.5
- elseif btnp(🅾️) or btnp(❎) then
+ elseif actionbtnp() then
   if menu.xpos==5 then
    join_room(menu.room)
   end
@@ -622,7 +755,7 @@ function menu_itemselect()
   menu.ypos=menu.ypos%3+1
  elseif btnp(⬆️) then
   menu.ypos=(menu.ypos+1)%3+1
- elseif btnp(🅾️) or btnp(❎) then
+ elseif actionbtnp() then
   if menu.ypos==1 then
    join_room(public_room)
   elseif menu.ypos==2 then
@@ -675,9 +808,24 @@ _update=menu_update
 -->8
 function _init()
  if local_run then
-  pop_gpio()
-  poke(a_room_mgmt,3)
-  --refresh_count=60
+  game={
+   throw={3,4,0,5,3,0,1},
+   battle={2,3},
+   collected={{4,1}},
+   round=1,
+   turn=2,
+   phase=phase.pickdice,
+   thrownum=2,
+   endcause=0,
+  }
+  --game.pickdie=die_choices(game)
+  --game.die_idx=1
+  game.chkpass=true
+  game.pass=false
+
+  _update=game_update
+  _draw=game_draw
+  poke(a_ctrl_out,0)
  else
   poke(a_room_mgmt,0)
  end

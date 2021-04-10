@@ -2,6 +2,7 @@ const gpio_GameControl = 0;
 const gpio_RoomControl = 1;
 const gpio_OutControl = 2;
 const gpio_Dump = 3;
+const gpio_Move = 4;
 const gpio_RoomStatus = 8;
 const gpio_Room = 9;
 const gpio_Throw = 16;
@@ -19,6 +20,11 @@ const DIE_IDS = {
 	"Cow": 4,
 	"Human": 5
 };
+
+const DIE_NAMES = Object.entries(DIE_IDS).reduce((d, [name, index]) => {
+	d[index] = name;
+	return d;
+}, {});
 
 const PHASE_IDS = {
 	"Throwing": 1,
@@ -62,11 +68,15 @@ function isHost() {
 }
 
 function isAwaitingMove() {
-	return md_turnStates.length == 0 && md_game;
+	return md_turnStates.length == 0 && !!md_game;
 }
 
 function isBotMove() {
 	return isAwaitingMove() && md_bots[md_game.active_player];
+}
+
+function isMyMove() {
+	return isAwaitingMove() && md_game.active_player === md_myName;
 }
 
 function welcomeNewClients(prevClients) {
@@ -305,27 +315,14 @@ function gpioUpdateTurn(turn) {
 	pico8_gpio[gpio_TurnCounters + 2] = turn.throw_count;
 	pico8_gpio[gpio_TurnCounters + 3] = PHASE_IDS[turn.phase];
 
+	// Signal when move is expected
+	pico8_gpio[gpio_OutControl] = isMyMove() ? 0 : 2;
+	console.info("isMyMove", isMyMove());
+
 	pico8_gpio[gpio_GameControl] = 1; // Ready to read
 }
 
-function dump() {
-	console.log("CTRL_IN_GAME  =", pico8_gpio[gpio_GameControl]);
-	console.log("CTRL_IN_ROOM  =", pico8_gpio[gpio_RoomControl]);
-	console.log("CTRL_OUT      =", pico8_gpio[gpio_OutControl]);
-	console.log("ROOM_STATUS   =", pico8_gpio[gpio_RoomStatus]);
-	console.log("ROOM          =", gpioGetRoomId());
-
-	console.log("md_game =", md_game);
-	console.log("md_gameNext =", md_gameNext);
-	console.log("md_turnStates =", md_turnStates);
-}
-
-function gpioUpdate() {
-	if (pico8_gpio[gpio_Dump] != 0) {
-		pico8_gpio[gpio_Dump] = 0;
-		dump();
-	}
-
+function gpioHandleRoomCommands() {
 	if (pico8_gpio[gpio_RoomStatus] == 1) {
 		// Fresh attempt to join room
 		console.log("Initiating room join");
@@ -346,11 +343,62 @@ function gpioUpdate() {
 		console.log("Initiating room exit");
 		leaveRoom();
 	}
+}
+
+function gpioHandleMove() {
+	if (pico8_gpio[gpio_OutControl] != 1) {
+		return
+	}
+
+	assert(isMyMove());
+	const move = pico8_gpio[gpio_Move];
+	if (move >= 1 && move <= 5) {
+		assert(move != 2);
+		md_socket.send(JSON.stringify({
+			action: "move",
+			game_id: md_roomId,
+			pick_die: DIE_NAMES[move],
+			game_state: md_game
+		}));
+	} else {
+		md_socket.send(JSON.stringify({
+			action: "move",
+			game_id: md_roomId,
+			pass: move == 6,
+			game_state: md_game
+		}));
+	}
+
+	pico8_gpio[gpio_OutControl] = 2;
+}
+
+function dump() {
+	console.log("CTRL_IN_GAME  =", pico8_gpio[gpio_GameControl]);
+	console.log("CTRL_IN_ROOM  =", pico8_gpio[gpio_RoomControl]);
+	console.log("CTRL_OUT      =", pico8_gpio[gpio_OutControl]);
+	console.log("ROOM_STATUS   =", pico8_gpio[gpio_RoomStatus]);
+	console.log("ROOM          =", gpioGetRoomId());
+
+	console.log("md_game =", md_game);
+	console.log("md_gameNext =", md_gameNext);
+	console.log("md_turnStates =", md_turnStates);
+}
+
+function gpioUpdate() {
+	if (pico8_gpio[gpio_Dump] != 0) {
+		pico8_gpio[gpio_Dump] = 0;
+		dump();
+	}
+
+	gpioHandleRoomCommands();
+	gpioHandleMove();
 
 	if (pico8_gpio[gpio_GameControl] == 0) {
 		if (md_turnStates.length > 0) {
-			gpioUpdateTurn(md_turnStates[0]);
+			const turnState = md_turnStates[0];
+
 			md_turnStates = md_turnStates.slice(1);
+			gpioUpdateTurn(turnState);
 
 			if (md_turnStates.length === 0) {
 				md_game = md_gameNext;
