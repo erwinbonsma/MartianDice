@@ -111,6 +111,16 @@ function modchar(s,idx,to)
  return snew
 end
 
+function is_roomid_set()
+ for i=1,4 do
+  if sub(menu.room,i,i)=="*" then
+   return false
+  end
+ end
+
+ return true
+end
+
 -->8
 --drawing
 function draw_button(
@@ -181,13 +191,13 @@ function menu_draw()
  for i=1,3 do
   local y=64+i*10
   local x=64-2*#menuitems[i]
-  if menu.ypos==i then
+  if menu.ypos==i
+  and menu.xpos==0 then
    print_outlined(
     menuitems[i],x,y,11,3,0
    )
   else
-   color(3)
-   print(menuitems[i],x,y)
+   print(menuitems[i],x,y,3)
   end
  end
 
@@ -212,7 +222,8 @@ function menu_draw()
   end
   print(showroom)
 
-  if menu.xpos>0 then
+  if menu.xpos>0
+  and is_roomid_set() then
    draw_button(
     "go",90,52,14,menu.xpos==5
    )
@@ -538,29 +549,34 @@ function create_room()
 end
 
 function menu_roomentry()
+ local max_xpos=4
+ if is_roomid_set() then
+  max_xpos+=1
+ end
+
  if btnp(➡️) then
-  menu.xpos=menu.xpos%5+1
+  menu.xpos=menu.xpos%max_xpos+1
   menu.blink=0
  elseif btnp(⬅️) then
-  menu.xpos=(menu.xpos+3)%5+1
+  menu.xpos=(
+   menu.xpos+max_xpos-2
+  )%max_xpos+1
   menu.blink=0
  elseif btnp(⬆️)
-  and menu.xpos<5 then
+ and menu.xpos<5 then
   menu.room=modchar(
    menu.room,menu.xpos,⬆️)
   menu.blink=0.5
  elseif btnp(⬇️)
-  and menu.xpos<5 then
+ and menu.xpos<5 then
   menu.room=modchar(
    menu.room,menu.xpos,⬇️)
   menu.blink=0.5
  elseif btnp(🅾️) or btnp(❎) then
   if menu.xpos==5 then
    join_room(menu.room)
-  else
-   --return to menu
-   menu.xpos=0
   end
+  menu.xpos=0
  else
   menu.blink+=(1/30)
   if menu.blink>1 then
@@ -580,7 +596,13 @@ function menu_itemselect()
   elseif menu.ypos==2 then
    create_room()
   elseif menu.ypos==3 then
-   menu.xpos=1
+   if is_roomid_set() then
+    --can directly enter
+    menu.xpos=5
+   else
+    --need to specify id first
+    menu.xpos=1
+   end
   end
  end
 end
