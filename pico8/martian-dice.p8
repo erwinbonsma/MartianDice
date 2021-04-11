@@ -25,6 +25,7 @@ endcause={
 }
 
 menuitems={
+ "change name",
  "enter public room",
  "create private room",
  "enter private room"
@@ -44,14 +45,16 @@ pal2={7,8,11,10}
 title={
  --flying saucer movement
  delta={{0,0},{0,0}},
- room=public_room,
- public=true
+ room=nil
 }
 
 menu={
  ypos=1, --menu-item
  xpos=0, --pos in text entry
  room="****",
+ name="p8-"..chr(
+  ord("a")+flr(rnd(26))
+ ),
  blink=0,
 }
 
@@ -91,17 +94,21 @@ function print_select(
  msg,x,y,selected
 )
  if not selected then
-  print(msg,x,y,3)
+  print(msg,x,y,4)
  else
-  print_outlined(msg,x,y,11,3,0)
+  print_outlined(msg,x,y,9,4,0)
  end
 end
 
 function modchar(s,idx,to)
  local ch0=ord("a")
  local from=sub(s,idx,idx)
+ if from<"a" 
+ or from>"z" then
+  from=nil
+ end
  if to==⬆️ then
-  if from=="*" then
+  if from==nil then
    to="a"
   else
    to=chr(
@@ -109,7 +116,7 @@ function modchar(s,idx,to)
    )
   end
  elseif to==⬇️ then
-  if from=="*" then
+  if from==nil then
    to="z"
   else
    to=chr(
@@ -159,14 +166,14 @@ end
 function draw_button(
  label,x,y,w,active
 )
- rectfill(x+1,y+1,x+w-1,y+7,3)
- line(x,y+1,x,y+7,11)
- line(x+1,y,x+w-1,y,11)
+ rectfill(x+1,y+1,x+w-1,y+7,4)
+ line(x,y+1,x,y+7,9)
+ line(x+1,y,x+w-1,y,9)
  line(x+w,y+1,x+w,y+7,1)
  line(x+1,y+8,x+w-1,y+8,1)
 
  if active then
-  color(11)
+  color(9)
  else
   color(1)
  end
@@ -219,7 +226,9 @@ end
 
 function title_draw(y0)
  --logo
+ pal(3,4)
  spr(128,32,y0,9,4)
+ pal()
 
  --flying saucers
  palt(1,true)
@@ -231,16 +240,31 @@ function title_draw(y0)
  end
  palt()
 
- color(3)
+ if (title.room==nil) return
+
+ color(5)
  print(
-  "room "..title.room,52,y0+38
+  "room "..title.room,52,y0+35
  )
 
  if title.public then
-  spr(49,40,y0+36)
+  spr(49,40,y0+33)
  else
-  spr(48,40,y0+36)
+  spr(48,40,y0+33)
  end
+end
+
+function edit_draw(s,x,y)
+ color(5) --default
+ if menu.xpos>0 then
+  if menu.xpos<=menu.editlen then
+   color(9)
+   if menu.blink<0.5 then
+    s=modchar(s,menu.xpos,"_")
+   end
+  end
+ end
+ print(s,x,y)
 end
 
 function menu_draw()
@@ -248,36 +272,32 @@ function menu_draw()
  color(3)
  print(version)
 
- title_draw(16)
+ title_draw(8)
 
- for i=1,3 do
+ for i=1,4 do
+  local txt=menuitems[i]
+  local x=64-2*#txt
+  local y=60+i*10
   print_select(
-   menuitems[i],
-   64-2*#menuitems[i],
-   64+i*10,
+   txt,x,y,
    menu.ypos==i and menu.xpos==0
   )
  end
 
- if menu.ypos==3 then
-  local showroom=menu.room
-  color(3)
-  if menu.xpos>0 then
-   if menu.xpos<5 then
-    color(11)
-    if menu.blink<0.5 then
-     showroom=modchar(
-      menu.room,menu.xpos,"_"
-     )
-    end
-   end
-  end
-  print(showroom,72,54)
+ print("name",52,52,5)
+ if menu.ypos==1 then
+  edit_draw(menu.name,72,52)
+ else
+  print(menu.name,72,52,5)
+ end
+
+ if menu.ypos==4 then
+  edit_draw(menu.room,72,43)
 
   if menu.xpos>0
   and is_roomid_set() then
    draw_button(
-    "go",90,52,14,menu.xpos==5
+    "go",90,41,14,menu.xpos==5
    )
   end
  end
@@ -826,12 +846,7 @@ function create_room()
  poke(a_room_mgmt,6)
 end
 
-function menu_roomentry()
- local max_xpos=4
- if is_roomid_set() then
-  max_xpos+=1
- end
-
+function edittext(s,max_xpos)
  if btnp(➡️) then
   menu.xpos=menu.xpos%max_xpos+1
   menu.blink=0
@@ -841,25 +856,51 @@ function menu_roomentry()
   )%max_xpos+1
   menu.blink=0
  elseif btnp(⬆️)
- and menu.xpos<5 then
-  menu.room=modchar(
-   menu.room,menu.xpos,⬆️)
+ and menu.xpos<=menu.editlen then
+  s=modchar(s,menu.xpos,⬆️)
   menu.blink=0.5
  elseif btnp(⬇️)
- and menu.xpos<5 then
-  menu.room=modchar(
-   menu.room,menu.xpos,⬇️)
+ and menu.xpos<=menu.editlen then
+  s=modchar(s,menu.xpos,⬇️)
   menu.blink=0.5
- elseif actionbtnp() then
-  if menu.xpos==5 then
-   join_room(menu.room)
-  end
-  menu.xpos=0
  else
   menu.blink+=(1/30)
   if menu.blink>1 then
    menu.blink=0
   end
+ end
+
+ return s
+end
+
+function menu_edittext()
+ local s
+ local max_xpos=menu.editlen
+
+ if menu.ypos==4
+ and is_roomid_set() then
+  --can move to go button
+  max_xpos+=1
+ end
+
+ if menu.ypos==1 then
+  menu.name=edittext(
+   menu.name,max_xpos
+  )
+ elseif menu.ypos==4 then
+  menu.room=edittext(
+   menu.room,max_xpos
+  )
+ else
+  assert(false)
+ end
+
+ if actionbtnp() then
+  if menu.ypos==4
+  and menu.xpos==max_xpos then
+   join_room(menu.room)
+  end
+  menu.xpos=0
  end
 end
 
@@ -867,15 +908,19 @@ function menu_itemselect()
  local yposold=menu.ypos
 
  if btnp(⬇️) then
-  menu.ypos=menu.ypos%3+1
+  menu.ypos=menu.ypos%4+1
  elseif btnp(⬆️) then
-  menu.ypos=(menu.ypos+1)%3+1
+  menu.ypos=(menu.ypos+2)%4+1
  elseif actionbtnp() then
   if menu.ypos==1 then
-   join_room(public_room)
+   menu.editlen=6
+   menu.xpos=1
   elseif menu.ypos==2 then
-   create_room()
+   join_room(public_room)
   elseif menu.ypos==3 then
+   create_room()
+  elseif menu.ypos==4 then
+   menu.editlen=4
    if is_roomid_set() then
     --can directly enter
     menu.xpos=5
@@ -888,13 +933,15 @@ function menu_itemselect()
 
  if menu.ypos!=yposold then
   if menu.ypos==1 then
-   title.room=public_room
+   title.room=nil
   elseif menu.ypos==2 then
+   title.room=public_room
+  elseif menu.ypos==3 then
    title.room="????"
   else
    title.room=""
   end
-  title.public=(menu.ypos==1)
+  title.public=(menu.ypos==2)
  end
 end
 
@@ -915,14 +962,14 @@ function menu_update()
   --in case room was created
   if room.id!=public_room then
    menu.room=room.id
-   menu.ypos=3
+   menu.ypos=4
   end
 
   enter_room(gpio_gets(a_room,4))
  end
 
  if menu.xpos!=0 then
-  menu_roomentry()
+  menu_edittext()
  else
   menu_itemselect()
  end
@@ -1005,14 +1052,14 @@ c000c000d000d00022022000f000f000600060004000400000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-8888888000bbbb007777700088888000bbbbb000aaaa000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-800000800bbbbbb07070700088888000bbbbb000000aa00000000000000000000000000000000000000000000000000000000000000000000000000000000000
-80888080bb0bb0bb7777700008800000bbbbb000aa0aa00000000000000000000000000000000000000000000000000000000000000000000000000000000000
-80888080bb0bb0bb70707000880000000bbb0000aa00000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-80888080bbbbbbbb777770008800000000b000000aaaa00000000000000000000000000000000000000000000000000000000000000000000000000000000000
-08080800bb0bb0bb0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-088088000bb00bb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0088800000bbbb000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+88888880003333007777700088888000bbbbb000aaaa000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+80000080033333307070700088888000bbbbb000000aa00000000000000000000000000000000000000000000000000000000000000000000000000000000000
+80888080330330337777700008800000bbbbb000aa0aa00000000000000000000000000000000000000000000000000000000000000000000000000000000000
+808880803303303370707000880000000bbb0000aa00000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+8088808033333333777770008800000000b000000aaaa00000000000000000000000000000000000000000000000000000000000000000000000000000000000
+08080800330330330000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+08808800033003300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00888000003333000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00bbbbbbbbbbbbb00000000000000000007777777777700000000cccccc000000000000aa0000000000000000000000000000000000000000000000000000000
 00bbbbbbbbbbbbb000000000000080800777777777777700000cccccccccc0000aaaa00aa00aaaa0000000000000000000000000000000000000000000000000
 00bb000000000bb00888888888888888770007777700077000cccccccccccc000aaaaaaaa00aaaa0000000000000000000000000000000000000000000000000
