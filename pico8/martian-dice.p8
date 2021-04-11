@@ -100,28 +100,37 @@ function print_select(
  end
 end
 
-function modchar(s,idx,to)
- local ch0=ord("a")
+function modchar(
+ s,idx,to,allowspace
+)
  local from=sub(s,idx,idx)
- if from<"a" 
- or from>"z" then
+ if from<"a" or from>"z" then
   from=nil
  end
+
  if to==⬆️ then
   if from==nil then
    to="a"
+  elseif from=="z" then
+   if allowspace then
+    to=" "
+   else
+    to="a"
+   end
   else
-   to=chr(
-    (ord(s,idx)-ch0+1)%26+ch0
-   )
+   to=chr(ord(s,idx)+1)
   end
  elseif to==⬇️ then
   if from==nil then
    to="z"
+  elseif from=="a" then
+   if allowspace then
+    to=" "
+   else
+    to="z"
+   end
   else
-   to=chr(
-    (ord(s,idx)-ch0+25)%26+ch0
-   )
+   to=chr(ord(s,idx)-1)
   end
  end
 
@@ -129,7 +138,9 @@ function modchar(s,idx,to)
  if idx>1 then
   snew=sub(s,1,idx-1)
  end
- snew=snew..to
+ if idx<#s or to!=" " then
+  snew=snew..to
+ end
  if idx<#s then
   snew=snew..sub(s,idx+1)
  end
@@ -138,7 +149,8 @@ end
 
 function is_roomid_set()
  for i=1,4 do
-  if sub(menu.room,i,i)=="*" then
+  local ch=sub(menu.room,i,i)
+  if ch<"a" or ch>"z" then
    return false
   end
  end
@@ -846,7 +858,9 @@ function create_room()
  poke(a_room_mgmt,6)
 end
 
-function edittext(s,max_xpos)
+function edittext(
+ s,max_xpos,allowspace
+)
  if btnp(➡️) then
   menu.xpos=menu.xpos%max_xpos+1
   menu.blink=0
@@ -857,11 +871,15 @@ function edittext(s,max_xpos)
   menu.blink=0
  elseif btnp(⬆️)
  and menu.xpos<=menu.editlen then
-  s=modchar(s,menu.xpos,⬆️)
+  s=modchar(
+   s,menu.xpos,⬆️,allowspace
+  )
   menu.blink=0.5
  elseif btnp(⬇️)
  and menu.xpos<=menu.editlen then
-  s=modchar(s,menu.xpos,⬇️)
+  s=modchar(
+   s,menu.xpos,⬇️,allowspace
+  )
   menu.blink=0.5
  else
   menu.blink+=(1/30)
@@ -874,22 +892,21 @@ function edittext(s,max_xpos)
 end
 
 function menu_edittext()
- local s
  local max_xpos=menu.editlen
-
- if menu.ypos==4
- and is_roomid_set() then
-  --can move to go button
-  max_xpos+=1
- end
 
  if menu.ypos==1 then
   menu.name=edittext(
-   menu.name,max_xpos
+   menu.name,
+   min(#menu.name+1,max_xpos),
+   menu.xpos>1
   )
  elseif menu.ypos==4 then
+  if is_roomid_set() then
+   --can move to go button
+   max_xpos+=1
+  end
   menu.room=edittext(
-   menu.room,max_xpos
+   menu.room,max_xpos,false
   )
  else
   assert(false)
