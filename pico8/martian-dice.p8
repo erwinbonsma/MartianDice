@@ -337,6 +337,15 @@ function game_draw()
  end
 end
 
+function draw_room_member(
+ n,sprite,name,c
+)
+ local x=30+(n%2)*34
+ local y=50+flr(n/2)*8
+ spr(sprite,x,y)
+ print(name,x+7,y,c)
+end
+
 function room_draw()
  cls()
 
@@ -344,17 +353,15 @@ function room_draw()
 
  local n=0
  for id,name in pairs(room.clients) do
-  local x=30+(n%2)*34
-  local y=50+flr(n/2)*8
-  spr(31+id,x,y)
-  print(name,x+7,y,pal1[id])
+  draw_room_member(
+   n,31+id,name,pal1[id]
+  )
   n+=1
  end
  for name,tp in pairs(room.bots) do
-  local x=30+(n%2)*34
-  local y=50+flr(n/2)*8
-  spr(49+tp,x,y)
-  print(name,x+7,y,pal2[tp])
+  draw_room_member(
+   n,49+tp,name,pal2[tp]
+  )
   n+=1
  end
 end
