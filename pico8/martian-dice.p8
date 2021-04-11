@@ -298,8 +298,12 @@ function game_draw()
  
  color(3)
  print("round "..game.round,0,0)
- print("player #"..game.turn,46,0)
  print("throw "..game.thrownum,100,0)
+
+ local ap=game.active_player
+ local x=60-#ap.name*2
+ spr(ap.avatar,x,0)
+ print(ap.name,x+7,0,ap.color)
 
  draw_throw(game.throw)
  draw_battle(game.battle)
@@ -414,9 +418,12 @@ a_cpos=0x5f9d --cur. position
 
 --round/turn/throw/phase counters
 a_crou=0x5fa0
-a_ctur=a_crou+1
-a_cthr=a_ctur+1
-a_cpha=a_cthr+1
+a_ctur=0x5fa1
+a_cthr=0x5fa2
+a_cpha=0x5fa3
+--active player, see a_ptyp
+a_atyp=0x5fa4
+a_anam=0x5fa5 -- 6 bytes
 
 --- room status ---
 --num clients/bots
@@ -427,32 +434,6 @@ a_nbot=0x5fb1
 a_ptyp=0x5fb2
 --name, 0-chars when len<6
 a_pnam=0x5fb3 -- 6 bytes
-
-function pop_gpio()
- poke(a_thrw,1)
- poke(a_thrw+1,2)
- poke(a_thrw+2,3)
- poke(a_thrw+3,4)
- poke(a_thrw+4,3)
-
- poke(a_side,4)
- poke(a_side+1,3)
- poke(a_side+2,3)
- poke(a_side+3,2)
- poke(a_side+4,1)
-
- poke(a_crou,3)
- poke(a_ctur,1)
- poke(a_cthr,2)
- poke(a_cpha,2)
- 
- poke(a_endc,1)
- poke(a_trsc,3)
- poke(a_ttsc,8)
- poke(a_cpos,2)
-
- poke(a_ctrl_in_game,1)
-end
 
 function die_choices(g)
  local tp={}
@@ -555,6 +536,35 @@ function update_throw(old,new)
  return l
 end
 
+function gpio_puts(a0,len,s)
+ for i=1,len do
+  local v=0
+  if i<=#s then
+   v=ord(s,i)
+   if v>=97 and v<=122 then
+    --subtract 32 to output as
+    --uppercase ascii
+    v-=32
+   end
+  end
+  poke(a0+i-1,v)
+ end
+end
+
+function gpio_gets(a0,len)
+ local s=""
+
+ for i=1,len do
+  local v=peek(a0+i-1)
+  if v!=0 then
+   if (v>=65 and v<=90) v+=32
+   s=s..chr(v)
+  end
+ end
+
+ return s
+end
+
 game_gpio_read_delay=0
 function read_gpio_game()
  if peek(a_ctrl_in_game)!=1 then
@@ -620,6 +630,20 @@ function read_gpio_game()
   poke(a_ctrl_out,3)
  end
 
+ local ap={}
+ local v=peek(a_atyp)
+ if v<=6 then
+  --client avatar
+  ap.avatar=31+v
+  ap.color=pal1[v]
+ else
+  --bot avatar
+  ap.avatar=43+v
+  ap.color=pal2[v-6]
+ end
+ ap.name=gpio_gets(a_anam,6)
+ g.active_player=ap
+
  game=g 
  game_gpio_read_delay=60
  poke(a_ctrl_in_game,0)
@@ -644,15 +668,7 @@ function read_gpio_room()
  local r=roomnew
  assert(r!=nil)
 
- local name=""
- for i=0,5 do
-  local ch=peek(a_pnam+i)
-  if ch!=0 then
-   if (ch>=65 and ch<=90) ch+=32
-   name=name..chr(ch)
-  end
- end
-
+ local name=gpio_gets(a_pnam,6)
  local typ=peek(a_ptyp)
  if typ<=6 then
   r.clients[typ]=name
@@ -680,26 +696,6 @@ end
 function read_gpio()
  read_gpio_game()
  read_gpio_room()
-end
-
-function gpio_setroom(roomid)
- --pico-8 strings are lowercase,
- --so subtract 32 to make upper
- for i=1,4 do
-  poke(
-   a_room+i-1,ord(roomid,i)-32
-  )
- end
-end
-
-function gpio_getroom()
- local roomid=""
- for i=1,4 do
-  roomid=roomid..chr(peek(
-   a_room+i-1
-  )+32)
- end
- return roomid
 end
 
 function game_pickdie()
@@ -819,7 +815,7 @@ function enter_room(room_id)
 end
 
 function join_room(room_id)
- gpio_setroom(room_id)
+ gpio_puts(a_room,4,room_id)
 
  --initiate join
  poke(a_room_mgmt,1)
@@ -922,7 +918,7 @@ function menu_update()
    menu.ypos=3
   end
 
-  enter_room(gpio_getroom())
+  enter_room(gpio_gets(a_room,4))
  end
 
  if menu.xpos!=0 then

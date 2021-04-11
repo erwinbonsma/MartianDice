@@ -12,6 +12,8 @@ const gpio_TurnScore = 27; // Only valid when EndCause != 0
 const gpio_TotalScore = 28;
 const gpio_CurrentPos = 29; // Only valid when EndCause != 0
 const gpio_TurnCounters = 32;
+const gpio_ActivePlayerType = 36;
+const gpio_ActivePlayerName = 37;
 const gpio_NumClients = 48;
 const gpio_NumBots = 49;
 const gpio_PlayerType = 50;
@@ -33,6 +35,7 @@ const DIE_NAMES = Object.entries(DIE_IDS).reduce((d, [name, index]) => {
 }, {});
 
 const BEHAVIOUR_IDS = {
+	"unknown": 0,
 	"random": 1,
 	"aggressive": 2,
 	"defensive": 3,
@@ -75,7 +78,7 @@ function sizeOfDict(d) {
 	return n;
 }
 
-function playerId(playerName) {
+function playerTurnOrder(playerName) {
 	const players = md_game.players;
 	for (var i = 0; i < players.length; i++) {
 		if (players[i] === playerName) {
@@ -243,7 +246,7 @@ function joinRoom() {
 	md_socket.addEventListener('message', handleResponseMessage);
 
 	md_myName = `PICO8${String.fromCharCode(65 + md_joinAttempts)}`;
-	const roomId = gpioGetRoomId();
+	const roomId = gpioGetStr(gpio_Room, 4);
 
 	console.info(`Joining Room ${roomId}`);
 
@@ -261,7 +264,7 @@ function createRoom() {
 
 		if (msg.type === "response" && msg.status === "ok") {
 			pico8_gpio[gpio_RoomStatus] = 2;
-			gpioSetRoomId(msg.room_id);
+			gpioSetStr(gpio_Room, 4, msg.room_id);
 
 			// Only one attempt. Joining a fresly created room should always succeed (as there
 			// will never be a client name clash)
@@ -340,19 +343,23 @@ function gpioRoomBatchUpdate(batchItem) {
 	}
 }
 
-function gpioGetRoomId() {
-	var roomId = "";
+function gpioGetStr(address, maxLen) {
+	var s = "";
 
-	for (var i = 0; i < 4; i++) {
-		roomId += String.fromCharCode(pico8_gpio[gpio_Room + i]);
+	for (var i = 0; i < maxLen; i++) {
+		const val = pico8_gpio[address + i];
+		if (val == 0) {
+			break;
+		}
+		s += String.fromCharCode(val);
 	}
 
-	return roomId;
+	return s;
 }
 
-function gpioSetRoomId(roomId) {
-	for (var i = 0; i < 4; i++) {
-		pico8_gpio[gpio_Room + i] = roomId.charCodeAt(i);
+function gpioSetStr(address, maxLen, s) {
+	for (var i = 0; i < maxLen; i++) {
+		pico8_gpio[address + i] = (i < s.length) ? s.charCodeAt(i) : 0;
 	}
 }
 
@@ -392,10 +399,14 @@ function gpioUpdateTurn(turn) {
 	gpioUpdateDice(turn.side_dice || {}, gpio_SideDice);
 	gpioUpdateScore(turn);
 
+	const name = md_game.active_player;
 	pico8_gpio[gpio_TurnCounters] = md_game.round;
-	pico8_gpio[gpio_TurnCounters + 1] = playerId(md_game.active_player);
+	pico8_gpio[gpio_TurnCounters + 1] = playerTurnOrder(name);
 	pico8_gpio[gpio_TurnCounters + 2] = turn.throw_count;
 	pico8_gpio[gpio_TurnCounters + 3] = PHASE_IDS[turn.phase];
+	gpioSetStr(gpio_ActivePlayerName, maxPlayerNameLength, name);
+	const playerId = md_clients[name];
+	pico8_gpio[gpio_ActivePlayerType] = playerId ? playerId : BEHAVIOUR_IDS[md_bots[name] || "unknown"] + 6;
 
 	// Signal when move is expected
 	pico8_gpio[gpio_OutControl] = isMyMove() ? 0 : 2;
@@ -459,7 +470,7 @@ function dump() {
 	console.log("CTRL_IN_ROOM  =", pico8_gpio[gpio_RoomControl]);
 	console.log("CTRL_OUT      =", pico8_gpio[gpio_OutControl]);
 	console.log("ROOM_STATUS   =", pico8_gpio[gpio_RoomStatus]);
-	console.log("ROOM          =", gpioGetRoomId());
+	console.log("ROOM          =", gpioGetStr(gpio_Room, 4));
 
 	console.log("md_game =", md_game);
 	console.log("md_gameNext =", md_gameNext);
