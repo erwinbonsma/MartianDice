@@ -76,6 +76,8 @@ Done:
 	-	Show end of turn reason
 	-	Enable creating/joining private room
 	-	Play
+	-	Show clients and bots in room
+	-	Show active player name
 
 TODO:
 -	Add die movement animations
@@ -83,14 +85,16 @@ TODO:
 	-	Add public/private toggle
 	-	Show available public rooms
 	-	Limit chat in public rooms
-		-	Messages: Hi, Yes, No, Thanks, Wow, Good Game, Play?
+		-	Messages: Hi, Bye, Yes, No, Okay, Thx, Wow, GG, Play?, Wait?
 -	Extend PICO-8 client
 	-	Show errors on room join failure
 	-	Enable game start
 		-	Auto-add smart bot when only player
-	-	Show active player name
 	-	Show game result
 	-	Simple chat
+	-	Handle disconnected/inactive players
+		-	Auto-skip turn for disconnected players
+		-	
 	-	Animations
 		-	Throw
 		-	Die selection
