@@ -56,9 +56,7 @@ menu={
 }
 
 room={
- id="",
- bots={},
- clients={}
+ id=""
 }
 
 function shuffle(l)
@@ -337,10 +335,18 @@ function game_draw()
  end
 end
 
-function draw_room_member(
+function draw_room_member_1col(
  n,sprite,name,c
 )
- local x=30+(n%2)*34
+ local y=50+n*8
+ spr(sprite,51,y)
+ print(name,58,y,c)
+end
+
+function draw_room_member_2cols(
+ n,sprite,name,c
+)
+ local x=32+(n%2)*34
  local y=50+flr(n/2)*8
  spr(sprite,x,y)
  print(name,x+7,y,c)
@@ -352,14 +358,18 @@ function room_draw()
  title_draw(0)
 
  local n=0
+ local drawfun=draw_room_member_1col
+ if room.size>4 then
+  drawfun=draw_room_member_2cols
+ end
  for id,name in pairs(room.clients) do
-  draw_room_member(
+  drawfun(
    n,31+id,name,pal1[id]
   )
   n+=1
  end
  for name,tp in pairs(room.bots) do
-  draw_room_member(
+  drawfun(
    n,49+tp,name,pal2[tp]
   )
   n+=1
@@ -620,6 +630,7 @@ function read_gpio_room()
   roomnew={
    pclients=peek(a_ncli),
    pbots=peek(a_nbot),
+   size=0,
    clients={},
    bots={}
   }
@@ -636,7 +647,10 @@ function read_gpio_room()
  local name=""
  for i=0,5 do
   local ch=peek(a_pnam+i)
-  if (ch!=0) name=name..ch
+  if ch!=0 then
+   if (ch>=65 and ch<=90) ch+=32
+   name=name..chr(ch)
+  end
  end
 
  local typ=peek(a_ptyp)
@@ -647,6 +661,7 @@ function read_gpio_room()
   r.bots[name]=typ-6
   r.pbots-=1
  end
+ r.size+=1
  assert(r.pclients>=0)
  assert(r.pbots>=0)
 
@@ -655,6 +670,7 @@ function read_gpio_room()
   --finished batch update
   room.clients=r.clients
   room.bots=r.bots
+  room.size=r.size
   roomnew=nil
  end
 
@@ -791,6 +807,12 @@ function enter_room(room_id)
  game=nil
  game_gpio_read_delay=0
  poke(a_ctrl_in_game,0)
+
+ --clear room status
+ room.bots={}
+ room.clients={}
+ room.size=0
+ poke(a_ctrl_in_room,0)
 
  _update=room_update
  _draw=room_draw
@@ -948,7 +970,8 @@ function dev_init_room()
   bots={
    ["bot-1"]=3,
    ["bot-2"]=4
-  }
+  },
+  size=8
  }
 
  _update=room_update
@@ -958,7 +981,7 @@ end
 
 function _init()
  poke(a_room_mgmt,0)
- dev_init_room()
+ --dev_init_room()
 end
 
 __gfx__
