@@ -12,6 +12,12 @@ const gpio_TurnScore = 27; // Only valid when EndCause != 0
 const gpio_TotalScore = 28;
 const gpio_CurrentPos = 29; // Only valid when EndCause != 0
 const gpio_TurnCounters = 32;
+const gpio_NumClients = 48;
+const gpio_NumBots = 49;
+const gpio_PlayerType = 50;
+const gpio_PlayerName = 51;
+
+const maxPlayerNameLength = 6;
 
 const DIE_IDS = {
 	"Ray": 1,
@@ -25,6 +31,13 @@ const DIE_NAMES = Object.entries(DIE_IDS).reduce((d, [name, index]) => {
 	d[index] = name;
 	return d;
 }, {});
+
+const BEHAVIOUR_IDS = {
+	"random": 1,
+	"aggressive": 2,
+	"defensive": 3,
+	"smart": 4
+};
 
 const PHASE_IDS = {
 	"Throwing": 1,
@@ -43,15 +56,24 @@ var md_roomId;
 var md_socket;
 var md_joinAttempts = 0;
 var md_host;
-var md_clients = [];
-var md_bots = {};
+var md_clients = {}; // key=name, value=id [1..6]
+var md_bots = {}; // key=name, value=behaviour [1..4]
 var md_nextBotId = 0;
+
+var md_gpioRoomBatch = null;
+var md_gpioRoomUpdates = []
 
 // Game status
 var md_game;
 var md_gameNext;
 var md_turnStates = [];
 var md_botMoveTriggered;
+
+function sizeOfDict(d) {
+	let n = 0;
+	Object.keys(d).forEach(() => { n += 1; });
+	return n;
+}
 
 function playerId(playerName) {
 	const players = md_game.players;
@@ -79,28 +101,61 @@ function isMyMove() {
 	return isAwaitingMove() && md_game.active_player === md_myName;
 }
 
-function welcomeNewClients(prevClients) {
-	const newClients = new Set(md_clients);
-	prevClients.forEach(oldClient => { newClients.delete(oldClient); });
-	newClients.delete(md_myName);
+// Updates md_clients so that it contains all clients in clients list. It ensures that:
+// - New clients get a unique id, in range [1..6]
+// - Existing clients keep their id
+// - The local client is always assigned id 1
+//
+// It also returns a set with new clients, which may need to be welcomed.
+function updateClients(clients) {
+	const availableIds = new Set(Array.from({length: 5}, (v, i) => i+2));
 
-	if (newClients.size > 0) {
-		console.log("Welcoming new clients:", newClients);
-		const optGameConfig = md_gameNext ? {
-			game_state: md_gameNext
-		} : {};
+	const clientsOld = md_clients;
+	md_clients = {}
 
-		md_socket.send(JSON.stringify({
-			action: "send-welcome",
-			room_id: md_roomId,
-			to_clients: [...newClients],
-			game_config: {
-				bots: md_bots,
-				next_bot_id: md_nextBotId
-			},
-			...optGameConfig
-		}));
-	}
+	// Transfer existing clients
+	clients.forEach(name => {
+		const id = clientsOld[name];
+		if (id) {
+			md_clients[name] = id;
+			availableIds.delete(id);
+		}
+	});
+
+	// Ensure current player always has ID 1
+	md_clients[md_myName] = 1;
+
+	const addedClients = [];
+	// Add clients that appeared
+	clients.forEach(name => {
+		if (!md_clients[name]) {
+			let id;
+			for (id of availableIds) { break; }
+			md_clients[name] = id;
+			availableIds.delete(id);
+			addedClients.push(name);	
+		}
+	});
+
+	return addedClients;
+}
+
+function welcomeNewClients(addedClients) {
+	console.log("Welcoming new clients:", newClients);
+	const optGameConfig = md_gameNext ? {
+		game_state: md_gameNext
+	} : {};
+
+	md_socket.send(JSON.stringify({
+		action: "send-welcome",
+		room_id: md_roomId,
+		to_clients: [...newClients],
+		game_config: {
+			bots: md_bots,
+			next_bot_id: md_nextBotId
+		},
+		...optGameConfig
+	}));
 }
 
 function triggerBotMove() {
@@ -125,20 +180,21 @@ function handleMessage(event) {
 	console.log("Message:", msg);
 	switch (msg.type) {
 		case "clients":
-			const prevClients = md_clients;
-			md_clients = msg.clients;
+			const addedClients = updateClients(msg.clients);
 			md_host = msg.host;
 			if (pico8_gpio[gpio_RoomStatus] == 2) {
 				// Signal that room was joined successfully;
 				pico8_gpio[gpio_RoomStatus] = 3;
 			}
-			if (isHost()) {
-				welcomeNewClients(prevClients);
+			gpioPrepareRoomUpdateBatch();
+			if (isHost() && addedClients.length > 0) {
+				welcomeNewClients(addedClients);
 			}
 			break;
 		case "game-config":
 			md_bots = msg.game_config.bots;
 			md_nextBotId = msg.game_config.next_bot_id;
+			gpioPrepareRoomUpdateBatch();
 			break;
 		case "game-state":
 			if (md_gameNext && md_gameNext.id !== msg.state.prev_id) {
@@ -186,7 +242,7 @@ function joinRoom() {
 
 	md_socket.addEventListener('message', handleResponseMessage);
 
-	md_myName = `PICO-8${String.fromCharCode(65 + md_joinAttempts)}`;
+	md_myName = `PICO8${String.fromCharCode(65 + md_joinAttempts)}`;
 	const roomId = gpioGetRoomId();
 
 	console.info(`Joining Room ${roomId}`);
@@ -256,6 +312,32 @@ function connectToServer(callback) {
 		md_socket = undefined;
 	})
 	socket.addEventListener('message', handleMessage);
+}
+
+function gpioPrepareRoomUpdateBatch() {
+	md_gpioRoomBatch = {
+		numClients: sizeOfDict(md_clients),
+		numBots: sizeOfDict(md_bots)
+	};
+
+	md_gpioRoomUpdates = [];
+	Object.entries(md_clients).forEach(([name, id]) => {
+		md_gpioRoomUpdates.push([id, name]);
+	});
+	Object.entries(md_bots).forEach(([name, behaviour]) => {
+		md_gpioRoomUpdates.push([BEHAVIOUR_IDS[behaviour] + 6, name]);
+	});
+
+	console.info("Prepared room update:", md_gpioRoomBatch, md_gpioRoomUpdates);
+}
+
+function gpioRoomBatchUpdate(batchItem) {
+	const [typ, name] = batchItem;
+
+	pico8_gpio[gpio_PlayerType] = typ;
+	for (let i = 0; i < maxPlayerNameLength; i++) {
+		pico8_gpio[gpio_PlayerName + i] = (i < name.length) ? name.charCodeAt(i) : 0;
+	}
 }
 
 function gpioGetRoomId() {
@@ -403,6 +485,21 @@ function gpioUpdate() {
 			if (md_turnStates.length === 0) {
 				md_game = md_gameNext;
 			}
+		}
+	}
+
+	if (pico8_gpio[gpio_RoomControl] == 0) {
+		if (md_gpioRoomBatch) {
+			pico8_gpio[gpio_NumClients] = md_gpioRoomBatch.numClients;
+			pico8_gpio[gpio_NumBots] = md_gpioRoomBatch.numBots;
+			md_gpioRoomBatch = null;
+
+			pico8_gpio[gpio_RoomControl] = 4; // Signal start of batch
+		} else if (md_gpioRoomUpdates.length > 0) {
+			gpioRoomBatchUpdate(md_gpioRoomUpdates[0]);
+			md_gpioRoomUpdates = md_gpioRoomUpdates.slice(1);
+
+			pico8_gpio[gpio_RoomControl] = 1; // Signal ready to read
 		}
 	}
 }

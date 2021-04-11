@@ -372,6 +372,7 @@ end
 --0:ready for write
 --1:ready for read
 a_ctrl_in_game=0x5f80
+--4:start batch/reset
 a_ctrl_in_room=0x5f81
 --2:null
 --3:awaiting input (set by p8)
@@ -391,6 +392,7 @@ a_move=0x5f84
 a_room_mgmt=0x5f88
 a_room=0x5f89 -- 4 bytes
 
+--- game status ---
 a_thrw=0x5f90 -- 5 bytes
 a_side=0x5f95 -- 5 bytes
 
@@ -405,6 +407,16 @@ a_crou=0x5fa0
 a_ctur=a_crou+1
 a_cthr=a_ctur+1
 a_cpha=a_cthr+1
+
+--- room status ---
+--num clients/bots
+a_ncli=0x5fb0
+a_nbot=0x5fb1
+--1..6 :client, id=value
+--7..10:bot,    tp=value-6
+a_ptyp=0x5fb2
+--name, 0-chars when len<6
+a_pnam=0x5fb3 -- 6 bytes
 
 function pop_gpio()
  poke(a_thrw,1)
@@ -603,9 +615,55 @@ function read_gpio_game()
  poke(a_ctrl_in_game,0)
 end
 
+function read_gpio_room()
+ if peek(a_ctrl_in_room)==4 then
+  roomnew={
+   pclients=peek(a_ncli),
+   pbots=peek(a_nbot),
+   clients={},
+   bots={}
+  }
+  poke(a_ctrl_in_room,0)
+  return
+ end
+ if peek(a_ctrl_in_room)!=1 then
+  return
+ end
+
+ local r=roomnew
+ assert(r!=nil)
+
+ local name=""
+ for i=0,5 do
+  local ch=peek(a_pnam+i)
+  if (ch!=0) name=name..ch
+ end
+
+ local typ=peek(a_ptyp)
+ if typ<=6 then
+  r.clients[typ]=name
+  r.pclients-=1
+ else
+  r.bots[name]=typ-6
+  r.pbots-=1
+ end
+ assert(r.pclients>=0)
+ assert(r.pbots>=0)
+
+ if r.pclients==0
+ and r.pbots==0 then
+  --finished batch update
+  room.clients=r.clients
+  room.bots=r.bots
+  roomnew=nil
+ end
+
+ poke(a_ctrl_in_room,0)
+end
+
 function read_gpio()
  read_gpio_game()
- --todo: read_gpio_room()
+ read_gpio_room()
 end
 
 function gpio_setroom(roomid)
