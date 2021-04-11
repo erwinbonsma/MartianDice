@@ -36,13 +36,18 @@ vector={
 
 public_room="pico"
 
+title={
+ --flying saucer movement
+ delta={{0,0},{0,0}},
+ room=public_room,
+ public=true
+}
+
 menu={
  ypos=1, --menu-item
  xpos=0, --pos in text entry
  room="****",
  blink=0,
- --flying saucer movement
- delta={{0,0},{0,0}}
 }
 
 room={
@@ -209,22 +214,38 @@ function draw_collected(collected)
  end
 end
 
-function menu_draw()
- cls(0)
- color(3)
- print(version)
- 
- spr(128,32,16,9,4) --title
+function title_draw(y0)
+ --logo
+ spr(128,32,y0,9,4)
 
  --flying saucers
  palt(1,true)
  for i=1,2 do
-  local d=menu.delta[i]
+  local d=title.delta[i]
   local x=86*i-72+d[1]
-  local y=18+d[2]
+  local y=y0+d[2]+2
   spr(4,x,y,2,2)
  end
  palt()
+
+ color(3)
+ print(
+  "room "..title.room,52,y0+38
+ )
+
+ if title.public then
+  spr(49,40,y0+36)
+ else
+  spr(48,40,y0+36)
+ end
+end
+
+function menu_draw()
+ cls(0)
+ color(3)
+ print(version)
+
+ title_draw(16)
 
  for i=1,3 do
   print_select(
@@ -235,15 +256,9 @@ function menu_draw()
   )
  end
 
- color(3)
- print("room \0",52,54)
- local room
- if menu.ypos==1 then
-  print(public_room)
- elseif menu.ypos==2 then
-  print("????")
- else
+ if menu.ypos==3 then
   local showroom=menu.room
+  color(3)
   if menu.xpos>0 then
    if menu.xpos<5 then
     color(11)
@@ -254,7 +269,7 @@ function menu_draw()
     end
    end
   end
-  print(showroom)
+  print(showroom,72,54)
 
   if menu.xpos>0
   and is_roomid_set() then
@@ -262,12 +277,6 @@ function menu_draw()
     "go",90,52,14,menu.xpos==5
    )
   end
- end
-
- if menu.ypos==1 then
-  spr(49,40,52)
- else
-  spr(48,40,52)
  end
 
  local status=""
@@ -325,9 +334,8 @@ end
 
 function room_draw()
  cls()
- color(3)
- print("room: "..room.id)
- print("status:"..peek(a_room_mgmt))
+
+ title_draw(0)
 end
 
 -->8
@@ -682,6 +690,7 @@ function room_update()
  end
 
  read_gpio()
+ title_update()
 
  --tmp:debug 
  if btnp(🅾️) then
@@ -751,6 +760,8 @@ function menu_roomentry()
 end
 
 function menu_itemselect()
+ local yposold=menu.ypos
+
  if btnp(⬇️) then
   menu.ypos=menu.ypos%3+1
  elseif btnp(⬆️) then
@@ -770,12 +781,23 @@ function menu_itemselect()
    end
   end
  end
+
+ if menu.ypos!=yposold then
+  if menu.ypos==1 then
+   title.room=public_room
+  elseif menu.ypos==2 then
+   title.room="????"
+  else
+   title.room=""
+  end
+  title.public=(menu.ypos==1)
+ end
 end
 
-function menu_movesaucers()
+function title_update()
  for i=1,2 do
   if rnd(10)<1 then
-   local d=menu.delta[i]
+   local d=title.delta[i]
    local v=vector[flr(rnd(4))+1]
    for j=1,2 do
     d[j]=max(min(d[j]+v[j],1),-1)
@@ -800,35 +822,42 @@ function menu_update()
  else
   menu_itemselect()
  end
- menu_movesaucers()
+ title_update()
 end
 
 _draw=menu_draw
 _update=menu_update
 -->8
-function _init()
- if local_run then
-  game={
-   throw={3,4,0,5,3,0,1},
-   battle={2,3},
-   collected={{4,1}},
-   round=1,
-   turn=2,
-   phase=phase.pickdice,
-   thrownum=2,
-   endcause=0,
-  }
-  --game.pickdie=die_choices(game)
-  --game.die_idx=1
-  game.chkpass=true
-  game.pass=false
+function dev_init_game()
+ game={
+  throw={3,4,0,5,3,0,1},
+  battle={2,3},
+  collected={{4,1}},
+  round=1,
+  turn=2,
+  phase=phase.pickdice,
+  thrownum=2,
+  endcause=0,
+ }
+ --game.pickdie=die_choices(game)
+ --game.die_idx=1
+ game.chkpass=true
+ game.pass=false
 
-  _update=game_update
-  _draw=game_draw
-  poke(a_ctrl_out,0)
- else
-  poke(a_room_mgmt,0)
- end
+ _update=game_update
+ _draw=game_draw
+ poke(a_ctrl_out,0)
+end
+
+function dev_init_room()
+ _update=room_update
+ _draw=room_draw
+ poke(a_room_mgmt,3)
+end
+
+function _init()
+ --dev_init_room()
+ poke(a_room_mgmt,0)
 end
 
 __gfx__
