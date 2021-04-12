@@ -1,5 +1,6 @@
 import asyncio
 import json
+import random
 from service.BaseHandler import GameHandler, HandlerException, ok_message
 from service.Config import Config
 from service.GamePlayHandler import bot_behaviours
