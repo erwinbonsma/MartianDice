@@ -845,17 +845,20 @@ function enter_room(room_id)
  game_gpio_read_delay=0
  poke(a_ctrl_in_game,0)
 
- --clear room status
- room.bots={}
- room.clients={}
- room.size=0
- poke(a_ctrl_in_room,0)
-
  _update=room_update
  _draw=room_draw
 end
 
+function clear_room_status()
+ room.bots={}
+ room.clients={}
+ room.size=0
+ poke(a_ctrl_in_room,0)
+end
+
 function join_room(room_id)
+ clear_room_status()
+
  gpio_puts(a_room,4,room_id)
  gpio_puts(a_name,6,menu.name)
 
@@ -867,6 +870,8 @@ function join_room(room_id)
 end
 
 function create_room()
+ clear_room_status()
+
  gpio_puts(a_name,6,menu.name)
 
  menu.status_msg="creating room..."
