@@ -857,6 +857,8 @@ function join_room(room_id)
 end
 
 function create_room()
+ gpio_puts(a_name,6,menu.name)
+
  --initiate room creation
  poke(a_room_mgmt,6)
 end

@@ -266,6 +266,8 @@ function createRoom() {
 
 	md_socket.addEventListener('message', handleResponseMessage);
 
+	md_myName = gpioGetStr(gpio_MyName, 6);
+
 	md_socket.send(JSON.stringify({
 		action: "create-room",
 	}));
