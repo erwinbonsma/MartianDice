@@ -78,6 +78,9 @@ Done:
 	-	Play
 	-	Show clients and bots in room
 	-	Show active player name
+	-	Enable player name entry
+	-	Use name from PICO-8 client
+	-	Show errors on room join failure
 
 TODO:
 -	Add die movement animations
@@ -87,19 +90,17 @@ TODO:
 	-	Limit chat in public rooms
 		-	Messages: Hi, Bye, Yes, No, Okay, Thx, Wow, GG, Play?, Wait?
 -	Extend PICO-8 client
-	-	Show errors on room join failure
 	-	Enable game start
 		-	Auto-add smart bot when only player
 	-	Show game result
 	-	Simple chat
 	-	Handle disconnected/inactive players
 		-	Auto-skip turn for disconnected players
-		-	
+		-	Remind/prod/skip inactive players
 	-	Animations
 		-	Throw
 		-	Die selection
 	-	Sounds
-	-	Enable player name entry
 -	Remove memcache dependency
 	-	From Dockerfile
 	-	From layer
