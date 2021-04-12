@@ -831,6 +831,7 @@ end
 
 function enter_room(room_id)
  room.id=room_id
+ title.room=room_id
 
  --clear game status
  game=nil
@@ -978,13 +979,13 @@ end
 
 function menu_update()
  if peek(a_room_mgmt)==3 then
+  enter_room(gpio_gets(a_room,4))
+
   --in case room was created
   if room.id!=public_room then
    menu.room=room.id
    menu.ypos=4
   end
-
-  enter_room(gpio_gets(a_room,4))
  end
 
  if menu.xpos!=0 then

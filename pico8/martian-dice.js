@@ -185,10 +185,6 @@ function handleMessage(event) {
 		case "clients":
 			const addedClients = updateClients(msg.clients);
 			md_host = msg.host;
-			if (pico8_gpio[gpio_RoomStatus] == 2) {
-				// Signal that room was joined successfully;
-				pico8_gpio[gpio_RoomStatus] = 3;
-			}
 			gpioPrepareRoomUpdateBatch();
 			if (isHost() && addedClients.length > 0) {
 				welcomeNewClients(addedClients);
@@ -231,7 +227,10 @@ function joinRoom() {
 		if (msg.type === "response" && msg.status === "error") {
 			// TODO: Signal failure to Pico-8
 		} else {
-			md_roomId = msg.room_id;			
+			md_roomId = msg.room_id;
+			// Signal that room was joined successfully;
+			pico8_gpio[gpio_RoomStatus] = 3;
+			console.info("Room joined!");
 		}
 
 		md_socket.removeEventListener('message', handleResponseMessage);
