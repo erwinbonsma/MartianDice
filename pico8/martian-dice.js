@@ -1,7 +1,7 @@
 const gpio_GameControl = 0;
 const gpio_RoomControl = 1;
 const gpio_OutControl = 2;
-const gpio_Dump = 3;
+const gpio_Error = 3;
 const gpio_Move = 4;
 const gpio_RoomStatus = 5;
 const gpio_Room = 6;
@@ -19,6 +19,7 @@ const gpio_NumClients = 48;
 const gpio_NumBots = 49;
 const gpio_PlayerType = 50;
 const gpio_PlayerName = 51;
+const gpio_Dump = 255;
 
 const maxPlayerNameLength = 6;
 
@@ -222,18 +223,26 @@ function joinRoom() {
 	console.assert(pico8_gpio[gpio_RoomStatus] == 2);
 
 	const handleResponseMessage = (event) => {
+		md_socket.removeEventListener('message', handleResponseMessage);
+
 		const msg = JSON.parse(event.data);
 
-		if (msg.type === "response" && msg.status === "error") {
-			// TODO: Signal failure to Pico-8
-		} else {
+		if (msg.type === "clients") {
 			md_roomId = msg.room_id;
 			// Signal that room was joined successfully;
 			pico8_gpio[gpio_RoomStatus] = 3;
 			console.info("Room joined!");
+
+			return;
+		}
+		if (msg.type === "response" && msg.status === "error") {
+			pico8_gpio[gpio_Error] = msg.error_code;
+			pico8_gpio[gpio_RoomStatus] = 8;
+
+			return;
 		}
 
-		md_socket.removeEventListener('message', handleResponseMessage);
+		console.warn("Unexpected response message", msg);
 	};
 
 	md_socket.addEventListener('message', handleResponseMessage);
@@ -252,16 +261,29 @@ function joinRoom() {
 
 function createRoom() {
 	const handleResponseMessage = (event) => {
+		md_socket.removeEventListener('message', handleResponseMessage);
+
 		const msg = JSON.parse(event.data);
 
-		if (msg.type === "response" && msg.status === "ok") {
-			gpioSetStr(gpio_Room, 4, msg.room_id);
-			pico8_gpio[gpio_RoomStatus] = 2;
+		if (msg.type === "response") {
+			if (msg.status === "ok") {
+				gpioSetStr(gpio_Room, 4, msg.room_id);
+				pico8_gpio[gpio_RoomStatus] = 2;
 
-			joinRoom();
+				joinRoom();
+
+				return;
+			}
+
+			if (msg.status === "error") {
+				pico8_gpio[gpio_Error] = msg.error_code;
+				pico8_gpio[gpio_RoomStatus] = 8;
+
+				return;
+			}
 		}
 
-		md_socket.removeEventListener('message', handleResponseMessage);
+		console.warn("Unexpected response message", msg);
 	};
 
 	md_socket.addEventListener('message', handleResponseMessage);

@@ -1,7 +1,7 @@
 import asyncio
 import json
 import random
-from service.BaseHandler import GameHandler, HandlerException, ok_message
+from service.BaseHandler import ErrorCode, GameHandler, HandlerException, ok_message
 from service.Config import Config
 from service.GamePlayHandler import bot_behaviours
 from service.GameState import GameState
@@ -45,23 +45,41 @@ class MetaGameHandler(GameHandler):
 	async def join_room(self, room_id, client_id):
 		# Avoid possible bot name clash here, as this check is cheap
 		if client_id.startswith("Bot-"):
-			raise HandlerException(f"Name {client_id} is restricted to non-sentients")
+			raise HandlerException(
+				f"Name {client_id} is restricted to non-sentients",
+				ErrorCode.InvalidClientName
+			)
 
 		if len(client_id) == 0 or len(client_id) > Config.MAX_NAME_LENGTH:
-			raise HandlerException("Invalid name length")
+			raise HandlerException(
+				"Invalid name length",
+				ErrorCode.InvalidClientName
+			)
 
 		if client_id in self.clients.values():
-			raise HandlerException(f"Name {client_id} already present in Room {room_id}")
+			raise HandlerException(
+				f"Name {client_id} already present in Room {room_id}",
+				ErrorCode.NameAlreadyPresent
+			)
 
 		if len(self.clients) >= Config.MAX_CLIENTS_PER_ROOM:
-			raise HandlerException(f"Room {room_id} is at its player capacity limit")
+			raise HandlerException(
+				f"Room {room_id} is at its player capacity limit",
+				ErrorCode.PlayerLimitReached
+			)
 
 		if not self.db.set_room_for_connection(self.connection, room_id):
-			raise HandlerException(f"Failed to link connection to Room {room_id}")
+			raise HandlerException(
+				f"Failed to link connection to Room {room_id}",
+				ErrorCode.InternalServerError
+			)
 
 		updated_clients = self.room.add_client(self.connection, client_id)
 		if updated_clients is None:
-			raise HandlerException("Failed to join game. Please try again")
+			raise HandlerException(
+				"Failed to join game. Please try again",
+				ErrorCode.InternalServerError
+			)
 		self.clients = updated_clients
 
 		host = self.room.host()

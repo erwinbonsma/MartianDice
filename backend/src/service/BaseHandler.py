@@ -3,15 +3,26 @@ import json
 import jsonpickle
 import logging
 import traceback
+from enum import IntEnum
 
 logger = logging.getLogger('handlers')
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
-def error_message(details):
+class ErrorCode(IntEnum):
+	UnspecifiedError = 0
+	RoomNotFound = 1
+	InvalidClientName = 2
+	NameAlreadyPresent = 3
+	PlayerLimitReached = 4
+	InternalServerError = 255
+
+
+def error_message(details, error_code = ErrorCode.UnspecifiedError):
 	return json.dumps({
 		"type": "response",
 		"status": "error",
+		"error_code": error_code,
 		"details": details
 	})
 
@@ -23,8 +34,9 @@ def ok_message(info = {}):
 	})
 
 class HandlerException(Exception):
-	def __init__(self, message):
+	def __init__(self, message, error_code = ErrorCode.UnspecifiedError):
 		self.message = message
+		self.error_code = error_code
 
 class BaseHandler:
 	def __init__(self, db, comms, connection):
@@ -44,8 +56,8 @@ class BaseHandler:
 			destination = self.connection
 		return await self.comms.send(destination, message)
 
-	async def send_error_message(self, details):
-		return await self.send_message(error_message(details))
+	async def send_error_message(self, details, error_code = ErrorCode.UnspecifiedError):
+		return await self.send_message(error_message(details, error_code))
 
 class GameHandler(BaseHandler):
 
@@ -90,12 +102,15 @@ class GameHandler(BaseHandler):
 		room_id = cmd_message["room_id"] if "room_id" in cmd_message else cmd_message["game_id"]
 		try:
 			if not self.fetch_room(room_id):
-				return await self.send_error_message(f"Room {room_id} not found")
+				raise HandlerException(
+					f"Room {room_id} not found",
+					ErrorCode.RoomNotFound
+				)
 
 			await self.handle_game_command(cmd_message)
 		except HandlerException as e:
 			self.logger.warn(e.message)
-			return await self.send_error_message(e.message)
+			return await self.send_error_message(e.message, error_code = e.error_code)
 		except Exception as e:
 			self.logger.warn(e)
 			traceback.print_exc()

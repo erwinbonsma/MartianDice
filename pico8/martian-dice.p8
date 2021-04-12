@@ -24,6 +24,14 @@ endcause={
  [6]="turn forcefully ended"
 }
 
+errormsg={
+ [1]="room not found",
+ [2]="invalid name",
+ [3]="name already in use",
+ [4]="player limit reached",
+ [5]="internal server error"
+}
+
 menuitems={
  "change name",
  "enter public room",
@@ -314,15 +322,14 @@ function menu_draw()
   end
  end
 
- local status=""
- local p=peek(a_room_mgmt)
- if p==1 or p==2 then
-  status="joining room..."
- elseif p==6 or p==7 then
-  status="creating room..."
+ if menu.status_msg!=nil then
+  print(
+   menu.status_msg,
+   64-2*#menu.status_msg,
+   120,
+   menu.status_color
+  )
  end
-
- print(status,64-2*#status,120,3)
 end
 
 function game_draw()
@@ -423,7 +430,8 @@ a_ctrl_in_room=0x5f81
 --2:null
 --3:awaiting input (set by p8)
 a_ctrl_out=0x5f82
-a_ctrl_dump=0x5f83
+a_errr=0x5f83
+a_ctrl_dump=0x607f --tmp
 
 a_move=0x5f84
 
@@ -435,6 +443,7 @@ a_move=0x5f84
 --5:initiating exit
 --6:initiate create (set by p8)
 --7:initiating create
+--8:error
 a_room_mgmt=0x5f85
 a_room=0x5f86 -- 4 bytes
 a_name=0x5f8a -- 6 bytes
@@ -781,8 +790,7 @@ function game_update()
 
  if peek(a_room_mgmt)==0 then
   --exited room
-  _update=menu_update
-  _draw=menu_draw
+  show_menu()
   return
  end
 
@@ -802,8 +810,7 @@ end
 function room_update()
  if peek(a_room_mgmt)==0 then
   --exited room
-  _update=menu_update
-  _draw=menu_draw
+  show_menu()
   return
  end
 
@@ -852,12 +859,18 @@ function join_room(room_id)
  gpio_puts(a_room,4,room_id)
  gpio_puts(a_name,6,menu.name)
 
+ menu.status_msg="joining room..."
+ menu.status_color=5
+
  --initiate join
  poke(a_room_mgmt,1)
 end
 
 function create_room()
  gpio_puts(a_name,6,menu.name)
+
+ menu.status_msg="creating room..."
+ menu.status_color=5
 
  --initiate room creation
  poke(a_room_mgmt,6)
@@ -964,6 +977,7 @@ function menu_itemselect()
    title.room=""
   end
   title.public=(menu.ypos==2)
+  menu.status_msg=nil
  end
 end
 
@@ -989,6 +1003,19 @@ function menu_update()
    menu.ypos=4
   end
  end
+ if peek(a_room_mgmt)==8 then
+  --failed to enter room
+  local msg=errormsg[
+   peek(a_errr)
+  ]
+  if msg!=nil then
+   menu.status_msg="error: "..msg
+  else
+   menu.status_msg="error: "..peek(a_errr)
+  end
+  menu.status_color=8
+  poke(a_room_mgmt,0)
+ end
 
  if menu.xpos!=0 then
   menu_edittext()
@@ -998,8 +1025,12 @@ function menu_update()
  title_update()
 end
 
-_draw=menu_draw
-_update=menu_update
+function show_menu()
+ _draw=menu_draw
+ _update=menu_update
+
+ menu.status_msg=nil
+end
 -->8
 function dev_init_game()
  game={
@@ -1047,6 +1078,8 @@ end
 function _init()
  poke(a_room_mgmt,0)
  --dev_init_room()
+
+ show_menu()
 end
 
 __gfx__
@@ -1121,7 +1154,7 @@ c000c000d000d00022022000f000f000600060004000400000000000000000000000000000000000
 00330333330330000000300000000000000000000000000000300000030000030000000000000000000000000000000000000000000000000000000000000000
 00330333330330000003330033333330033333333333300003330000033000330000000000000000000000000000000000000000000000000000000000000000
 00330033300330000003330000333333000333333000000003330000033000330000000000000000000000000000000000000000000000000000000000000000
-00330033300333000003030000033003300003300033000003030000033300330000000000000000000000000000000000000000000000000000000000000000
+03330033300333000003030000033003300003300033000003030000033300330000000000000000000000000000000000000000000000000000000000000000
 03330003000333000033033000033003300003300033000033033000033300330000000000000000000000000000000000000000000000000000000000000000
 03330003000333000030003000033003300003300033000030003000033330330000000000000000000000000000000000000000000000000000000000000000
 03330003000333000330003300033333000003300033000330003300033030330000000000000000000000000000000000000000000000000000000000000000
