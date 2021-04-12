@@ -435,8 +435,9 @@ a_move=0x5f84
 --5:initiating exit
 --6:initiate create (set by p8)
 --7:initiating create
-a_room_mgmt=0x5f88
-a_room=0x5f89 -- 4 bytes
+a_room_mgmt=0x5f85
+a_room=0x5f86 -- 4 bytes
+a_name=0x5f8a -- 6 bytes
 
 --- game status ---
 a_thrw=0x5f90 -- 5 bytes
@@ -848,6 +849,7 @@ end
 
 function join_room(room_id)
  gpio_puts(a_room,4,room_id)
+ gpio_puts(a_name,6,menu.name)
 
  --initiate join
  poke(a_room_mgmt,1)

@@ -3,8 +3,9 @@ const gpio_RoomControl = 1;
 const gpio_OutControl = 2;
 const gpio_Dump = 3;
 const gpio_Move = 4;
-const gpio_RoomStatus = 8;
-const gpio_Room = 9;
+const gpio_RoomStatus = 5;
+const gpio_Room = 6;
+const gpio_MyName = 10;
 const gpio_Throw = 16;
 const gpio_SideDice = 21;
 const gpio_EndCause = 26;
@@ -57,7 +58,6 @@ var md_myName;
 // Room status
 var md_roomId;
 var md_socket;
-var md_joinAttempts = 0;
 var md_host;
 var md_clients = {}; // key=name, value=id [1..6]
 var md_bots = {}; // key=name, value=behaviour [1..4]
@@ -224,18 +224,12 @@ function handleMessage(event) {
 
 function joinRoom() {
 	console.assert(pico8_gpio[gpio_RoomStatus] == 2);
-	console.assert(md_joinAttempts > 0);
 
 	const handleResponseMessage = (event) => {
 		const msg = JSON.parse(event.data);
 
 		if (msg.type === "response" && msg.status === "error") {
-			if (md_joinAttempts > 0) {
-				console.warn("Failed to join room. Retrying");
-				joinRoom();
-			} else {
-				// TODO: Signal failure to Pico-8
-			}
+			// TODO: Signal failure to Pico-8
 		} else {
 			md_roomId = msg.room_id;			
 		}
@@ -245,8 +239,8 @@ function joinRoom() {
 
 	md_socket.addEventListener('message', handleResponseMessage);
 
-	md_myName = `PICO8${String.fromCharCode(65 + md_joinAttempts)}`;
 	const roomId = gpioGetStr(gpio_Room, 4);
+	md_myName = gpioGetStr(gpio_MyName, 6);
 
 	console.info(`Joining Room ${roomId}`);
 
@@ -255,7 +249,6 @@ function joinRoom() {
 		room_id: roomId,
 		client_id: md_myName
 	}));
-	md_joinAttempts -= 1;
 }
 
 function createRoom() {
@@ -263,12 +256,8 @@ function createRoom() {
 		const msg = JSON.parse(event.data);
 
 		if (msg.type === "response" && msg.status === "ok") {
-			pico8_gpio[gpio_RoomStatus] = 2;
 			gpioSetStr(gpio_Room, 4, msg.room_id);
-
-			// Only one attempt. Joining a fresly created room should always succeed (as there
-			// will never be a client name clash)
-			md_joinAttempts = 1;
+			pico8_gpio[gpio_RoomStatus] = 2;
 
 			joinRoom();
 		}
@@ -421,15 +410,12 @@ function gpioHandleRoomCommands() {
 		console.log("Initiating room join");
 		
 		pico8_gpio[gpio_RoomStatus] = 2;
-		md_joinAttempts = 8;
-
 		connectToServer(joinRoom);
 	}
 	else if (pico8_gpio[gpio_RoomStatus] == 6) {
 		console.log("Initiating room creation");
 
 		pico8_gpio[gpio_RoomStatus] = 7;
-
 		connectToServer(createRoom);
 	}
 	else if (pico8_gpio[gpio_RoomStatus] == 4) {
