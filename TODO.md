@@ -81,6 +81,7 @@ Done:
 	-	Enable player name entry
 	-	Use name from PICO-8 client
 	-	Show errors on room join failure
+	-	Simple chat
 
 TODO:
 -	Add die movement animations
@@ -88,12 +89,10 @@ TODO:
 	-	Add public/private toggle
 	-	Show available public rooms
 	-	Limit chat in public rooms
-		-	Messages: Hi, Bye, Yes, No, Okay, Thx, Wow, GG, Play?, Wait?
 -	Extend PICO-8 client
 	-	Enable game start
 		-	Auto-add smart bot when only player
 	-	Show game result
-	-	Simple chat
 	-	Handle disconnected/inactive players
 		-	Auto-skip turn for disconnected players
 		-	Remind/prod/skip inactive players
