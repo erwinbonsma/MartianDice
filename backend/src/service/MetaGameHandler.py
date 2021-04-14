@@ -6,6 +6,13 @@ from service.Config import Config
 from service.GamePlayHandler import bot_behaviours
 from service.GameState import GameState
 
+CHAT_MESSAGES = [
+	"Hi", "Bye", "Yes", "No", "Okay", "Thx", "Wow", "Oops", "GG", "Play?", "Wait?"
+]
+CHAT_MESSAGE_LOOKUP = {
+	msg.lower(): i + 1 for i, msg in enumerate(CHAT_MESSAGES)
+}
+
 class MetaGameHandler(GameHandler):
 	"""Handles everything about the game/room, except the game play."""
 
@@ -34,13 +41,23 @@ class MetaGameHandler(GameHandler):
 		message = self.game_config_message(game_config)
 		await self.broadcast(message)
 
-	async def send_chat(self, message):
-		message = json.dumps({
+	async def send_chat(self, message, message_id = None):
+		if message_id is not None:
+			message = CHAT_MESSAGES[message_id - 1]
+		else:
+			if message is None:
+				raise HandlerException(f"Missing message")
+			message_id = CHAT_MESSAGE_LOOKUP.get(message.lower(), None)
+
+		msg = {
 			"type": "chat",
 			"client_id": self.client_id,
 			"message": message
-		})
-		await self.broadcast(message)
+		}
+		if message_id is not None:
+			msg["message_id"] = message_id
+
+		await self.broadcast(json.dumps(msg))
 
 	async def join_room(self, room_id, client_id):
 		# Avoid possible bot name clash here, as this check is cheap
@@ -161,13 +178,16 @@ class MetaGameHandler(GameHandler):
 		cmd = cmd_message["action"]
 
 		if cmd == "chat":
-			return await self.send_chat(cmd_message["message"])
+			return await self.send_chat(
+				cmd_message.get("message", None),
+				cmd_message.get("message_id", None)
+			)
 
 		if cmd == "send-welcome":
 			return await self.send_welcome(
 				cmd_message["to_clients"],
 				cmd_message["game_config"],
-				cmd_message["game_state"] if "game_state" in cmd_message else None, 
+				cmd_message.get("game_state", None),
 			)
 
 		if cmd == "send-clients":

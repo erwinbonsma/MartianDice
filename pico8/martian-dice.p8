@@ -39,6 +39,20 @@ menuitems={
  "enter private room"
 }
 
+--label,xpos
+buttons={
+ {"start",0},
+ {"help",29},
+ {"send",82},
+ {"exit",107}
+}
+
+chat_msgs={
+ "hi","bye","yes","no","okay",
+ "thx","wow","oops","gg",
+ "play?","wait?"
+}
+
 vector={
  {1,0},{0,1},{-1,0},{0,-1}
 }
@@ -67,7 +81,9 @@ menu={
 }
 
 room={
- id=""
+ id="",
+ ypos=1,
+ chatidx=0
 }
 
 function shuffle(l)
@@ -184,19 +200,19 @@ end
 -->8
 --drawing
 function draw_button(
- label,x,y,w,active
+ label,x,y,w,selected,disabled
 )
- rectfill(x+1,y+1,x+w-1,y+7,4)
+ color(4)
+ if (selected) color(13)
+ rectfill(x+1,y+1,x+w-1,y+7)
+
  line(x,y+1,x,y+7,15)
  line(x+1,y,x+w-1,y,15)
  line(x+w,y+1,x+w,y+7,5)
  line(x+1,y+8,x+w-1,y+8,5)
 
- if active then
-  color(9)
- else
-  color(1)
- end
+ color(15)
+ if (disabled) color(5)
  print(label,x+3,y+2)
 end
 
@@ -422,12 +438,22 @@ function room_draw()
   n+=1
  end
  
- draw_button("start",0,98,24)
- draw_button("help",29,98,20)
- draw_button("exit",107,98,20)
+ local disabled={
+  false,false,
+  room.chatidx==0,false
+ }
+ for i,b in pairs(buttons) do
+  draw_button(
+   b[1],b[2],98,#b[1]*4+4,
+   room.ypos==i,disabled[i]
+  )
+ end
  rect(54,98,80,106,5)
- print(" chat ",56,100,1)
- draw_button("send",82,98,20)
+ local msg=chat_msgs[room.chatidx]
+ if (msg==nil) msg="chat"
+ color(4)
+ if (room.ypos==3) color(9)
+ print(msg,68-2*#msg,100)
  
  print("❎hi! 🅾️hi! ❎play? 🅾️wait? ❎no",0,110,3)
  print("❎hi! 🅾️hi! ❎play? 🅾️wait? ❎no",0,116,3)
@@ -835,8 +861,25 @@ function room_update()
   return
  end
 
+ if btnp(⬅️) then
+  room.ypos=(room.ypos+2)%4+1
+ elseif btnp(➡️) then
+  room.ypos=room.ypos%4+1
+ elseif btnp(⬆️) then
+  room.chatidx=(
+   room.chatidx+#chat_msgs-2
+  )%#chat_msgs+1
+  room.ypos=3
+ elseif btnp(⬇️) then
+  room.chatidx=(
+   room.chatidx%#chat_msgs+1
+  )
+  room.ypos=3
+ end
+ 
  if btnp(❎) then
-  if peek(a_room_mgmt)==3 then
+  if room.ypos==4
+  and peek(a_room_mgmt)==3 then
    --initiate room exit
    poke(a_room_mgmt,4)
   end
@@ -1087,7 +1130,9 @@ function dev_init_room()
    ["bot-1"]=3,
    ["bot-2"]=4
   },
-  size=8
+  size=8,
+  ypos=1,
+  chatidx=0
  }
  title.room="pico"
  title.public=true
