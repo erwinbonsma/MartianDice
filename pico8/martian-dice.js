@@ -19,6 +19,9 @@ const gpio_NumClients = 48;
 const gpio_NumBots = 49;
 const gpio_PlayerType = 50;
 const gpio_PlayerName = 51;
+const gpio_ChatOut_Msg = 64;
+const gpio_ChatIn_Msg = 65;
+const gpio_ChatIn_SenderId = 66;
 const gpio_Dump = 255;
 
 const maxPlayerNameLength = 6;
@@ -65,7 +68,8 @@ var md_bots = {}; // key=name, value=behaviour [1..4]
 var md_nextBotId = 0;
 
 var md_gpioRoomBatch = null;
-var md_gpioRoomUpdates = []
+var md_gpioRoomUpdates = [];
+var md_gpioChats = [];
 
 // Game status
 var md_game;
@@ -210,6 +214,14 @@ function handleMessage(event) {
 			md_turnStates.push(md_gameNext.turn_state);
 			md_botMoveTriggered = false;
 
+			break;
+		case "chat":
+			if (msg.message_id) {
+				md_gpioChats.push({
+					messageId: msg.message_id,
+					sender: msg.client_id
+				});
+			}
 			break;
 		case "response":
 			if (msg.status === "error") {
@@ -474,6 +486,30 @@ function gpioHandleMove() {
 	pico8_gpio[gpio_OutControl] = 2;
 }
 
+function gpioHandleChat() {
+	if (pico8_gpio[gpio_ChatOut_Msg]) {
+		md_socket.send(JSON.stringify({
+			action: "chat",
+			room_id: md_roomId,
+			message_id: pico8_gpio[gpio_ChatOut_Msg]
+		}));
+		pico8_gpio[gpio_ChatOut_Msg] = 0;
+	}
+
+	if (md_gpioChats.length > 0 && !pico8_gpio[gpio_ChatIn_Msg]) {
+		const chat = md_gpioChats[0];
+		const senderId = md_clients[chat.sender];
+		if (senderId) {
+			console.info("Sending chat", chat.messageId, senderId);
+			pico8_gpio[gpio_ChatIn_Msg] = chat.messageId;
+			pico8_gpio[gpio_ChatIn_SenderId] = senderId;
+			md_gpioChats = md_gpioChats.slice(1);
+		} else {
+			console.warn("Unknown sender", chat.sender);
+		}
+	}
+}
+
 function dump() {
 	console.log("CTRL_IN_GAME  =", pico8_gpio[gpio_GameControl]);
 	console.log("CTRL_IN_ROOM  =", pico8_gpio[gpio_RoomControl]);
@@ -494,6 +530,7 @@ function gpioUpdate() {
 
 	gpioHandleRoomCommands();
 	gpioHandleMove();
+	gpioHandleChat();
 
 	if (pico8_gpio[gpio_GameControl] == 0) {
 		if (md_turnStates.length > 0) {

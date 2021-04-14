@@ -81,9 +81,7 @@ menu={
 }
 
 room={
- id="",
- ypos=1,
- chatidx=0
+ id=""
 }
 
 function shuffle(l)
@@ -214,6 +212,45 @@ function draw_button(
  color(15)
  if (disabled) color(5)
  print(label,x+3,y+2)
+end
+
+function add_chat(sender,msg)
+ local w=6+#chat_msgs[msg]*4
+ if #room.chatlog>0 then
+  local l=room.chatlog[
+   #room.chatlog
+  ]
+  local e=l[#l]
+  local x=e[3]+w
+  if x<128 then
+   --msg fits on this line
+   add(l,{sender,msg,x+4})
+   return
+  end
+ end
+ --need to start a new line
+ add(room.chatlog,{
+  {sender,msg,w+4}
+ })
+ if #room.chatlog>3 then
+  --remove oldest line
+  deli(room.chatlog,1)
+ end
+end
+
+function draw_chatlog()
+ for i,l in pairs(room.chatlog) do
+  local x=0
+  local y=105+i*6
+  for chat in all(l) do
+   spr(chat[1]+31,x,y)
+   print(
+    chat_msgs[chat[2]],x+6,y,
+    pal1[chat[1]]
+   )
+   x=chat[3]
+  end
+ end
 end
 
 function draw_throw(throw)
@@ -440,7 +477,9 @@ function room_draw()
  
  local disabled={
   false,false,
-  room.chatidx==0,false
+  room.chatidx==0
+  or peek(a_chat_msg_out)!=0,
+  false
  }
  for i,b in pairs(buttons) do
   draw_button(
@@ -454,10 +493,8 @@ function room_draw()
  color(4)
  if (room.ypos==3) color(9)
  print(msg,68-2*#msg,100)
- 
- print("❎hi! 🅾️hi! ❎play? 🅾️wait? ❎no",0,110,3)
- print("❎hi! 🅾️hi! ❎play? 🅾️wait? ❎no",0,116,3)
- print("❎hi! 🅾️hi! ❎play? 🅾️wait? ❎no",0,122,3)
+
+ draw_chatlog()
 end
 
 -->8
@@ -517,6 +554,10 @@ a_nbot=0x5fb1
 a_ptyp=0x5fb2
 --name, 0-chars when len<6
 a_pnam=0x5fb3 -- 6 bytes
+
+a_chat_out_msg=0x5fc0
+a_chat_in_msg=0x5fc1
+a_chat_in_sender=0x5fc2
 
 function die_choices(g)
  local tp={}
@@ -776,9 +817,22 @@ function read_gpio_room()
  poke(a_ctrl_in_room,0)
 end
 
+function read_gpio_chat()
+ if peek(a_chat_in_msg)==0 then
+  return
+ end
+
+ add_chat(
+  peek(a_chat_in_sender),
+  peek(a_chat_in_msg)
+ )
+ poke(a_chat_in_msg,0)
+end
+
 function read_gpio()
  read_gpio_game()
  read_gpio_room()
+ read_gpio_chat()
 end
 
 function game_pickdie()
@@ -877,8 +931,15 @@ function room_update()
   room.ypos=3
  end
  
- if btnp(❎) then
-  if room.ypos==4
+ if actionbtnp() then
+  if room.ypos==3
+  and room.chatidx!=0
+  and peek(a_chat_out_msg)==0 then
+   poke(
+    a_chat_out_msg,room.chatidx
+   )
+   room.chatidx=0
+  elseif room.ypos==4
   and peek(a_room_mgmt)==3 then
    --initiate room exit
    poke(a_room_mgmt,4)
@@ -896,7 +957,13 @@ end
 
 function enter_room(room_id)
  room.id=room_id
+ room.ypos=1
+ room.chatidx=0
+ room.chatlog={}
  title.room=room_id
+
+ poke(a_chat_in_msg,0)
+ poke(a_chat_out_msg,0)
 
  --clear game status
  game=nil
@@ -1132,7 +1199,8 @@ function dev_init_room()
   },
   size=8,
   ypos=1,
-  chatidx=0
+  chatidx=0,
+  chatlog={}
  }
  title.room="pico"
  title.public=true
@@ -1144,9 +1212,9 @@ end
 
 function _init()
  poke(a_room_mgmt,0)
- dev_init_room()
+ --dev_init_room()
 
- --show_menu()
+ show_menu()
 end
 
 __gfx__
