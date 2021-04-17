@@ -262,6 +262,9 @@ function joinRoom() {
 	const roomId = gpioGetStr(gpio_Room, 4);
 	md_myName = gpioGetStr(gpio_MyName, 6);
 
+	md_bots = {}
+	md_nextBotId = 0;
+
 	console.info(`Joining Room ${roomId}`);
 
 	md_socket.send(JSON.stringify({
