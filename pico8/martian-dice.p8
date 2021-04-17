@@ -314,38 +314,26 @@ function draw_throw(throw)
   ]
  end
 
- for i=1,#throw do
-  if throw[i]>0 then
-   local x=((i-1)%7)*16+8
-   local y=((i-1)\7)*16+9
-   spr(2+2*throw[i],x,y,2,2)
-   if throw[i]==selected then
-    roundrect(
-     x-1,y-1,x+15,y+15,15
-    )
-   end
+ for d in all(throw) do
+  spr(2+2*d.tp,d.x,d.y,2,2)
+  if d.tp==selected then
+   roundrect(
+    d.x-1,d.y-1,d.x+15,d.y+15,15
+   )
   end
  end
 end
 
 function draw_battle(battle)
- for i=1,#battle do
-  for j=1,battle[i] do
-   spr(2+i*2,j*16-8,30+i*16,2,2)
-  end
+ for d in all(battle) do
+  spr(2+d.tp*2,d.x,d.y,2,2)
  end
 end
 
 function draw_collected(collected)
- local n=0
- for p in all(collected) do
-  local typ=p[1]
-  local num=p[2]
-  for i=1,num do
-   local x=(n%7)*16+8
-   local y=(n\7)*16+83
-   spr(2+typ*2,x,y,2,2)
-   n+=1
+ for tp,l in pairs(collected) do
+  for d in all(l) do
+   spr(2+d.tp*2,d.x,d.y,2,2)
   end
  end
 end
@@ -669,62 +657,81 @@ a_chat_in_msg=0x5fc1
 a_chat_in_sender=0x5fc2
 
 function die_choices(g)
- local tp={}
+ local choice={}
  
  --add dice from throw
  for d in all(g.throw) do
-  if d>0 then
-   tp[d]=true
-  end
+  choice[d.tp]=true
  end
- assert(not tp[2])
+ assert(not choice[2])
 
  --remove collected earthlings
- for t in all(g.collected) do
-  tp[t[1]]=false
+ for tp,l in pairs(g.collected) do
+  choice[tp]=false
  end
 
  --add in order of throw
  local l={}
  for d in all(g.throw) do
-  if tp[d] then
-   add(l,d)
-   tp[d]=false
+  if choice[d.tp] then
+   add(l,d.tp)
+   choice[d.tp]=false
   end
  end
  
  return l
 end
 
-function new_collected(dice)
- local l={}
-
- for tp,num in pairs(dice) do
-  add(l,{tp,num})
- end
-
- return l 
-end
-
 --updates collected while
 --preserving order.
---old is list, new is dict.
+--old is dict: [tp]={die}
+--new is dict: [tp]=num
 function update_collected(
  old,new
 )
- local l={}
+ local n=0
+ for tp,l in pairs(old) do
+  n+=#l
+ end
 
- for tuple in all(old) do
-  local tp=tuple[1]
-  if new[tp]>0 then
-   add(l,{tp,new[tp]})
-   new[tp]=0
+ local d={}
+ for tp,num in pairs(new) do
+  if num>0 then
+   d[tp]=old[tp] or {}
+   num-=#d[tp]
+   assert(num>=0)
+   for i=1,num do
+    add(d[tp],{
+     tp=tp,
+     x=(n%7)*16+8,
+     y=(n\7)*16+83
+    })
+    n+=1    
+   end
   end
  end
 
- for tp,num in pairs(new) do
-  if num>0 then
-   add(l,{tp,num})
+ return d
+end
+
+-- num=[#rays, #tanks]
+function set_battle(num)
+ local l={}
+ 
+ for tp=1,2 do
+  local x=8
+  local y=30+tp*16
+  for i=1,num[tp] do
+   add(l,{tp=tp,x=x,y=y})
+   if i<7 then
+    x+=16
+   elseif i==7 then
+    --overflow: switch rows
+    y+=16-(tp-1)*32
+   else
+    --move back in overflow row
+    x-=16
+   end
   end
  end
 
@@ -735,11 +742,18 @@ function new_throw(dice)
  local l={}
  for tp,num in pairs(dice) do
   for i=1,num do
-   add(l,tp)
+   add(l,{tp=tp})
   end
  end
 
- return shuffle(l)
+ shuffle(l)
+
+ for i,d in pairs(l) do
+  d.x=((i-1)%7)*16+8
+  d.y=((i-1)\7)*16+9
+ end
+
+ return l
 end
 
 --old is list, new is dict
@@ -823,10 +837,10 @@ function read_gpio_game()
  for i=1,5 do
   dice[i]=peek(a_thrw+i-1)
  end
- if (
-  g.phase==phase.thrown or
-  game==nil
- ) then
+
+ if game==nil
+ or g.thrownum!=game.thrownum
+ or g.turn!=game.turn then
   g.throw=new_throw(dice)
  else
   g.throw=update_throw(
@@ -834,9 +848,9 @@ function read_gpio_game()
   )
  end
 
- g.battle={}
- add(g.battle,peek(a_side))
- add(g.battle,peek(a_side+1))
+ g.battle=set_battle(
+  {peek(a_side),peek(a_side+1)}
+ )
 
  dice={}
  for i=3,5 do
@@ -1337,9 +1351,13 @@ end
 -->8
 function dev_init_game()
  game={
-  throw={3,4,0,5,3,3,1,1,1},
-  battle={2,3},
-  collected={{4,1}},
+  throw=new_throw(
+   {[3]=3,[4]=2,[5]=1,[1]=4}
+  ),
+  battle=set_battle({9,3}),
+  collected=update_collected(
+   {},{[4]=2}
+  ),
   round=1,
   turn=2,
   phase=phase.pickdice,
