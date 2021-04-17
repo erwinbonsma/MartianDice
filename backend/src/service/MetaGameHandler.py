@@ -43,7 +43,10 @@ class MetaGameHandler(GameHandler):
 
 	async def send_chat(self, message, message_id = None):
 		if message_id is not None:
-			message = CHAT_MESSAGES[message_id - 1]
+			if message_id > 0 and message_id <= len(CHAT_MESSAGES):
+				message = CHAT_MESSAGES[message_id - 1]
+			else:
+				raise HandlerException(f"Unrecognized message")
 		else:
 			if message is None:
 				raise HandlerException(f"Missing message")
