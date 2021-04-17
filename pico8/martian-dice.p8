@@ -471,9 +471,10 @@ function room_draw()
   )
   n+=1
  end
- for name,tp in pairs(room.bots) do
+ for bot in all(room.bots) do
+  local tp=bot[2]
   drawfun(
-   n,49+tp,name,pal2[tp]
+   n,49+tp,bot[1],pal2[tp]
   )
   n+=1
  end
@@ -819,7 +820,7 @@ function read_gpio_room()
   r.clients[typ]=name
   r.pclients-=1
  else
-  r.bots[name]=typ-6
+  add(r.bots,{name,typ-6})
   r.pbots-=1
  end
  r.size+=1
