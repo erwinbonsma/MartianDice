@@ -498,7 +498,7 @@ function room_draw()
 end
 
 -->8
---gpio,update
+--gpio
 
 --0:ready for write
 --1:ready for read
@@ -834,6 +834,9 @@ function read_gpio()
  read_gpio_room()
  read_gpio_chat()
 end
+
+-->8
+--update
 
 function game_pickdie()
  local n=#game.pickdie
