@@ -308,7 +308,8 @@ end
 
 function draw_throw(throw)
  local selected=0
- if game.pickdie then
+ if game.pickdie
+ and animate==nil then
   selected=game.pickdie[
    game.die_idx
   ]
@@ -586,6 +587,49 @@ function room_draw()
 end
 
 -->8
+-- animations
+function animate_throw(throw)
+ local update_tp=function(d)
+  local old=d.tp
+  d.tp=max(1,flr(
+   d.target_tp-1+(
+    d.entropy/4
+   )^1.4
+  )%6)
+  if d.tp!=old then
+   sfx(0)
+  end
+ end
+
+ for d in all(throw) do
+  d.target_tp=d.tp
+  d.entropy=20+rnd(30)
+  update_tp(d)
+ end
+ 
+ animate=function()
+  local done=true
+  for d in all(throw) do
+   if d.entropy!=nil then   
+    d.entropy-=rnd(1)
+    if d.entropy<0 then
+     d.tp=d.target_tp
+     d.target_tp=nil
+     d.entropy=nil
+    else
+     update_tp(d)
+    end
+    done=false
+   end
+  end
+  
+  if done then
+   animate=nil
+  end
+ end
+end
+
+-->8
 --gpio
 
 --general ctrl flags
@@ -847,6 +891,9 @@ function read_gpio_game()
    game.throw,dice
   )
  end
+ if g.phase==phase.thrown then
+  g.throw=animate_throw(g.throw)
+ end
 
  g.battle=set_battle(
   {peek(a_side),peek(a_side+1)}
@@ -1043,6 +1090,10 @@ function game_update()
    --initiate room exit
    poke(a_room_mgmt,4)
   end
+ end
+
+ if animate then
+  animate()
  end
 
  --tmp:debug 
@@ -1373,6 +1424,7 @@ function dev_init_game()
  game.die_idx=1
  --game.chkpass=true
  --game.pass=false
+ animate_throw(game.throw)
 
  room={
   chatlog={
@@ -1648,3 +1700,5 @@ __label__
 
 __map__
 00000000000000000000a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+__sfx__
+000100001d05000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
