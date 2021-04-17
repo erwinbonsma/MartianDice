@@ -480,7 +480,8 @@ function room_draw()
  end
  
  local disabled={
-  false,false,
+  room.host==0,
+  false,
   room.chatidx==0
   or peek(a_chat_msg_out)!=0,
   false
@@ -504,14 +505,21 @@ end
 -->8
 --gpio
 
+--general ctrl flags
 --0:ready for write
 --1:ready for read
+
+--5:start game (set by p8)
+--6:starting game
 a_ctrl_in_game=0x5f80
+
 --4:start batch/reset
 a_ctrl_in_room=0x5f81
+
 --2:null
 --3:awaiting input (set by p8)
 a_ctrl_out=0x5f82
+
 a_errr=0x5f83
 a_ctrl_dump=0x607f --tmp
 
@@ -553,11 +561,13 @@ a_anam=0x5fa5 -- 6 bytes
 --num clients/bots
 a_ncli=0x5fb0
 a_nbot=0x5fb1
+--0/1: 1=>player is host
+a_host=0x5fb2
 --1..6 :client, id=value
 --7..10:bot,    tp=value-6
-a_ptyp=0x5fb2
+a_ptyp=0x5fb3
 --name, 0-chars when len<6
-a_pnam=0x5fb3 -- 6 bytes
+a_pnam=0x5fb4 -- 6 bytes
 
 a_chat_out_msg=0x5fc0
 a_chat_in_msg=0x5fc1
@@ -800,6 +810,7 @@ function read_gpio_room()
   roomnew={
    pclients=peek(a_ncli),
    pbots=peek(a_nbot),
+   host=peek(a_host),
    size=0,
    clients={},
    bots={}
@@ -938,6 +949,10 @@ function room_update()
   return
  end
 
+ if peek(a_ctrl_in_game)==6 then
+  poke(a_ctrl_in_game,0)
+ end
+
  if game!=nil then
   _update=game_update
   _draw=game_draw
@@ -961,7 +976,11 @@ function room_update()
  end
  
  if actionbtnp() then
-  if room.ypos==3
+  if room.ypos==1
+  and room.host!=0 then
+   --initiate game start
+   poke(a_ctrl_in_game,5)
+  elseif room.ypos==3
   and room.chatidx!=0
   and peek(a_chat_out_msg)==0 then
    poke(

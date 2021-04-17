@@ -17,8 +17,9 @@ const gpio_ActivePlayerType = 36;
 const gpio_ActivePlayerName = 37;
 const gpio_NumClients = 48;
 const gpio_NumBots = 49;
-const gpio_PlayerType = 50;
-const gpio_PlayerName = 51;
+const gpio_IsHost = 50;
+const gpio_PlayerType = 51;
+const gpio_PlayerName = 52;
 const gpio_ChatOut_Msg = 64;
 const gpio_ChatIn_Msg = 65;
 const gpio_ChatIn_SenderId = 66;
@@ -555,12 +556,24 @@ function gpioUpdate() {
 				md_game = md_gameNext;
 			}
 		}
+	} else if (pico8_gpio[gpio_GameControl] == 5) {
+		// Game start requested
+		console.assert(isHost(), "Only host can start game");
+
+		md_socket.send(JSON.stringify({
+			action: "start-game",
+			game_id: md_roomId,
+			game_config: { bots: md_bots }
+		}));
+
+		pico8_gpio[gpio_GameControl] = 6; // Signal game starting
 	}
 
 	if (pico8_gpio[gpio_RoomControl] == 0) {
 		if (md_gpioRoomBatch) {
 			pico8_gpio[gpio_NumClients] = md_gpioRoomBatch.numClients;
 			pico8_gpio[gpio_NumBots] = md_gpioRoomBatch.numBots;
+			pico8_gpio[gpio_IsHost] = isHost() ? 1 : 0;
 			md_gpioRoomBatch = null;
 
 			pico8_gpio[gpio_RoomControl] = 4; // Signal start of batch
