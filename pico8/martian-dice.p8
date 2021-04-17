@@ -47,7 +47,7 @@ buttons={
  {"exit",107}
 }
 
-chat_msgs={
+chatmsg={
  "hi","bye","yes","no","okay",
  "thx","wow","oops","gg",
  "play?","wait?"
@@ -214,23 +214,26 @@ function draw_button(
  print(label,x+3,y+2)
 end
 
-function add_chat(sender,msg)
- local w=6+#chat_msgs[msg]*4
+function add_chat(
+ sender,msg,prefix
+)
+ if (prefix==nil) prefix=""
+ local w=6+(#msg+#prefix)*4
  if #room.chatlog>0 then
   local l=room.chatlog[
    #room.chatlog
   ]
   local e=l[#l]
-  local x=e[3]+w
+  local x=e[4]+w
   if x<128 then
    --msg fits on this line
-   add(l,{sender,msg,x+4})
+   add(l,{prefix,sender,msg,x+4})
    return
   end
  end
  --need to start a new line
  add(room.chatlog,{
-  {sender,msg,w+4}
+  {prefix,sender,msg,w+4}
  })
  if #room.chatlog>3 then
   --remove oldest line
@@ -243,12 +246,12 @@ function draw_chatlog()
   local x=0
   local y=105+i*6
   for chat in all(l) do
-   spr(chat[1]+31,x,y)
-   print(
-    chat_msgs[chat[2]],x+6,y,
-    pal1[chat[1]]
-   )
-   x=chat[3]
+   local c=pal1[chat[2]]
+   print(chat[1],x,y,c)
+   x+=#chat[1]*4
+   spr(chat[2]+31,x,y)
+   print(chat[3],x+6,y,c)
+   x=chat[4]
   end
  end
 end
@@ -488,7 +491,7 @@ function room_draw()
   )
  end
  rect(54,98,80,106,5)
- local msg=chat_msgs[room.chatidx]
+ local msg=chatmsg[room.chatidx]
  if (msg==nil) msg="chat"
  color(4)
  if (room.ypos==3) color(9)
@@ -773,6 +776,24 @@ function read_gpio_game()
  poke(a_ctrl_in_game,0)
 end
 
+--show client joins/leaves in
+--chat log
+function log_client_changes(
+ old,new
+)
+ for id,name in pairs(old) do
+  if new[id]==nil then
+   add_chat(id,name,"-")
+  end
+ end
+
+ for id,name in pairs(new) do
+  if old[id]==nil then
+   add_chat(id,name,"+")
+  end
+ end
+end
+
 function read_gpio_room()
  if peek(a_ctrl_in_room)==4 then
   roomnew={
@@ -808,6 +829,10 @@ function read_gpio_room()
  if r.pclients==0
  and r.pbots==0 then
   --finished batch update
+  log_client_changes(
+   room.clients,r.clients
+  )
+
   room.clients=r.clients
   room.bots=r.bots
   room.size=r.size
@@ -824,7 +849,7 @@ function read_gpio_chat()
 
  add_chat(
   peek(a_chat_in_sender),
-  peek(a_chat_in_msg)
+  chatmsg[peek(a_chat_in_msg)]
  )
  poke(a_chat_in_msg,0)
 end
@@ -924,12 +949,12 @@ function room_update()
   room.ypos=room.ypos%4+1
  elseif btnp(⬆️) then
   room.chatidx=(
-   room.chatidx+#chat_msgs-2
-  )%#chat_msgs+1
+   room.chatidx+#chatmsg-2
+  )%#chatmsg+1
   room.ypos=3
  elseif btnp(⬇️) then
   room.chatidx=(
-   room.chatidx%#chat_msgs+1
+   room.chatidx%#chatmsg+1
   )
   room.ypos=3
  end
