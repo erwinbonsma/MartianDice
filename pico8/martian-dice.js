@@ -64,7 +64,7 @@ var md_roomId;
 var md_socket;
 var md_host;
 var md_clients = {}; // key=name, value=id [1..6]
-var md_bots = {}; // key=name, value=behaviour [1..4]
+var md_bots = {}; // key=name, value=behaviour (string)
 var md_nextBotId = 0;
 
 var md_gpioRoomBatch = null;
@@ -148,7 +148,7 @@ function updateClients(clients) {
 	return addedClients;
 }
 
-function welcomeNewClients(addedClients) {
+function welcomeNewClients(newClients) {
 	console.log("Welcoming new clients:", newClients);
 	const optGameConfig = md_gameNext ? {
 		game_state: md_gameNext
@@ -190,10 +190,19 @@ function handleMessage(event) {
 		case "clients":
 			const addedClients = updateClients(msg.clients);
 			md_host = msg.host;
-			gpioPrepareRoomUpdateBatch();
-			if (isHost() && addedClients.length > 0) {
-				welcomeNewClients(addedClients);
+			if (isHost()) {
+				if (addedClients.length > 0) {
+					// Clear any bots
+					md_bots = {};
+					welcomeNewClients(addedClients);
+				} else if (sizeOfDict(md_clients) == 1 && sizeOfDict(md_bots) == 0) {
+					// When alone, automatically add a bot as opponent
+					md_nextBotId += 1;
+					md_bots[`Bot-${md_nextBotId}`] = "smart";
+				}
+
 			}
+			gpioPrepareRoomUpdateBatch();
 			break;
 		case "game-config":
 			md_bots = msg.game_config.bots;
