@@ -82,6 +82,9 @@ Done:
 	-	Use name from PICO-8 client
 	-	Show errors on room join failure
 	-	Simple chat
+	-	Show client joins/leaves in chat
+	-	Enable game start
+		-	Auto-add smart bot when only player
 
 TODO:
 -	Add die movement animations
@@ -90,8 +93,9 @@ TODO:
 	-	Show available public rooms
 	-	Limit chat in public rooms
 -	Extend PICO-8 client
-	-	Enable game start
-		-	Auto-add smart bot when only player
+	-	Show help
+		-	Show occassional "Don't panic" screen
+	-	Clean up play UI colors
 	-	Show game result
 	-	Handle disconnected/inactive players
 		-	Auto-skip turn for disconnected players
