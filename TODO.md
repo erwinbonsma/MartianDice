@@ -85,6 +85,11 @@ Done:
 	-	Show client joins/leaves in chat
 	-	Enable game start
 		-	Auto-add smart bot when only player
+	-	Show help
+	-	Clean up play UI colors
+	-	Animate throw
+	-	Animate moves
+	-	Show game result
 
 TODO:
 -	Add die movement animations
@@ -93,17 +98,14 @@ TODO:
 	-	Show available public rooms
 	-	Limit chat in public rooms
 -	Extend PICO-8 client
-	-	Show help
-		-	Show occassional "Don't panic" screen
-	-	Clean up play UI colors
-	-	Show game result
+	-	Test end-game HTML integration
+	-	Enable chat in game screen
+	-	Enable move to room from end-game screen
 	-	Handle disconnected/inactive players
 		-	Auto-skip turn for disconnected players
 		-	Remind/prod/skip inactive players
-	-	Animations
-		-	Throw
-		-	Die selection
 	-	Sounds
+	-	Show occassional "Don't panic" screen instead of help
 -	Remove memcache dependency
 	-	From Dockerfile
 	-	From layer
