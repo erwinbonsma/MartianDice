@@ -12,7 +12,8 @@ phase={
  pickdice=4,
  pickeddice=5,
  checkpass=6,
- done=7
+ done=7,
+ endgame=8
 }
 
 endcause={
@@ -424,15 +425,49 @@ function menu_draw()
  end
 end
 
-function game_draw()
- cls(0)
+function draw_winner(avatarx)
+ local xc=64+flr(
+  0.5+30*sin(time()*0.1)
+ )
+ local yc=64+flr(
+  0.5+30*cos(time()*0.11)
+ )
+ local r=4+flr(
+  0.5+sin(0*time())
+ )
+ local x0=xc-flr(2.5*r)
+ local y0=yc-flr(2.5*r)
 
- for i=0,2 do
-  rectfill(
-   6,7+37*i,121,41+37*i-i\2,4
-  )
+-- rectfill(
+--  x0-2,y0-2,x0+5*r+1,y0+5*r+1,1
+-- )
+ for x=0,4 do
+  for y=0,4 do
+   rectfill(
+    x0+x*r,    y0+y*r,
+    x0+x*r+r-1,y0+y*r+r-1,
+    pget(avatarx+x,y)
+   )
+  end
  end
- 
+ local msg=game.winner
+ msg=msg.." wins!"
+ print(
+  msg,xc-2*#msg+1,yc+15,
+  game.active_player.color
+ )
+ palt(14,true)
+ pal(11,game.active_player.color)
+ spr(4,xc-31,yc-8,2,2)
+ spr(4,xc+16,yc-8,2,2)
+ pal()
+
+-- pset(xc,yc,15)
+end
+
+function game_draw()
+ cls()
+
  color(4)
  print("round "..game.round,0,0)
  print("throw "..game.thrownum,100,0)
@@ -442,6 +477,19 @@ function game_draw()
  spr(ap.avatar,x,0)
  print(ap.name,x+7,0,ap.color)
 
+ draw_chatlog(117,2)
+
+ if game.winner!=nil then
+  draw_winner(x)
+  return
+ end
+
+ for i=0,2 do
+  rectfill(
+   6,7+37*i,121,41+37*i-i\2,4
+  )
+ end
+ 
  palt(14,true)
  palt(0,false)
  draw_throw(game.throw)
@@ -476,8 +524,6 @@ function game_draw()
    "no",86,27,12,game.pass
   )
  end
-
- draw_chatlog(117,2)
 end
 
 function draw_help()
@@ -992,6 +1038,25 @@ function read_gpio_game()
  g.score=peek(a_ttsc)
  g.position=peek(a_cpos)
 
+ local ap={}
+ local v=peek(a_atyp)
+ if v<=6 then
+  --client avatar
+  ap.avatar=31+v
+  ap.color=pal1[v]
+ else
+  --bot avatar
+  ap.avatar=43+v
+  ap.color=pal2[v-6]
+ end
+ ap.name=gpio_gets(a_anam,6)
+ g.active_player=ap
+
+ if g.phase==phase.endgame then
+  g.winner=ap
+  return
+ end
+ 
  local dice={}
  for i=1,5 do
   dice[i]=peek(a_thrw+i-1)
@@ -1048,20 +1113,6 @@ function read_gpio_game()
   end
   poke(a_ctrl_out,3)
  end
-
- local ap={}
- local v=peek(a_atyp)
- if v<=6 then
-  --client avatar
-  ap.avatar=31+v
-  ap.color=pal1[v]
- else
-  --bot avatar
-  ap.avatar=43+v
-  ap.color=pal2[v-6]
- end
- ap.name=gpio_gets(a_anam,6)
- g.active_player=ap
 
  game=g
  poke(a_ctrl_in_game,0)
@@ -1568,6 +1619,11 @@ function dev_init_game()
   game.score=2
   game.position=1
  end
+ if true then
+  game.score=27
+  game.winner="me"
+  game.phase=phase.endgame
+ end
 
  room={
   chatlog={
@@ -1617,10 +1673,10 @@ end
 
 function _init()
  poke(a_room_mgmt,0)
- --dev_init_game()
+ dev_init_game()
  --dev_init_room()
 
- show_menu()
+ --show_menu()
 end
 
 __gfx__
