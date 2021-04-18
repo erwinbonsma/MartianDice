@@ -628,7 +628,7 @@ function animate_throw(throw)
    end
   end
   
-  if (done) animate=nil
+  if (done) wait(30)
  end
 end
 
@@ -691,6 +691,41 @@ function animate_move(
    
    if (done) animate=nil
   end
+ end
+end
+
+function wait(frames)
+ animate=function()
+  frames-=1
+  if (frames<0) animate=nil
+ end
+end
+
+function set_game_animation(
+ g,moving
+)
+ local p=g.phase
+ if p==phase.thrown then
+  animate_throw(g.throw)
+ elseif p==phase.movedtanks then
+  animate_move(
+   game.battle,g.battle,moving
+  )
+ elseif p==phase.pickeddice then
+  if #game.battle<#g.battle then
+   animate_move(
+    game.battle,g.battle,moving
+   )
+  else
+   animate_move(
+    game.collected,g.collected,
+    moving
+   )
+  end
+ elseif p==phase.done then
+  wait(60)
+ else
+  wait(10)
  end
 end
 -->8
@@ -935,13 +970,8 @@ function gpio_gets(a0,len)
  return s
 end
 
-game_gpio_read_delay=0
 function read_gpio_game()
  if peek(a_ctrl_in_game)!=1 then
-  return
- end
- if game_gpio_read_delay>0 then
-  game_gpio_read_delay-=1
   return
  end
  if animate!=nil then
@@ -1001,24 +1031,7 @@ function read_gpio_game()
   prvc,dice
  )
 
- if g.phase==phase.thrown then
-  animate_throw(g.throw)
- elseif g.phase==phase.movedtanks then
-  animate_move(
-   game.battle,g.battle,moving
-  )
- elseif g.phase==phase.pickeddice then
-  if #game.battle<#g.battle then
-   animate_move(
-    game.battle,g.battle,moving
-   )
-  else
-   animate_move(
-    game.collected,g.collected,
-    moving
-   )
-  end
- end
+ set_game_animation(g,moving)
 
  if peek(a_ctrl_out)==0 then
   --move expected
@@ -1047,8 +1060,7 @@ function read_gpio_game()
  ap.name=gpio_gets(a_anam,6)
  g.active_player=ap
 
- game=g 
- game_gpio_read_delay=60
+ game=g
  poke(a_ctrl_in_game,0)
 end
 
@@ -1314,7 +1326,7 @@ function enter_room(room_id)
 
  --clear game status
  game=nil
- game_gpio_read_delay=0
+ animate=nil
  poke(a_ctrl_in_game,0)
 
  _update=room_update
