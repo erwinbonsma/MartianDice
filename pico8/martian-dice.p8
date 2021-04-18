@@ -306,6 +306,12 @@ function draw_chatlog(y0)
  end
 end
 
+function draw_dice(dice)
+ for d in all(dice) do
+  spr(2+d.tp*2,d.x,d.y,2,2)
+ end
+end
+
 function draw_throw(throw)
  local selected=0
  if game.pickdie
@@ -315,26 +321,12 @@ function draw_throw(throw)
   ]
  end
 
+ draw_dice(throw)
  for d in all(throw) do
-  spr(2+2*d.tp,d.x,d.y,2,2)
   if d.tp==selected then
    roundrect(
     d.x-1,d.y-1,d.x+15,d.y+15,15
    )
-  end
- end
-end
-
-function draw_battle(battle)
- for d in all(battle) do
-  spr(2+d.tp*2,d.x,d.y,2,2)
- end
-end
-
-function draw_collected(collected)
- for tp,l in pairs(collected) do
-  for d in all(l) do
-   spr(2+d.tp*2,d.x,d.y,2,2)
   end
  end
 end
@@ -452,8 +444,8 @@ function game_draw()
  palt(14,true)
  palt(0,false)
  draw_throw(game.throw)
- draw_battle(game.battle)
- draw_collected(game.collected)
+ draw_dice(game.battle)
+ draw_dice(game.collected)
  palt()
 
  if game.endcause!=0 then
@@ -729,34 +721,35 @@ end
 
 --updates collected while
 --preserving order.
---old is dict: [tp]={die}
+--old is list: {die*}
 --new is dict: [tp]=num
 function update_collected(
  old,new
 )
- local n=0
- for tp,l in pairs(old) do
-  n+=#l
- end
+ local l={}
 
- local d={}
- for tp,num in pairs(new) do
-  if num>0 then
-   d[tp]=old[tp] or {}
-   num-=#d[tp]
-   assert(num>=0)
-   for i=1,num do
-    add(d[tp],{
-     tp=tp,
-     x=(n%7)*16+8,
-     y=(n\7)*16+83
-    })
-    n+=1    
-   end
+ --copy over existing
+ for d in all(old) do
+  if new[d.tp]>0 then
+   add(l,d)
+   new[d.tp]-=1
   end
  end
 
- return d
+ --add new
+ local n=#l
+ for tp,num in pairs(new) do
+  for i=1,num do
+   add(l,{
+    tp=tp,
+    x=(n%7)*16+8,
+    y=(n\7)*16+83
+   })
+   n+=1    
+  end
+ end
+
+ return l
 end
 
 -- num=[#rays, #tanks]
