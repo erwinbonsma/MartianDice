@@ -616,12 +616,68 @@ function animate_throw(throw)
    end
   end
   
-  if done then
-   animate=nil
-  end
+  if (done) animate=nil
  end
 end
 
+function animate_move(
+ old,new,src
+)
+ assert(#old<#new)
+ local moving={}
+ 
+ for i=#new,#old+1,-1 do
+  local j=#src
+  local d=new[i]
+  while j>0 
+  and src[j].tp!=d.tp do
+   j-=1
+  end
+  if j>0 then
+   --found the new die in src
+   --so animate it
+   d.dstx=d.x
+   d.dsty=d.y
+   d.srcx=src[j].x
+   d.srcy=src[j].y
+   d.x=d.srcx
+   d.y=d.srcy
+   d.t=0
+
+   add(moving,d)   
+   deli(src,j)
+  end
+ end
+ 
+ local tmax=30
+ if #moving>0 then
+  animate=function()
+   local done=true
+   for d in all(moving) do
+    d.t+=1
+    if d.t==tmax then
+     d.x=d.dstx
+     d.y=d.dsty
+     d.dstx=nil
+     d.dsty=nil
+     d.srcx=nil
+     d.srcy=nil
+    else
+     d.x=d.srcx+(
+      d.dstx-d.srcx
+     )*d.t/tmax
+     d.y=d.srcy+(
+      d.dsty-d.srcy
+     )*d.t/tmax
+
+     done=false
+    end
+   end
+   
+   if (done) animate=nil
+  end
+ end
+end
 -->8
 --gpio
 
@@ -703,8 +759,8 @@ function die_choices(g)
  assert(not choice[2])
 
  --remove collected earthlings
- for tp,l in pairs(g.collected) do
-  choice[tp]=false
+ for d in all(g.collected) do
+  choice[d.tp]=false
  end
 
  --add in order of throw
@@ -752,15 +808,26 @@ function update_collected(
  return l
 end
 
--- num=[#rays, #tanks]
-function set_battle(num)
+--old is list: {die*}
+--new is dict: [tp]=num
+function update_battle(old,new)
  local l={}
+ local w={0,0}
  
+ --copy over existing
+ for d in all(old) do
+  add(l,d)
+  w[d.tp]+=1
+ end
+
  for tp=1,2 do
   local x=8
   local y=30+tp*16
-  for i=1,num[tp] do
-   add(l,{tp=tp,x=x,y=y})
+  assert(new[tp]>=w[tp])
+  for i=1,new[tp] do
+   if i>w[tp] then
+    add(l,{tp=tp,x=x,y=y})
+   end
    if i<7 then
     x+=16
    elseif i==7 then
@@ -794,28 +861,28 @@ function new_throw(dice)
  return l
 end
 
---old is list, new is dict
-function update_throw(old,new)
+--old is list, new is dict.
+--all removed dice will be added
+--to removed list, which should
+--be empty
+function update_throw(
+ old,new,removed
+)
+ assert(#removed==0)
  local l={}
- for tp in all(old) do
-  if tp!=0 and new[tp]>0 then
-   add(l,tp)
-   new[tp]-=1
+ for d in all(old) do
+  if d!=nil and new[d.tp]>0 then
+   add(l,d)
+   new[d.tp]-=1
   else
-   add(l,0)
+   add(l,nil)
+   add(removed,d)
   end
  end
 
- --just in case, add new dice
- local i=1
+ --sanity check
  for tp,num in pairs(new) do
-  while num>0 do
-   while l[i]!=0 and i<13 do
-    i+=1
-   end
-   l[i]=tp
-   num-=1
-  end
+  assert(num==0)
  end
 
  return l
@@ -876,20 +943,19 @@ function read_gpio_game()
   dice[i]=peek(a_thrw+i-1)
  end
 
+ local moving={}
  if game==nil
  or g.thrownum!=game.thrownum
  or g.turn!=game.turn then
   g.throw=new_throw(dice)
  else
   g.throw=update_throw(
-   game.throw,dice
+   game.throw,dice,moving
   )
  end
- if g.phase==phase.thrown then
-  g.throw=animate_throw(g.throw)
- end
 
- g.battle=set_battle(
+ g.battle=update_battle(
+  game.battle,
   {peek(a_side),peek(a_side+1)}
  )
 
@@ -902,6 +968,19 @@ function read_gpio_game()
  else
   g.collected=update_collected(
    game.collected,dice
+  )
+ end
+
+ if g.phase==phase.thrown then
+  animate_throw(g.throw)
+ elseif g.phase==phase.movedtanks then
+  animate_move(
+   game.battle,g.battle,moving
+  )
+ elseif g.phase==phase.pickeddice then
+  animate_move(
+   game.collected,g.collected,
+   moving
   )
  end
 
@@ -1395,11 +1474,23 @@ function show_menu()
 end
 -->8
 function dev_init_game()
+ local t0=new_throw(
+  {3,2,1,2,1}
+ )
+ local moving={}
+ local t1=update_throw(
+  t0,{3,0,1,2,1},moving
+ )
+ local b0=update_battle(
+  {},{3,2}
+ )
+ local b1=update_battle(
+  b0,{3,4}
+ )
+ animate_move(b0,b1,moving)
  game={
-  throw=new_throw(
-   {[3]=3,[4]=2,[5]=1,[1]=4}
-  ),
-  battle=set_battle({9,3}),
+  throw=t1,
+  battle=b1,
   collected=update_collected(
    {},{[4]=2}
   ),
@@ -1414,11 +1505,11 @@ function dev_init_game()
    color=pal1[1]
   }
  }
- game.pickdie=die_choices(game)
+ --game.pickdie=die_choices(game)
  game.die_idx=1
  --game.chkpass=true
  --game.pass=false
- animate_throw(game.throw)
+ --animate_throw(game.throw)
 
  room={
   chatlog={
