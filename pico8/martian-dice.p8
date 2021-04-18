@@ -124,11 +124,8 @@ function shuffle(l)
 end
 
 function print_outlined(
- msg,x,y,c1,c2,c3
+ msg,x,y,c1,c2
 )
- color(c3)
- print(msg,x+1,y+1)
-
  color(c2)
  print(msg,x-1,y)
  print(msg,x+1,y)
@@ -451,14 +448,14 @@ function game_draw()
  if game.endcause!=0 then
   local msg=endcause[game.endcause]
   print_outlined(
-   msg,64-2*#msg,15,11,1,0
+   msg,64-2*#msg,26,9,0
   )
   
   msg="+"..game.scored.." => "
   msg=msg..game.score.."(#"
   msg=msg..game.position..")"
   print_outlined(
-   msg,64-2*#msg,26,11,1,0
+   msg,64-2*#msg,34,9,0
   )
  end
 
@@ -1534,6 +1531,13 @@ function dev_init_game()
  --game.chkpass=true
  --game.pass=false
  --animate_throw(game.throw)
+
+ if false then
+  game.endcause=1
+  game.scored=2
+  game.score=2
+  game.position=1
+ end
 
  room={
   chatlog={
