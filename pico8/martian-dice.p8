@@ -288,17 +288,22 @@ function add_chat(
  end
 end
 
-function draw_chatlog(y0)
+function draw_chatlog(y0,n)
+ local i0=1+max(
+  #room.chatlog-n,0
+ )
  for i,l in pairs(room.chatlog) do
-  local x=0
-  local y=i*6+y0
-  for chat in all(l) do
-   local c=pal1[chat[2]]
-   print(chat[1],x,y,c)
-   x+=#chat[1]*4
-   spr(chat[2]+31,x,y)
-   print(chat[3],x+6,y,c)
-   x=chat[4]
+  if i>=i0 then
+   local x=0
+   local y=(i-i0)*6+y0
+   for chat in all(l) do
+    local c=pal1[chat[2]]
+    print(chat[1],x,y,c)
+    x+=#chat[1]*4
+    spr(chat[2]+31,x,y)
+    print(chat[3],x+6,y,c)
+    x=chat[4]
+   end
   end
  end
 end
@@ -470,7 +475,7 @@ function game_draw()
   )
  end
 
- draw_chatlog(111)
+ draw_chatlog(117,2)
 end
 
 function draw_help()
@@ -572,7 +577,7 @@ function room_draw()
  if (room.ypos==3) color(9)
  print(msg,68-2*#msg,100)
 
- draw_chatlog(115)
+ draw_chatlog(110,3)
 end
 
 -->8
@@ -1543,6 +1548,7 @@ function dev_init_game()
   chatlog={
    {{"",1,"hi",30}},
    {{"",2,"bye",30}},
+   {{"-",3,"bob",0}}
   }
  }
 
@@ -1570,7 +1576,11 @@ function dev_init_room()
   ypos=1,
   help=nil,
   chatidx=0,
-  chatlog={}
+  chatlog={
+   {{"",1,"hi",0}},
+   {{"",2,"bye",0}},
+   {{"-",3,"bob",0}}
+  }
  }
  title.room="pico"
  title.public=true
@@ -1583,6 +1593,7 @@ end
 function _init()
  poke(a_room_mgmt,0)
  --dev_init_game()
+ --dev_init_room()
 
  show_menu()
 end
