@@ -1054,7 +1054,7 @@ function log_client_changes(
  end
 
  for id,name in pairs(new) do
-  if old[id]==nil then
+  if old[id]==nil and id!=1 then
    add_chat(id,name,"+")
   end
  end
