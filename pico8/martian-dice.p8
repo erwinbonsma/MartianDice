@@ -426,15 +426,9 @@ function menu_draw()
 end
 
 function draw_winner(avatarx)
- local xc=64+flr(
-  0.5+30*sin(time()*0.1)
- )
- local yc=64+flr(
-  0.5+30*cos(time()*0.11)
- )
- local r=4+flr(
-  0.5+sin(0*time())
- )
+ local r=game.end_anim.r
+ local xc=game.end_anim.x
+ local yc=game.end_anim.y
  local x0=xc-flr(2.5*r)
  local y0=yc-flr(2.5*r)
 
@@ -461,8 +455,6 @@ function draw_winner(avatarx)
  spr(4,xc-31,yc-8,2,2)
  spr(4,xc+16,yc-8,2,2)
  pal()
-
--- pset(xc,yc,15)
 end
 
 function game_draw()
@@ -776,6 +768,77 @@ function set_game_animation(
  else
   wait(10)
  end
+end
+
+function animate_endgame()
+ local path={}
+ local ap={}
+ 
+ game.end_anim={}
+ 
+ --fairly complex function to
+ --reduce jitter effects in the
+ --animation. more specifically,
+ --it avoids that the path
+ --contains "empty triangles":
+ -- e.g. *     *
+ --      ** =>  *
+ --it does so without causing
+ --path incontinuities
+ local getpoint=function(x,y)
+  if ap.x==nil then
+   ap.x=x
+   ap.y=y
+   return ap
+  end
+  
+  local lp=ap
+  if (#path>0) lp=path[#path]
+    
+  if lp.x==x and lp.y==y then
+   return ap
+  end
+
+  add(path,{x=x,y=y})
+  
+  if (ap.x==x and ap.y==y)
+  or abs(ap.x-x)>=2
+  or abs(ap.y-y)>=2
+  or (
+   abs(lp.x-x)==1 
+   and abs(lp.y-y)==1
+  ) then
+   ap.x=path[1].x
+   ap.y=path[1].y
+   deli(path,1)
+   return ap
+  end
+
+  if #path==2 then
+   ap.x=path[2].x
+   ap.y=path[2].y
+   path={}
+   return ap
+  end
+  
+  return ap
+ end
+ 
+ animate=function()
+  local xc=64+flr(
+   0.5+32*sin(time()*0.1)
+  )
+  local yc=56+flr(
+   0.5+36*cos(time()*0.11)
+  )
+  local p=getpoint(xc,yc)
+  game.end_anim.x=p.x
+  game.end_anim.y=p.y
+
+  game.end_anim.r=4+flr(
+   0.5+sin(time())
+  )
+ end 
 end
 -->8
 --gpio
@@ -1623,7 +1686,9 @@ function dev_init_game()
   game.score=27
   game.winner="me"
   game.phase=phase.endgame
+  animate_endgame()
  end
+ cls()
 
  room={
   chatlog={
