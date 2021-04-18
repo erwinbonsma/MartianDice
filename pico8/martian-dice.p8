@@ -582,17 +582,27 @@ end
 
 -->8
 -- animations
+die_rolls={1,2,3,1,4,5}
 function animate_throw(throw)
  local update_tp=function(d)
   local old=d.tp
-  d.tp=max(1,flr(
-   d.target_tp-1+(
-    d.entropy/20
-   )^2
-  )%6)
-  if d.tp!=old then
-   sfx(0)
-  end
+
+  --* when entropy is zero the
+  --  type that is off by one
+  --* ufos are at opposite sides
+  --  of the die, see die_rolls
+  --this gives a predictable
+  --roll which always changes
+  --when entropy is negative
+  d.tp=die_rolls[1+(
+   d.target_tp+
+   --shift past second ufo in
+   --die_rolls
+   d.target_tp\4+
+   flr((d.entropy/20)^2)
+  )%6]
+
+  if (d.tp!=old) sfx(0)
  end
 
  for d in all(throw) do
