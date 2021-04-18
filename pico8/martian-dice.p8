@@ -454,6 +454,15 @@ function draw_winner(avatarx)
  pal(11,game.active_player.color)
  spr(4,xc-31,yc-8,2,2)
  spr(4,xc+16,yc-8,2,2)
+
+ for e in all(
+  game.end_anim.earthlings
+ ) do
+  spr(
+   4+2*e.tp,e.x,100,2,2,e.dx>0
+  )
+ end
+
  pal()
 end
 
@@ -823,13 +832,23 @@ function animate_endgame()
   
   return ap
  end
- 
+
+ game.end_anim.earthlings={}
+ for i=1,12 do
+  add(game.end_anim.earthlings,{
+   tp=i%3+2,
+   x=56,
+   dx=(i%2)*2-1,
+   speed=0.2+rnd(2)
+  })
+ end
+
  animate=function()
   local xc=64+flr(
    0.5+32*sin(time()*0.1)
   )
-  local yc=56+flr(
-   0.5+36*cos(time()*0.11)
+  local yc=50+flr(
+   0.5+31*cos(time()*0.11)
   )
   local p=getpoint(xc,yc)
   game.end_anim.x=p.x
@@ -838,6 +857,15 @@ function animate_endgame()
   game.end_anim.r=4+flr(
    0.5+sin(time())
   )
+  
+  for e in all(
+   game.end_anim.earthlings
+  ) do
+   e.x+=e.dx*e.speed
+   if e.x<2 or e.x>109 then
+    e.dx=-e.dx
+   end
+  end
  end 
 end
 -->8
