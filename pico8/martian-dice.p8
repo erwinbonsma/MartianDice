@@ -338,7 +338,7 @@ function title_draw(y0,c2)
  pal()
 
  --flying saucers
- palt(1,true)
+ palt(14,true)
  pal(11,9)
  for i=1,2 do
   local d=title.delta[i]
@@ -1554,9 +1554,9 @@ end
 
 function _init()
  poke(a_room_mgmt,0)
- dev_init_game()
+ --dev_init_game()
 
- --show_menu()
+ show_menu()
 end
 
 __gfx__
