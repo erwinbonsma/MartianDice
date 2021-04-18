@@ -623,7 +623,10 @@ end
 function animate_move(
  old,new,src
 )
- assert(#old<#new)
+ assert(
+  #old<#new,
+  "#old="..#old..",#new="..#new
+ )
  local moving={}
  
  for i=#new,#old+1,-1 do
@@ -882,7 +885,10 @@ function update_throw(
 
  --sanity check
  for tp,num in pairs(new) do
-  assert(num==0)
+  assert(
+   num==0,
+   "#["..tp.."]="..num
+  )
  end
 
  return l
@@ -926,6 +932,9 @@ function read_gpio_game()
   game_gpio_read_delay-=1
   return
  end
+ if animate!=nil then
+  return
+ end
  
  local g={}
  g.round=peek(a_crou)
@@ -943,33 +952,42 @@ function read_gpio_game()
   dice[i]=peek(a_thrw+i-1)
  end
 
+ local sameturn=(
+  game!=nil
+  and game.turn==g.turn
+ )
  local moving={}
- if game==nil
- or g.thrownum!=game.thrownum
- or g.turn!=game.turn then
-  g.throw=new_throw(dice)
- else
+ if sameturn
+ and g.thrownum==game.thrownum then
   g.throw=update_throw(
    game.throw,dice,moving
   )
+ else
+  g.throw=new_throw(dice)
  end
 
+ local prvb={}
+ local prvc={}
+
+ if sameturn then
+  prvb=game.battle
+  prvc=game.collected
+ end
+
+ dice={
+  peek(a_side),peek(a_side+1)
+ }
  g.battle=update_battle(
-  game.battle,
-  {peek(a_side),peek(a_side+1)}
+  prvb,dice
  )
 
  dice={}
  for i=3,5 do
   dice[i]=peek(a_side+i-1)
  end
- if game==nil then
-  g.collected=new_collected(dice)
- else
-  g.collected=update_collected(
-   game.collected,dice
-  )
- end
+ g.collected=update_collected(
+  prvc,dice
+ )
 
  if g.phase==phase.thrown then
   animate_throw(g.throw)
@@ -978,10 +996,16 @@ function read_gpio_game()
    game.battle,g.battle,moving
   )
  elseif g.phase==phase.pickeddice then
-  animate_move(
-   game.collected,g.collected,
-   moving
-  )
+  if #game.battle<#g.battle then
+   animate_move(
+    game.battle,g.battle,moving
+   )
+  else
+   animate_move(
+    game.collected,g.collected,
+    moving
+   )
+  end
  end
 
  if peek(a_ctrl_out)==0 then
