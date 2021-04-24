@@ -138,12 +138,15 @@ function print_outlined(
 end
 
 function print_select(
- msg,x,y,selected
+ msg,x,y,selected,active
 )
- if not selected then
-  print(msg,x,y,4)
+ if selected and active then
+  print_outlined(msg,x,y,9,0,0)
  else
-  print_outlined(msg,x,y,9,4,0)
+  print(
+   msg,x,y,
+   selected and 7 or 15
+  )
  end
 end
 
@@ -258,11 +261,10 @@ end
 function draw_button(
  label,x,y,w,selected,disabled
 )
- color(4)
- if (selected) color(13)
+ color(selected and 9 or 4)
  draw_rrect(x,y,w,8)
 
- color(15)
+ color(selected and 7 or 15)
  if (disabled) color(5)
  print(label,x+3,y+2)
 end
@@ -461,32 +463,36 @@ end
 function menu_draw()
  cls(0)
 
- title_draw(8,15)
+ title_draw(0,15)
 
  for i=1,4 do
   local txt=menuitems[i]
   local x=64-2*#txt
-  local y=60+i*10
+  local y=54+i*10
+  
+  rectfill(24,y-2,103,y+6,4)
+
   print_select(
    txt,x,y,
-   menu.ypos==i and menu.xpos==0
+   menu.ypos==i,
+   menu.xpos==0
   )
  end
 
- print("name",47,52,15)
+ print("name",47,46,15)
  if menu.ypos==1 then
-  edit_draw(menu.name,67,52)
+  edit_draw(menu.name,67,46)
  else
-  print(menu.name,67,52,15)
+  print(menu.name,67,46,15)
  end
 
  if menu.ypos==4 then
-  edit_draw(menu.room,67,43)
+  edit_draw(menu.room,67,35)
 
   if menu.xpos>0
   and is_roomid_set() then
    draw_button(
-    "go",85,41,12,menu.xpos==5
+    "go",87,33,12,menu.xpos==5
    )
   end
  end
@@ -2007,10 +2013,10 @@ end
 
 function _init()
  poke(a_handshke,7)
- show_qr()
+ --show_qr()
 
- --poke(a_room_mgmt,0)
- --show_menu()
+ poke(a_room_mgmt,0)
+ show_menu()
 
  --dev_init_game()
  
