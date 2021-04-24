@@ -340,29 +340,50 @@ function title_draw(y0,c2)
  spr(128,32,y0,9,4)
  pal()
 
- --flying saucers
  palt(14,true)
  pal(11,9)
+
+ --earthlings
+ for e in all(title.earthlings) do
+  local x=e.x
+  local show=true
+  if e.y<112 then
+   local i=(x<64 and 1) or 2
+   x+=title.delta[i][1]
+   
+   show=(
+    e.y>(y0+1+title.delta[1][2])
+   )
+  end
+
+  if show then
+   spr(e.tp*2+2,x,e.y,2,2,e.flip)
+  end
+ end
+
+ --flying saucers
  for i=1,2 do
   local d=title.delta[i]
-  local x=86*i-72+d[1]
+  local x=97*i-89+d[1]
   local y=y0+d[2]+2
+  rectfill(x,y,x+14,y+11,0)
   spr(4,x,y,2,2)
  end
+
  pal()
 
  if (title.room==nil) return
 
  print(
   "room "..title.room,
-  52,y0+35,c2
+  47,y0+35,c2
  )
 
  pal(7,c2)
  if title.public then
-  spr(49,40,y0+33)
+  spr(49,35,y0+33)
  else
-  spr(48,40,y0+33)
+  spr(48,35,y0+33)
  end
  pal()
 end
@@ -382,8 +403,6 @@ end
 
 function menu_draw()
  cls(0)
- color(3)
- print(version)
 
  title_draw(8,15)
 
@@ -397,20 +416,20 @@ function menu_draw()
   )
  end
 
- print("name",52,52,15)
+ print("name",47,52,15)
  if menu.ypos==1 then
-  edit_draw(menu.name,72,52)
+  edit_draw(menu.name,67,52)
  else
-  print(menu.name,72,52,15)
+  print(menu.name,67,52,15)
  end
 
  if menu.ypos==4 then
-  edit_draw(menu.room,72,43)
+  edit_draw(menu.room,67,43)
 
   if menu.xpos>0
   and is_roomid_set() then
    draw_button(
-    "go",90,41,14,menu.xpos==5
+    "go",85,41,12,menu.xpos==5
    )
   end
  end
@@ -427,12 +446,12 @@ end
 
 function qr_draw()
  cls(0)
- title_draw(8,15)
+ title_draw(4,15)
 
- rectfill(31,46,96,111,7)
+ rectfill(31,40,96,105,7)
  palt(0,false)
  palt(14,true)
- sspr(0,96,32,32,33,48,64,64)
+ sspr(0,96,32,32,33,42,64,64)
  palt()
 end
 
@@ -1478,6 +1497,7 @@ function enter_room(room_id)
  room.chatlog={}
  room.help=nil
  title.room=room_id
+ title_init_earthlings(0)
 
  poke(a_chat_in_msg,0)
  poke(a_chat_out_msg,0)
@@ -1628,13 +1648,52 @@ function menu_itemselect()
  end
 end
 
+function title_init_earthlings(
+ n
+)
+ local l={}
+ for i=1,n do
+  add(l,{
+   tp=3+i%3,x=60,y=112,dx=0
+  })
+ end
+ title.earthlings=l
+end
+
 function title_update()
+ --move flying saucers
  for i=1,2 do
   if rnd(10)<1 then
    local d=title.delta[i]
    local v=vector[flr(rnd(4))+1]
    for j=1,2 do
     d[j]=max(min(d[j]+v[j],1),-1)
+   end
+  end
+ end
+
+ --move earthlings
+ for e in all(title.earthlings) do
+  if e.y==112 then
+   if e.dx==0 and rnd(1)<0.1 then
+    e.dx=flr(rnd(2))*2-1
+    e.flip=e.dx>0
+   end
+   if e.dx!=0 and rnd(1)<0.1 then
+    e.dx=0
+   end
+   
+   e.x+=e.dx
+   if e.x<9 or e.x>103 then
+    e.y-=1
+   end
+  else
+   if e.y>0 then
+    e.y-=1
+   else
+    e.x=64
+    e.y=112
+    e.dx=0
    end
   end
  end
@@ -1681,11 +1740,13 @@ function show_menu()
  _update=menu_update
 
  menu.status_msg=nil
+ title_init_earthlings(3)
 end
 
 function show_qr()
  _draw=qr_draw
  _update=qr_update
+ title_init_earthlings(3)
 end
 -->8
 function dev_init_game()
