@@ -220,6 +220,28 @@ function actionbtnp()
  return btnp(❎) or btnp(🅾️)
 end
 
+function clone_log(log)
+ local out={}
+ local n=#log
+
+ if (n==0) return out
+
+ --shallow copy all lines
+ foreach(
+  log,
+  function(l) add(out,l) end
+ )
+
+ --deep-copy last line
+ out[n]={}
+ foreach(
+  log[n],
+  function(l) add(out[n],l) end
+ )
+
+ return out
+end
+
 -->8
 --drawing
 function draw_rrect(
@@ -263,50 +285,74 @@ function draw_vscroll(
 end
 
 function add_chat(
- sender,msg,prefix
+ log,sender,msg,prefix,wip
 )
  if (prefix==nil) prefix=""
  local w=6+(#msg+#prefix)*4
- if #room.chatlog>0 then
-  local l=room.chatlog[
-   #room.chatlog
-  ]
+ local entry={
+  prefix=prefix,
+  sender=sender,
+  msg=msg,
+  clr=pal1[sender]
+ }
+ if (wip) entry.clr=9
+ 
+ if #log>0 then
+  local l=log[#log]
   local e=l[#l]
-  local x=e[4]+w
+  local x=e.xnext+w
   if x<128 then
    --msg fits on this line
-   add(l,{prefix,sender,msg,x+4})
+   entry.xnext=x+4
+   add(l,entry)
    return
   end
  end
+
  --need to start a new line
- add(room.chatlog,{
-  {prefix,sender,msg,w+4}
- })
- if #room.chatlog>3 then
+ entry.xnext=w+4
+ add(log,{entry})
+
+ if #log>3 then
   --remove oldest line
-  deli(room.chatlog,1)
+  deli(log,1)
+ end
+end
+
+function _draw_chatlog(log,y0,n)
+ local i0=1+max(#log-n,0)
+ for i,l in pairs(log) do
+  if i>=i0 then
+   local x=0
+   local y=(i-i0)*6+y0
+   for e in all(l) do
+    print(e.prefix,x,y,e.clr)
+    x+=#e.prefix*4
+    pal(pal1[e.sender],e.clr)
+    spr(e.sender+31,x,y)
+    pal()
+    print(e.msg,x+6,y,e.clr)
+    x=e.xnext
+   end
+  end
  end
 end
 
 function draw_chatlog(y0,n)
- local i0=1+max(
-  #room.chatlog-n,0
- )
- for i,l in pairs(room.chatlog) do
-  if i>=i0 then
-   local x=0
-   local y=(i-i0)*6+y0
-   for chat in all(l) do
-    local c=pal1[chat[2]]
-    print(chat[1],x,y,c)
-    x+=#chat[1]*4
-    spr(chat[2]+31,x,y)
-    print(chat[3],x+6,y,c)
-    x=chat[4]
-   end
-  end
+ local log=room.chatlog
+
+ if room.chatidx!=0
+ and room.chat_active then
+  --add wip message
+  log=clone_log(room.chatlog)
+  add_chat(
+   log,1,
+   chatmsg[room.chatidx],
+   nil,true
+  )
  end
+
+ _draw_chatlog(log,y0,n)
 end
 
 function draw_dice(dice)
@@ -1248,13 +1294,17 @@ function log_client_changes(
 )
  for id,name in pairs(old) do
   if new[id]==nil then
-   add_chat(id,name,"-")
+   add_chat(
+    room.chatlog,id,name,"-"
+   )
   end
  end
 
  for id,name in pairs(new) do
   if old[id]==nil and id!=1 then
-   add_chat(id,name,"+")
+   add_chat(
+    room.chatlog,id,name,"+"
+   )
   end
  end
 end
@@ -1314,6 +1364,7 @@ function read_gpio_chat()
  end
 
  add_chat(
+  room.chatlog,
   peek(a_chat_in_sender),
   chatmsg[peek(a_chat_in_msg)]
  )
@@ -1368,15 +1419,49 @@ function game_chkpass()
  end
 end
 
+function game_chat()
+ if btnp(⬅️) or btnp(➡️) then
+  room.chatidx=0
+ elseif btnp(⬆️) then
+  room.chatidx=(
+   room.chatidx+#chatmsg-2
+  )%#chatmsg+1
+ elseif btnp(⬇️) then
+  room.chatidx=(
+   room.chatidx%#chatmsg+1
+  )
+ elseif room.chatidx!=0
+ and actionbtnp() then
+  poke(
+   a_chat_out_msg,room.chatidx
+  )
+  room.chatidx=0
+  
+  --signal that action button
+  --was handled by chat to
+  --avoid that it also triggers
+  --a game action
+  return true
+ end
+
+ room.chat_active=(
+  room.chatidx!=0
+ )
+end
+
 function game_update()
  read_gpio()
 
  if game.winner then
   animate_endgame()
- elseif game.pickdie then
-  game_pickdie()
- elseif game.chkpass then
-  game_chkpass()
+ end
+ 
+ if not game_chat() then
+  if game.pickdie then
+   game_pickdie()
+  elseif game.chkpass then
+   game_chkpass()
+  end
  end
 
  if peek(a_room_mgmt)==0 then
@@ -1451,6 +1536,10 @@ function room_update()
    room.helpdelta-=1
   end
  end
+
+ room.chat_active=(
+  room.ypos==3
+ )
  
  if actionbtnp() then
   if room.ypos==1
@@ -1465,8 +1554,7 @@ function room_update()
     room.helpdelta=0
    end
   elseif room.ypos==3
-  and room.chatidx!=0
-  and peek(a_chat_out_msg)==0 then
+  and room.chatidx!=0 then
    poke(
     a_chat_out_msg,room.chatidx
    )
@@ -1788,7 +1876,7 @@ function dev_init_game()
   game.score=2
   game.position=1
  end
- if true then
+ if false then
   game.score=27
   game.winner=game.active_player
   game.phase=phase.endgame
@@ -1796,12 +1884,12 @@ function dev_init_game()
  end
  cls()
 
+ local log={}
+ add_chat(log,2,"hi")
+ add_chat(log,3,"hi")
  room={
-  chatlog={
-   {{"",1,"hi",30}},
-   {{"",2,"bye",30}},
-   {{"-",3,"bob",0}}
-  }
+  chatlog=log,
+  chatidx=0
  }
 
  _update=game_update
@@ -1811,6 +1899,10 @@ function dev_init_game()
 end
 
 function dev_init_room()
+ local log={}
+ add_chat(log,2,"hi")
+ add_chat(log,3,"hi")
+
  room={
   clients={
    [1]="bob",
@@ -1828,11 +1920,7 @@ function dev_init_room()
   ypos=1,
   help=nil,
   chatidx=0,
-  chatlog={
-   {{"",1,"hi",0}},
-   {{"",2,"bye",0}},
-   {{"-",3,"bob",0}}
-  }
+  chatlog=log
  }
  title.room="pico"
  title.public=true
@@ -1846,7 +1934,11 @@ function _init()
  poke(a_handshke,7)
  show_qr()
 
+ --poke(a_room_mgmt,0)
+ --show_menu()
+
  --dev_init_game()
+ 
  --dev_init_room()
 end
 
