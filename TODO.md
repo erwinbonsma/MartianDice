@@ -90,6 +90,9 @@ Done:
 	-	Animate throw
 	-	Animate moves
 	-	Show game result
+	-	Add abduction animation to title
+	-	Show QR code
+	-	Enable chat in game screen
 
 TODO:
 -	Add die movement animations
@@ -98,14 +101,11 @@ TODO:
 	-	Show available public rooms
 	-	Limit chat in public rooms
 -	Extend PICO-8 client
-	-	Test end-game HTML integration
-	-	Enable chat in game screen
-	-	Enable move to room from end-game screen
+	-	Track and show scores and wins in room screen
 	-	Handle disconnected/inactive players
 		-	Auto-skip turn for disconnected players
 		-	Remind/prod/skip inactive players
 	-	Sounds
-	-	Show occassional "Don't panic" screen instead of help
 -	Remove memcache dependency
 	-	From Dockerfile
 	-	From layer
