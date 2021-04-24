@@ -278,9 +278,12 @@ export class GameRoom extends React.Component {
 		newClients.delete(this.props.playerName);
 
 		if (newClients.size > 0) {
-			const optGameConfig = this.state.futureGame ? {
-				game_state: this.state.futureGame
-			} : {};
+			const optGameConfig = (
+				// Only share game state when there is still a game in progress
+				this.state.futureGame?.turn_state
+				? { game_state: this.state.futureGame }
+				: {}
+			);
 
 			this.props.websocket.send(JSON.stringify({
 				action: "send-welcome",

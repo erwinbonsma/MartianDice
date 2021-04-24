@@ -152,9 +152,12 @@ function updateClients(clients) {
 
 function welcomeNewClients(newClients) {
 	console.log("Welcoming new clients:", newClients);
-	const optGameConfig = md_gameNext ? {
-		game_state: md_gameNext
-	} : {};
+	const optGameConfig = (
+		// Only share game state when there is an in-progress game
+		md_gameNext?.turn_state
+		? { game_state: md_gameNext }
+		: {}
+	);
 
 	md_socket.send(JSON.stringify({
 		action: "send-welcome",
