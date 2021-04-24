@@ -284,6 +284,12 @@ function draw_vscroll(
  print("⬇️",x,y2,4)
 end
 
+function draw_animation()
+ if animate and animate.draw then
+  animate.draw()
+ end
+end
+
 function add_chat(
  log,sender,msg,prefix,wip
 )
@@ -353,6 +359,11 @@ function draw_chatlog(y0,n)
  end
 
  _draw_chatlog(log,y0,n)
+end
+
+function draw_popup_msg(msg,y)
+ rectfill(0,y,127,y+7,5)
+ print(msg,2,y+1,9)
 end
 
 function draw_dice(dice)
@@ -501,19 +512,18 @@ function qr_draw()
  palt()
 end
 
-function draw_winner()
- local r=game.end_anim.r
- local xc=game.end_anim.x
- local yc=game.end_anim.y
- local x0=xc-flr(2.5*r)
- local y0=yc-flr(2.5*r)
+function draw_winner(
+ r,xc,yc,earthlings
+)
  local winner=game.winner
 
  sspr(
   (winner.avatar%16)*8,
   (winner.avatar\16)*8,
   8,8,
-  x0,y0,8*r,8*r
+  xc-flr(2.5*r),
+  yc-flr(2.5*r),
+  8*r,8*r
  )
  
  local msg=winner.name.." wins!"
@@ -526,9 +536,7 @@ function draw_winner()
  spr(4,xc-31,yc-8,2,2)
  spr(4,xc+16,yc-8,2,2)
 
- for e in all(
-  game.end_anim.earthlings
- ) do
+ for e in all(earthlings) do
   spr(
    4+2*e.tp,e.x,100,2,2,e.dx>0
   )
@@ -550,11 +558,9 @@ function game_draw()
  print(ap.name,x+7,0,ap.color)
 
  draw_chatlog(117,2)
+ draw_animation()
 
- if game.winner!=nil then
-  draw_winner()
-  return
- end
+ if (game.winner!=nil) return
 
  for i=0,2 do
   rectfill(
@@ -699,6 +705,7 @@ function room_draw()
  print(msg,68-2*#msg,100)
 
  draw_chatlog(110,3)
+ draw_animation()
 end
 
 -->8
@@ -732,25 +739,27 @@ function animate_throw(throw)
   update_tp(d)
  end
  
- animate=function()
-  local done=true
-  for d in all(throw) do
-   if d.entropy!=nil then   
-    d.entropy-=1
-    if d.entropy<0 then
-     d.tp=d.target_tp
-     d.target_tp=nil
-     d.entropy=nil
-     sfx(1)
-    else
-     update_tp(d)
+ animate={
+  update=function()
+   local done=true
+   for d in all(throw) do
+    if d.entropy!=nil then
+     d.entropy-=1
+     if d.entropy<0 then
+      d.tp=d.target_tp
+      d.target_tp=nil
+      d.entropy=nil
+      sfx(1)
+     else
+      update_tp(d)
+     end
+     done=false
     end
-    done=false
    end
-  end
   
-  if (done) wait(30)
- end
+   if (done) wait(30)
+  end
+ }
 end
 
 function animate_move(
@@ -786,8 +795,10 @@ function animate_move(
  end
  
  local tmax=30
- if #moving>0 then
-  animate=function()
+ if (#moving==0) return
+ 
+ animate={
+  update=function()
    local done=true
    for d in all(moving) do
     d.t+=1
@@ -812,14 +823,16 @@ function animate_move(
    
    if (done) animate=nil
   end
- end
+ }
 end
 
 function wait(frames)
- animate=function()
-  frames-=1
-  if (frames<0) animate=nil
- end
+ animate={
+  update=function()
+   frames-=1
+   if (frames<0) animate=nil
+  end
+ }
 end
 
 function set_game_animation(
@@ -851,17 +864,13 @@ function set_game_animation(
 end
 
 function animate_endgame()
- if game.end_anim then
-  return
- end
+ if (animate!=nil) return
 
  local path={}
  local ap={}
  
- game.end_anim={
-  earthlings={},
-  ticks=300
- }
+ local earthlings={}
+ local ticks=300
  
  --fairly complex function to
  --reduce jitter effects in the
@@ -912,7 +921,7 @@ function animate_endgame()
  end
 
  for i=1,12 do
-  add(game.end_anim.earthlings,{
+  add(earthlings,{
    tp=i%3+2,
    x=56,
    dx=(i%2)*2-1,
@@ -920,36 +929,75 @@ function animate_endgame()
   })
  end
 
- animate=function()
-	 game.end_anim.ticks-=1
-	 if game.end_anim.ticks<=0 then
-	  enter_room()
-	  return
-	 end
+ local avatar_r=0
+ local avatar_x=0
+ local avatar_y=0
 
-  local xc=64+flr(
-   0.5+32*sin(time()*0.1)
-  )
-  local yc=50+flr(
-   0.5+31*cos(time()*0.11)
-  )
-  local p=getpoint(xc,yc)
-  game.end_anim.x=p.x
-  game.end_anim.y=p.y
+ animate={
+  update=function()
+ 	 ticks-=1
+	  if (ticks<=0) enter_room()
 
-  game.end_anim.r=4+flr(
-   0.5+sin(time())
-  )
+   local xc=64+flr(
+    0.5+32*sin(time()*0.1)
+   )
+   local yc=50+flr(
+    0.5+31*cos(time()*0.11)
+   )
+   local p=getpoint(xc,yc)
+   avatar_x=p.x
+   avatar_y=p.y
+
+   avatar_r=4+flr(
+    0.5+sin(time())
+   )
   
-  for e in all(
-   game.end_anim.earthlings
-  ) do
-   e.x+=e.dx*e.speed
-   if e.x<2 or e.x>109 then
-    e.dx=-e.dx
+   for e in all(earthlings) do
+    e.x+=e.dx*e.speed
+    if e.x<2 or e.x>109 then
+     e.dx=-e.dx
+    end
    end
+  end,
+  draw=function()
+   draw_winner(
+    avatar_r,avatar_x,avatar_y,
+    earthlings
+   )
   end
- end 
+ }
+end
+
+function show_popup_msg(msg)
+ local y=127
+
+ local cr=cocreate(
+  function()
+   for i=1,7 do
+    y-=1
+    yield()
+   end
+  
+   for i=1,60 do
+    yield()
+   end
+
+   for i=1,8 do
+    y+=1
+    yield()
+   end   
+  end
+ )
+ 
+ animate={
+  update=function()
+   assert(coresume(cr))
+   if (y>127) animate=nil
+  end,
+  draw=function()
+   draw_popup_msg(msg,y)
+  end
+ }
 end
 -->8
 --gpio
@@ -1389,6 +1437,10 @@ end
 -->8
 --update
 
+function animation_update()
+ if (animate) animate.update()
+end
+
 function game_pickdie()
  local n=#game.pickdie
  if n>1 then
@@ -1486,9 +1538,7 @@ function game_update()
   end
  end
 
- if animate then
-  animate()
- end
+ animation_update()
 end
 
 function room_update()
@@ -1551,10 +1601,15 @@ function room_update()
  )
  
  if actionbtnp() then
-  if room.ypos==1
-  and room.host!=0 then
-   --initiate game start
-   poke(a_ctrl_in_game,5)
+  if room.ypos==1 then
+   if room.host==1 then
+    --initiate game start
+    poke(a_ctrl_in_game,5)
+   else
+    show_popup_msg(
+     "only the host can start a game"
+    )
+   end
   elseif room.ypos==2 then
    if room.help!=nil then
     room.help=nil
@@ -1562,12 +1617,17 @@ function room_update()
     room.help=0
     room.helpdelta=0
    end
-  elseif room.ypos==3
-  and room.chatidx!=0 then
-   poke(
-    a_chat_out_msg,room.chatidx
-   )
-   room.chatidx=0
+  elseif room.ypos==3 then
+   if room.chatidx!=0 then
+    poke(
+     a_chat_out_msg,room.chatidx
+    )
+    room.chatidx=0
+   else
+    show_popup_msg(
+     "select message using ⬆️ and ⬇️"
+    )
+   end
   elseif room.ypos==4
   and peek(a_room_mgmt)==3 then
    --initiate room exit
@@ -1577,6 +1637,7 @@ function room_update()
 
  read_gpio()
  title_update()
+ animation_update()
 end
 
 function enter_room(room_id)
@@ -1588,6 +1649,7 @@ function enter_room(room_id)
  room.ypos=1
  room.chatidx=0
  room.help=nil
+ room.error=nil
  title.room=room_id
  title_init_earthlings(0)
 
