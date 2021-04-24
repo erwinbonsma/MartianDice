@@ -461,23 +461,22 @@ function draw_winner()
  local yc=game.end_anim.y
  local x0=xc-flr(2.5*r)
  local y0=yc-flr(2.5*r)
- local ap=game.active_player
+ local winner=game.winner
 
--- rectfill(
---  x0-2,y0-2,x0+5*r+1,y0+5*r+1,1
--- )
  sspr(
-  (ap.avatar-32)*8,16,8,8,
+  (winner.avatar%16)*8,
+  (winner.avatar\16)*8,
+  8,8,
   x0,y0,8*r,8*r
  )
  
- local msg=game.winner
- msg=msg.." wins!"
+ local msg=winner.name.." wins!"
  print(
-  msg,xc-2*#msg+1,yc+15,ap.color
+  msg,xc-2*#msg+1,yc+15,
+  winner.color
  )
  palt(14,true)
- pal(11,ap.color)
+ pal(11,winner.color)
  spr(4,xc-31,yc-8,2,2)
  spr(4,xc+16,yc-8,2,2)
 
@@ -806,6 +805,10 @@ function set_game_animation(
 end
 
 function animate_endgame()
+ if game.end_anim then
+  return
+ end
+
  local path={}
  local ap={}
  
@@ -903,7 +906,10 @@ end
 
 --5:start game (set by p8)
 --6:starting game
+--7:bootstrapping (set by p8)
+--8:bootstrapped
 a_ctrl_in_game=0x5f80
+a_handshke=0x5f80
 
 --4:start batch/reset
 a_ctrl_in_room=0x5f81
@@ -913,9 +919,6 @@ a_ctrl_in_room=0x5f81
 a_ctrl_out=0x5f82
 
 a_errr=0x5f83
-a_ctrl_dump=0x607f --tmp
-
-a_handshke=0x607f
 
 a_move=0x5f84
 
@@ -1173,6 +1176,7 @@ function read_gpio_game()
 
  if g.phase==phase.endgame then
   g.winner=ap
+  game=g
   return
  end
  
@@ -1367,7 +1371,9 @@ end
 function game_update()
  read_gpio()
 
- if game.pickdie then
+ if game.winner then
+  animate_endgame()
+ elseif game.pickdie then
   game_pickdie()
  elseif game.chkpass then
   game_chkpass()
@@ -1388,11 +1394,6 @@ function game_update()
 
  if animate then
   animate()
- end
-
- --tmp:debug 
- if btnp(🅾️) then
-  poke(a_ctrl_dump,1)
  end
 end
 
@@ -1479,11 +1480,6 @@ function room_update()
 
  read_gpio()
  title_update()
-
- --tmp:debug 
- if btnp(🅾️) then
-  poke(a_ctrl_dump,1)
- end
 end
 
 function enter_room(room_id)
@@ -1727,16 +1723,19 @@ function menu_update()
  title_update()
 end
 
-function qr_update()
- title_update()
-end
-
 function show_menu()
  _draw=menu_draw
  _update=menu_update
 
  menu.status_msg=nil
  title_init_earthlings(3)
+end
+
+function qr_update()
+ title_update()
+ if peek(a_handshke)==8 then
+  show_menu()
+ end
 end
 
 function show_qr()
@@ -1791,7 +1790,7 @@ function dev_init_game()
  end
  if true then
   game.score=27
-  game.winner="me"
+  game.winner=game.active_player
   game.phase=phase.endgame
   animate_endgame()
  end
@@ -1844,12 +1843,11 @@ function dev_init_room()
 end
 
 function _init()
- poke(a_room_mgmt,0)
- dev_init_game()
- --dev_init_room()
+ poke(a_handshke,7)
+ show_qr()
 
- --show_menu()
- --show_qr()
+ --dev_init_game()
+ --dev_init_room()
 end
 
 __gfx__

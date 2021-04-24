@@ -23,7 +23,7 @@ const gpio_PlayerName = 52;
 const gpio_ChatOut_Msg = 64;
 const gpio_ChatIn_Msg = 65;
 const gpio_ChatIn_SenderId = 66;
-const gpio_Dump = 255;
+const gpio_Handshake = gpio_GameControl;
 
 const maxPlayerNameLength = 6;
 
@@ -432,22 +432,23 @@ function gpioUpdateCounters(phaseId, playerName) {
 	pico8_gpio[gpio_TurnCounters + 3] = phaseId;
 	gpioSetStr(gpio_ActivePlayerName, maxPlayerNameLength, playerName);
 	const playerId = md_clients[playerName];
-	pico8_gpio[gpio_ActivePlayerType] = (playerId
+	pico8_gpio[gpio_ActivePlayerType] = (
+		playerId
 		? playerId
 		: BEHAVIOUR_IDS[md_bots[playerName] || "unknown"] + 6
 	);
 }
 
 function gpioGameEnd() {
-	console.log("Writing game end");
+	console.log("Writing game end", md_game);
 
 	gpioUpdateCounters(gameEndId, md_game.winner);
 	pico8_gpio[gpio_TotalScore] = md_game.scores[md_game.winner];
+
+	pico8_gpio[gpio_GameControl] = 1; // Ready to read
 }
 
 function gpioUpdateTurn(turn) {
-	console.log("Writing new turn status:", turn);
-
 	if (turn.phase === "Throwing" && turn.throw_count === 0) {
 		md_game = md_gameNext;
 	}
@@ -549,9 +550,9 @@ function dump() {
 }
 
 function gpioUpdate() {
-	if (pico8_gpio[gpio_Dump] != 0) {
-		pico8_gpio[gpio_Dump] = 0;
-		dump();
+	if (pico8_gpio[gpio_Handshake] === 7) {
+		console.log("Pico-8 client started");
+		pico8_gpio[gpio_Handshake] = 8;
 	}
 
 	gpioHandleRoomCommands();
@@ -563,15 +564,18 @@ function gpioUpdate() {
 			const turnState = md_turnStates[0];
 
 			md_turnStates = md_turnStates.slice(1);
-			if (turnState != nil) {
+			console.log("turnState =", turnState);
+
+			if (md_turnStates.length === 0) {
+				md_game = md_gameNext;
+			}
+
+			if (turnState) {
 				gpioUpdateTurn(turnState);
 			} else {
 				gpioGameEnd();
 			}
 
-			if (md_turnStates.length === 0) {
-				md_game = md_gameNext;
-			}
 		}
 	} else if (pico8_gpio[gpio_GameControl] == 5) {
 		// Game start requested
