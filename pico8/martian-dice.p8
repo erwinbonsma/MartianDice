@@ -491,14 +491,7 @@ function menu_draw()
   end
  end
 
- if menu.status_msg!=nil then
-  print(
-   menu.status_msg,
-   64-2*#menu.status_msg,
-   120,
-   menu.status_color
-  )
- end
+ draw_animation()
 end
 
 function qr_draw()
@@ -1678,8 +1671,9 @@ function join_room(room_id)
  gpio_puts(a_room,4,room_id)
  gpio_puts(a_name,6,menu.name)
 
- menu.status_msg="joining room..."
- menu.status_color=5
+ show_popup_msg(
+  "joining room "..room_id
+ )
 
  --initiate join
  poke(a_room_mgmt,1)
@@ -1690,8 +1684,9 @@ function create_room()
 
  gpio_puts(a_name,6,menu.name)
 
- menu.status_msg="creating room..."
- menu.status_color=5
+ show_popup_msg(
+  "creating room..."
+ )
 
  --initiate room creation
  poke(a_room_mgmt,6)
@@ -1798,7 +1793,6 @@ function menu_itemselect()
    title.room=""
   end
   title.public=(menu.ypos==2)
-  menu.status_msg=nil
  end
 end
 
@@ -1869,11 +1863,14 @@ function menu_update()
    peek(a_errr)
   ]
   if msg!=nil then
-   menu.status_msg="error: "..msg
+   show_popup_msg(
+    "error: "..msg
+   )
   else
-   menu.status_msg="error: "..peek(a_errr)
+   show_popup_msg(
+    "error: "..peek(a_errr)
+   )
   end
-  menu.status_color=8
   poke(a_room_mgmt,0)
  end
 
@@ -1882,14 +1879,15 @@ function menu_update()
  else
   menu_itemselect()
  end
+
  title_update()
+ animation_update() 
 end
 
 function show_menu()
  _draw=menu_draw
  _update=menu_update
 
- menu.status_msg=nil
  title_init_earthlings(3)
 end
 
