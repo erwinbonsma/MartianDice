@@ -679,7 +679,7 @@ function room_draw()
  end
  
  local disabled={
-  room.host==0,
+  room.host!=1,
   false,
   room.chatidx==0
   or peek(a_chat_msg_out)!=0,
@@ -858,7 +858,10 @@ function animate_endgame()
  local path={}
  local ap={}
  
- game.end_anim={}
+ game.end_anim={
+  earthlings={},
+  ticks=300
+ }
  
  --fairly complex function to
  --reduce jitter effects in the
@@ -908,7 +911,6 @@ function animate_endgame()
   return ap
  end
 
- game.end_anim.earthlings={}
  for i=1,12 do
   add(game.end_anim.earthlings,{
    tp=i%3+2,
@@ -919,6 +921,12 @@ function animate_endgame()
  end
 
  animate=function()
+	 game.end_anim.ticks-=1
+	 if game.end_anim.ticks<=0 then
+	  enter_room()
+	  return
+	 end
+
   local xc=64+flr(
    0.5+32*sin(time()*0.1)
   )
@@ -1352,6 +1360,7 @@ function read_gpio_room()
   room.clients=r.clients
   room.bots=r.bots
   room.size=r.size
+  room.host=r.host
   roomnew=nil
  end
 
@@ -1571,10 +1580,13 @@ function room_update()
 end
 
 function enter_room(room_id)
- room.id=room_id
+ if room_id!=nil then
+  room.id=room_id
+  room.chatlog={}
+ end
+
  room.ypos=1
  room.chatidx=0
- room.chatlog={}
  room.help=nil
  title.room=room_id
  title_init_earthlings(0)
@@ -1876,7 +1888,7 @@ function dev_init_game()
   game.score=2
   game.position=1
  end
- if false then
+ if true then
   game.score=27
   game.winner=game.active_player
   game.phase=phase.endgame
