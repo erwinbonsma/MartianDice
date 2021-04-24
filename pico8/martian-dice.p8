@@ -1595,6 +1595,13 @@ function room_update()
   end
  end
 
+ if room.help42 then
+  room.help42-=1
+  if room.help42==0 then
+   room.help42=nil
+  end
+ end
+
  room.chat_active=(
   room.ypos==3
  )
@@ -1612,8 +1619,11 @@ function room_update()
   elseif room.ypos==2 then
    if room.help!=nil then
     room.help=nil
+   elseif room.help42 then
+    show_popup_msg("don't panic")
    else
     room.help=0
+    room.help42=30
     room.helpdelta=0
    end
   elseif room.ypos==3 then
@@ -2015,12 +2025,12 @@ function _init()
  poke(a_handshke,7)
  --show_qr()
 
- poke(a_room_mgmt,0)
- show_menu()
+ --poke(a_room_mgmt,0)
+ --show_menu()
 
  --dev_init_game()
  
- --dev_init_room()
+ dev_init_room()
 end
 
 __gfx__
