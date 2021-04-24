@@ -455,33 +455,29 @@ function qr_draw()
  palt()
 end
 
-function draw_winner(avatarx)
+function draw_winner()
  local r=game.end_anim.r
  local xc=game.end_anim.x
  local yc=game.end_anim.y
  local x0=xc-flr(2.5*r)
  local y0=yc-flr(2.5*r)
+ local ap=game.active_player
 
 -- rectfill(
 --  x0-2,y0-2,x0+5*r+1,y0+5*r+1,1
 -- )
- for x=0,4 do
-  for y=0,4 do
-   rectfill(
-    x0+x*r,    y0+y*r,
-    x0+x*r+r-1,y0+y*r+r-1,
-    pget(avatarx+x,y)
-   )
-  end
- end
+ sspr(
+  (ap.avatar-32)*8,16,8,8,
+  x0,y0,8*r,8*r
+ )
+ 
  local msg=game.winner
  msg=msg.." wins!"
  print(
-  msg,xc-2*#msg+1,yc+15,
-  game.active_player.color
+  msg,xc-2*#msg+1,yc+15,ap.color
  )
  palt(14,true)
- pal(11,game.active_player.color)
+ pal(11,ap.color)
  spr(4,xc-31,yc-8,2,2)
  spr(4,xc+16,yc-8,2,2)
 
@@ -511,7 +507,7 @@ function game_draw()
  draw_chatlog(117,2)
 
  if game.winner!=nil then
-  draw_winner(x)
+  draw_winner()
   return
  end
 
@@ -1849,11 +1845,11 @@ end
 
 function _init()
  poke(a_room_mgmt,0)
- --dev_init_game()
+ dev_init_game()
  --dev_init_room()
 
  --show_menu()
- show_qr()
+ --show_qr()
 end
 
 __gfx__
