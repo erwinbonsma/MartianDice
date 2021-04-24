@@ -1857,6 +1857,7 @@ function menu_update()
    menu.ypos=4
   end
  end
+
  if peek(a_room_mgmt)==8 then
   --failed to enter room
   local msg=errormsg[
@@ -1887,6 +1888,8 @@ end
 function show_menu()
  _draw=menu_draw
  _update=menu_update
+
+ if (menu.ypos==4) title.room=""
 
  title_init_earthlings(3)
 end
