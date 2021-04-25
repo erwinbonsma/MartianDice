@@ -848,7 +848,7 @@ function animate_game_throw(
 )
  local i=0
  for d in all(dice) do
-  d.entropy=30+i*8
+  d.entropy=30+i*4*(1+rnd(1))
   i+=1
  end
 
@@ -2149,14 +2149,14 @@ function dev_init_room()
 end
 
 function _init()
- show_intro()
+ --show_intro()
 
  --show_qr()
 
  --poke(a_room_mgmt,0)
  --show_menu()
 
- --dev_init_game()
+ dev_init_game()
  
  --dev_init_room()
 end
