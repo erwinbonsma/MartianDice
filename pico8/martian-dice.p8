@@ -725,18 +725,38 @@ function draw_intro_dice(dice)
 
   local frac=
    max(0,min(1,1-d.shift*2))
+
+  local h1=45
+  local w1=45
+  local h2=45
+  local w2=45
+  local tp1=d.tp
+  local tp2=d.tp_prv
+  if flr(d.dir)>=2 then
+   local tmp=tp1
+   tp1=tp2
+   tp2=tmp
+   frac=1-frac
+  end
+  if flr(d.dir)%2==0 then
+   w1*=frac
+   w2=45-w1
+  else
+   h1*=frac
+   h2=45-h1
+  end
   sspr(
-   16+d.tp*16,0,15,15,
-   x,y,45*frac,45
+   16+tp1*16,0,15,15,
+   x,y,w1,h1
   )
   sspr(
-   16+d.tp_prv*16,0,15,15,
-   x+45*frac,y,45*(1-frac),45
+   16+tp2*16,0,15,15,
+   x+45-w2,y+45-h2,w2,h2
   )
   
   --local e=d.entropy or 0
   --print(
-  -- "e="..e..",f="..frac,
+  -- "e"..e..",f"..frac,
   -- x,y,7
   --)
 
@@ -1066,7 +1086,7 @@ function animate_intro()
 
   if d.tp!=old then
    if (old!=nil) d.tp_prv=old
-   sfx(0)
+   if (stat(16)<0) sfx(0)
    return true
   end
  end
@@ -1074,7 +1094,7 @@ function animate_intro()
  for i=0,3 do
   local d={
    target_tp=i+2*(1-i%2),
-   entropy=60+rnd(8),
+   entropy=60+i*8,
    dir=flr(rnd(4)),
    tp_prv=6
   }
@@ -1088,11 +1108,12 @@ function animate_intro()
    for d in all(dice) do
     if d.entropy!=nil then
      d.entropy-=0.4
-     if d.entropy<0 then
+     if d.entropy<4 then
       d.tp=d.target_tp
       d.target_tp=nil
+      d.shift=0
       d.entropy=nil
-      sfx(1)
+      if (stat(16)<0) sfx(1)
      elseif update_tp(d) then
       d.dir=(d.dir+rnd(1)+3.5)%4
      end
@@ -1100,7 +1121,7 @@ function animate_intro()
     end
    end
   
-   if (done) wait(30)
+   if (done) wait(90)
   end,
   draw=function()
    draw_intro_dice(dice)
