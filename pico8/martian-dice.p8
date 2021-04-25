@@ -368,9 +368,51 @@ function draw_popup_msg(msg,y)
  print(msg,2,y+1,9)
 end
 
+function draw_thrown_die(
+ d,scale
+)
+ local sz=15*scale
+ local h1=sz
+ local w1=sz
+ local h2=sz
+ local w2=sz
+
+ local tp1=d.tp
+ local tp2=d.tp_prv
+
+ local frac=
+  max(0,min(1,1-d.shift*2))
+ 
+ if flr(d.rolldir)>=2 then
+  local tmp=tp1
+  tp1=tp2
+  tp2=tmp
+  frac=1-frac
+ end
+ if flr(d.rolldir)%2==0 then
+  w1*=frac
+  w2=sz-w1
+ else
+  h1*=frac
+  h2=sz-h1
+ end
+  
+ sspr(
+  16+tp1*16,0,15,15,
+  d.x,d.y,w1,h1
+ )
+ sspr(
+  16+tp2*16,0,15,15,
+  d.x+sz-w2,d.y+sz-h2,w2,h2
+ )
+end
+
 function draw_dice(dice)
  for d in all(dice) do
   spr(2+d.tp*2,d.x,d.y,2,2)
+  if d.entropy!=nil then
+   draw_thrown_die(d,1)
+  end
  end
 end
 
@@ -712,10 +754,10 @@ end
 
 function draw_intro_dice(dice)
  palt(14,true)
- local i=0
+
  for d in all(dice) do
-  local x=3+(i%2)*77
-  local y=3+(i\2)*77
+  local x=d.x
+  local y=d.y
 
   rectfill(x,y,x+44,y+44,0)
   spr(56,x,y)
@@ -723,44 +765,7 @@ function draw_intro_dice(dice)
   spr(56,x,y+37,1,1,false,true)
   spr(56,x+37,y+37,1,1,true,true)
 
-  local frac=
-   max(0,min(1,1-d.shift*2))
-
-  local h1=45
-  local w1=45
-  local h2=45
-  local w2=45
-  local tp1=d.tp
-  local tp2=d.tp_prv
-  if flr(d.dir)>=2 then
-   local tmp=tp1
-   tp1=tp2
-   tp2=tmp
-   frac=1-frac
-  end
-  if flr(d.dir)%2==0 then
-   w1*=frac
-   w2=45-w1
-  else
-   h1*=frac
-   h2=45-h1
-  end
-  sspr(
-   16+tp1*16,0,15,15,
-   x,y,w1,h1
-  )
-  sspr(
-   16+tp2*16,0,15,15,
-   x+45-w2,y+45-h2,w2,h2
-  )
-  
-  --local e=d.entropy or 0
-  --print(
-  -- "e"..e..",f"..frac,
-  -- x,y,7
-  --)
-
-  i+=1
+  draw_thrown_die(d,3)
  end
 end
 
@@ -781,55 +786,88 @@ end
 -->8
 -- animations
 die_rolls={1,2,3,1,4,5}
-function animate_throw(throw)
+
+function animate_throw(
+ dice,wait_ticks
+)
  local update_tp=function(d)
   local old=d.tp
-
-  --* when entropy is zero the
-  --  type that is off by one
-  --* ufos are at opposite sides
-  --  of the die, see die_rolls
-  --this gives a predictable
-  --roll which always changes
-  --when entropy is negative
+  local f=(d.entropy/20)^2
   d.tp=die_rolls[1+(
-   d.target_tp+
+   d.target_tp+5+
    --shift past second ufo in
    --die_rolls
    d.target_tp\4+
-   flr((d.entropy/20)^2)
+   flr(f)
   )%6]
+  d.shift=f-flr(f)
 
-  if (d.tp!=old) sfx(0)
+  if d.tp!=old then
+   d.tp_prv=old
+   if (stat(16)<0) sfx(0)
+   return true
+  end
  end
 
- for d in all(throw) do
+ for d in all(dice) do
   d.target_tp=d.tp
-  d.entropy=60+rnd(8)^2
-  update_tp(d)
+  d.tp_prv=6
+  d.rolldir=rnd(4)
+  update_tp(d) 
  end
  
  animate={
   update=function()
    local done=true
-   for d in all(throw) do
+   for d in all(dice) do
     if d.entropy!=nil then
-     d.entropy-=1
-     if d.entropy<0 then
+     d.entropy-=0.4
+     if d.entropy<4 then
       d.tp=d.target_tp
       d.target_tp=nil
+      d.shift=0
       d.entropy=nil
       sfx(1)
-     else
-      update_tp(d)
+     elseif update_tp(d) then
+      d.rolldir=(
+       d.rolldir+rnd(1)+3.5
+      )%4
      end
      done=false
     end
    end
   
-   if (done) wait(30)
+   if (done) wait(wait_ticks)
   end
  }
+end
+
+function animate_game_throw()
+ local i=0
+ for d in all(game.throw) do
+  d.entropy=30+i*8
+  i+=1
+ end
+
+ animate_throw(game.throw,30)
+end
+
+function animate_intro()
+ local dice={}
+
+ for i=0,3 do
+  add(dice,{
+   x=3+(i%2)*77,
+   y=3+(i\2)*77,
+   tp=i+2*(1-i%2),
+   entropy=60+i*8
+  })
+ end
+
+ animate_throw(dice,90)
+ animate.draw=function()
+  draw_intro_dice(dice)
+ end
 end
 
 function animate_move(
@@ -1069,65 +1107,6 @@ function show_popup_msg(msg)
  }
 end
 
-function animate_intro()
- local dice={}
-
- local update_tp=function(d)
-  local old=d.tp
-  local f=(d.entropy/20)^2
-  d.tp=die_rolls[1+(
-   d.target_tp+5+
-   --shift past second ufo in
-   --die_rolls
-   d.target_tp\4+
-   flr(f)
-  )%6]
-  d.shift=f-flr(f)
-
-  if d.tp!=old then
-   if (old!=nil) d.tp_prv=old
-   if (stat(16)<0) sfx(0)
-   return true
-  end
- end
- 
- for i=0,3 do
-  local d={
-   target_tp=i+2*(1-i%2),
-   entropy=60+i*8,
-   dir=flr(rnd(4)),
-   tp_prv=6
-  }
-  update_tp(d)
-  add(dice,d)
- end
-
- animate={
-  update=function()
-   local done=true
-   for d in all(dice) do
-    if d.entropy!=nil then
-     d.entropy-=0.4
-     if d.entropy<4 then
-      d.tp=d.target_tp
-      d.target_tp=nil
-      d.shift=0
-      d.entropy=nil
-      if (stat(16)<0) sfx(1)
-     elseif update_tp(d) then
-      d.dir=(d.dir+rnd(1)+3.5)%4
-     end
-     done=false
-    end
-   end
-  
-   if (done) wait(90)
-  end,
-  draw=function()
-   draw_intro_dice(dice)
-  end
- }
-end
 
 -->8
 --gpio
@@ -2084,8 +2063,8 @@ function dev_init_game()
  )
  animate_move(b0,b1,moving)
  game={
-  throw=t1,
-  battle=b1,
+  throw=t0,
+  battle=b0,
   collected=update_collected(
    {},{[4]=2}
   ),
@@ -2104,7 +2083,7 @@ function dev_init_game()
  game.die_idx=1
  --game.chkpass=true
  --game.pass=false
- --animate_throw(game.throw)
+ animate_game_throw()
 
  if false then
   game.endcause=1
@@ -2112,7 +2091,7 @@ function dev_init_game()
   game.score=2
   game.position=1
  end
- if true then
+ if false then
   game.score=27
   game.winner=game.active_player
   game.phase=phase.endgame
