@@ -436,18 +436,18 @@ function draw_throw(throw)
 end
 
 function title_draw(c2)
- palt(14,true)
+ rectfill(26,0,101,34,4)
 
- rectfill(26,0,101,32,4)
+ palt(14,true)
 
  --logo
  palt(0,false)
  pal(4,9)
- spr(128,28,1,9,4)
+ spr(128,28,2,9,4)
  pal(4,4)
 
  palt(0,true)
- pal(11,9)
+
  --earthlings
  for e in all(title.earthlings) do
   local x=e.x
@@ -467,6 +467,7 @@ function title_draw(c2)
  end
 
  --flying saucers
+ pal(11,9)
  for i=1,2 do
   local d=title.delta[i]
   local x=97*i-89+d[1]
@@ -474,19 +475,20 @@ function title_draw(c2)
   rectfill(x,y,x+14,y+11,0)
   spr(4,x,y,2,2)
  end
+ pal()
 
  if (title.room==nil) return
 
  print(
   "room "..title.room,
-  47,37,c2
+  47,39,c2
  )
 
  pal(7,c2)
  if title.public then
-  spr(49,36,35)
+  spr(49,38,37)
  else
-  spr(48,36,35)
+  spr(48,38,37)
  end
  pal()
 end
@@ -523,20 +525,20 @@ function menu_draw()
   )
  end
 
- print("name",47,45,15)
+ print("name",47,47,15)
  if menu.ypos==1 then
-  edit_draw(menu.name,67,45)
+  edit_draw(menu.name,67,47)
  else
-  print(menu.name,67,45,15)
+  print(menu.name,67,47,15)
  end
 
  if menu.ypos==4 then
-  edit_draw(menu.room,67,37)
+  edit_draw(menu.room,67,39)
 
   if menu.xpos>0
   and is_roomid_set() then
    draw_button(
-    "go",87,35,12,menu.xpos==5
+    "go",87,37,12,menu.xpos==5
    )
   end
  end
@@ -655,7 +657,7 @@ function draw_help()
  )
  palt(14,true)
  for i=1,7 do
-  local y=6*i+44-ysub
+  local y=6*i+46-ysub
   local j=i+room.help\helpscroll
   print(help[j],0,y,15)
   if j==1 then
@@ -675,14 +677,14 @@ function draw_help()
  end
  
  draw_vscroll(
-  121,50,86,room.help/helpmax
+  121,52,86,room.help/helpmax
  )
 end
 
 function draw_room_member_1col(
  n,sprite,name,c
 )
- local y=50+n*8
+ local y=56+n*8
  spr(sprite,51,y)
  print(name,58,y,c)
 end
@@ -691,7 +693,7 @@ function draw_room_member_2cols(
  n,sprite,name,c
 )
  local x=32+(n%2)*34
- local y=50+flr(n/2)*8
+ local y=56+(n\2)*8
  spr(sprite,x,y)
  print(name,x+7,y,c)
 end
@@ -842,14 +844,16 @@ function animate_throw(
  }
 end
 
-function animate_game_throw()
+function animate_game_throw(
+ dice
+)
  local i=0
- for d in all(game.throw) do
+ for d in all(dice) do
   d.entropy=30+i*8
   i+=1
  end
 
- animate_throw(game.throw,30)
+ animate_throw(dice,30)
 end
 
 function animate_intro()
@@ -947,7 +951,7 @@ function set_game_animation(
 )
  local p=g.phase
  if p==phase.thrown then
-  animate_throw(g.throw)
+  animate_game_throw(g.throw)
  elseif p==phase.movedtanks then
   animate_move(
    game.battle,g.battle,moving
@@ -1080,7 +1084,7 @@ function show_popup_msg(msg)
 
  local cr=cocreate(
   function()
-   for i=1,7 do
+   for i=1,6 do
     y-=1
     yield()
    end
@@ -1089,7 +1093,7 @@ function show_popup_msg(msg)
     yield()
    end
 
-   for i=1,8 do
+   for i=1,7 do
     y+=1
     yield()
    end   
@@ -2083,7 +2087,7 @@ function dev_init_game()
  game.die_idx=1
  --game.chkpass=true
  --game.pass=false
- animate_game_throw()
+ animate_game_throw(game.throw)
 
  if false then
   game.endcause=1
