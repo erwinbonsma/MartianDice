@@ -86,10 +86,12 @@ vector={
 
 public_room="pico"
 
---client names
-pal1={12,13,2,15,6,3}
---bot names
+--client colors
+pal1={12,13,2,15,6,3,[0]=1}
+--bot colors
 pal2={7,8,11,10}
+--die colors
+pal3={11,8,10,7,12}
 
 title={
  --flying saucer movement
@@ -593,6 +595,36 @@ function draw_winner(
  pal()
 end
 
+function draw_game_scores()
+ local np=game.nplayer
+ local w=2
+ local sep=max(0,4-np)
+ if (np<=2) w=4
+ local x0=(12-np*(w+sep)+sep)\2
+
+ --finish
+ for i=0,6 do
+  rectfill(
+   i*2-1,9,i*2,10,(i%2)*6
+  )
+ end
+ --start
+ rectfill(0,110,11,111,6)
+
+ for i=1,np do
+  local pid=game.players[i]
+  local y0=110
+  local x=x0+(i-1)*(w+sep)
+  local c=pal1[pid]
+  if (c==nil) c=pal2[pid-6]
+  rectfill(
+   x,y0-draw_scores[i]*4-2,
+   x+w-1,y0,
+   c
+  )
+ end
+end
+
 function game_draw()
  cls()
 
@@ -616,31 +648,30 @@ function game_draw()
   )
  end
 
- rectfill(0,7,10,41,4)
- print(game.thrownum,4,14,0)
- 
  palt(14,true)
  palt(0,false)
  draw_throw(game.throw)
  draw_dice(game.battle)
  draw_dice(game.collected)
  palt()
+ 
+ draw_game_scores()
 
  if game.endcause!=0 then
   local msg=endcause[game.endcause]
   print_outlined(
-   msg,64-2*#msg,26,9,0
+   msg,70-2*#msg,26,9,0
   )
-  
-  msg="+"..game.scored.."   "
-  local l1=#msg
-  msg=msg..game.score.."(#"
-  msg=msg..game.position..")"
-  local x=64-2*#msg
-  print_outlined(msg,x,34,9,0)
-  pal(4,0)
-  spr(54,x+l1*4-11,33,2,1)
-  pal()
+
+  if game.scored>0 then
+   msg="+"..game.scored.." point"
+   if (game.scored>1) msg..="s"
+  else
+   msg="no points"
+  end
+  print_outlined(
+   msg,70-2*#msg,34,9,0
+  )
  end
 
  if game.chkpass then
@@ -652,9 +683,6 @@ function game_draw()
   draw_button(
    "no",86,27,12,game.pass
   )
- elseif game.phase==phase.checkpass then
-  msg="waiting for "..ap.name
-  print(msg,64-2*#msg,22,5)
  end
 end
 
@@ -1209,6 +1237,11 @@ a_chat_out_msg=0x5fc0
 a_chat_in_msg=0x5fc1
 a_chat_in_sender=0x5fc2
 
+a_nply=0x5fd0
+--scores & players in turn order
+a_ascr=0x5fd1 -- 6 bytes
+a_aply=0x5fd7 -- 6 bytes
+
 function die_choices(g)
  local choice={}
  
@@ -1405,8 +1438,14 @@ function read_gpio_game()
 
  g.endcause=peek(a_endc)
  g.scored=peek(a_trsc)
- g.score=peek(a_ttsc)
- g.position=peek(a_cpos)
+
+ g.nplayer=peek(a_nply)
+ g.scores={}
+ g.players={}
+ for i=1,g.nplayer do
+  add(g.scores,peek(a_ascr+i-1))
+  add(g.players,peek(a_aply+i-1))
+ end
 
  local ap={}
  local v=peek(a_atyp)
@@ -1692,6 +1731,14 @@ function game_update()
   end
  end
 
+ for i=1,game.nplayer do
+  local delta=(
+   game.scores[i]-draw_scores[i]
+  )
+  delta=max(-0.2,min(0.2,delta))
+  draw_scores[i]+=delta
+ end
+
  animation_update()
 end
 
@@ -1707,8 +1754,7 @@ function room_update()
  end
 
  if game!=nil then
-  _update=game_update
-  _draw=game_draw
+  show_game()
   return
  end
 
@@ -2059,6 +2105,16 @@ function menu_update()
  animation_update() 
 end
 
+function show_game()
+ draw_scores={}
+ for i=1,game.nplayer do
+  add(draw_scores,0)
+ end
+
+ _draw=game_draw
+ _update=game_update
+end
+
 function show_menu()
  _draw=menu_draw
  _update=menu_update
@@ -2126,7 +2182,10 @@ function dev_init_game()
    name="me",
    avatar=32,
    color=pal1[1]
-  }
+  },
+  nplayer=3,
+  scores={24,13,0},
+  players={1,3,0}
  }
  --game.pickdie=die_choices(game)
  game.die_idx=1
@@ -2157,8 +2216,7 @@ function dev_init_game()
   id="test"
  }
 
- _update=game_update
- _draw=game_draw
+ show_game()
  poke(a_ctrl_out,0)
  poke(a_room_mgmt,3)
 end
@@ -2196,14 +2254,14 @@ function dev_init_room()
 end
 
 function _init()
- --show_intro()
+ show_intro()
 
  --show_qr()
 
  --poke(a_room_mgmt,0)
  --show_menu()
 
- dev_init_game()
+ --dev_init_game()
  
  --dev_init_room()
 

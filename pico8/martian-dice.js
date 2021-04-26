@@ -12,8 +12,6 @@ const gpio_Throw = 16;
 const gpio_SideDice = 21;
 const gpio_EndCause = 26;
 const gpio_TurnScore = 27; // Only valid when EndCause != 0
-const gpio_TotalScore = 28;
-const gpio_CurrentPos = 29; // Only valid when EndCause != 0
 const gpio_TurnCounters = 32;
 const gpio_ActivePlayerType = 36;
 const gpio_ActivePlayerName = 37;
@@ -25,6 +23,9 @@ const gpio_PlayerName = 52;
 const gpio_ChatOut_Msg = 64;
 const gpio_ChatIn_Msg = 65;
 const gpio_ChatIn_SenderId = 66;
+const gpio_NumPlayers = 80;
+const gpio_Scores = 81; // Listed in turn order
+const gpio_TurnOrder = 87; // Client Ids in turn order, 0 when player is not present
 const gpio_Handshake = gpio_GameControl;
 
 const maxPlayerNameLength = 6;
@@ -94,6 +95,20 @@ function playerTurnOrder(playerName) {
 			return i+1;
 		}
 	}
+	return 0;
+}
+
+function playerNameToId(playerName) {
+	const clientId = md_clients[playerName];
+	if (clientId) {
+		return clientId;
+	}
+	const botBehaviour = md_bots[playerName];
+	if (botBehaviour) {
+		return 6 + BEHAVIOUR_IDS[botBehaviour]; 
+	}
+
+	// Unknown or disconnected player
 	return 0;
 }
 
@@ -412,23 +427,21 @@ function gpioUpdateDice(dice, gpioAddress) {
 	});
 }
 
-function gpioUpdateScore(turn) {
-	var totalScore = md_game.scores[md_game.active_player];
-
+function gpioUpdateTurnScore(turn) {
 	pico8_gpio[gpio_EndCause] = turn.end_cause_id || 0;
 
 	if (turn.end_cause_id) {
-		totalScore += turn.score;
-
-		const currentPos = Object.values(md_game.scores).filter(
-			score => (score > totalScore)
-		).length + 1;
-
 		pico8_gpio[gpio_TurnScore] = turn.score;
-		pico8_gpio[gpio_CurrentPos] = currentPos;
 	}
+}
 
-	pico8_gpio[gpio_TotalScore] = totalScore;
+function gpioUpdateScores() {
+	pico8_gpio[gpio_NumPlayers] = md_game.players.length;
+	md_game.players.forEach((name, index) => {
+		pico8_gpio[gpio_Scores + index] = md_game.scores[name];
+		// Zero when player is currently not present in room
+		pico8_gpio[gpio_TurnOrder + index] = playerNameToId(name);
+	});
 }
 
 function gpioUpdateCounters(phaseId, playerName) {
@@ -448,7 +461,7 @@ function gpioGameEnd() {
 	console.log("Writing game end", md_game);
 
 	gpioUpdateCounters(gameEndId, md_game.winner);
-	pico8_gpio[gpio_TotalScore] = md_game.scores[md_game.winner];
+	gpioUpdateScores();
 
 	pico8_gpio[gpio_GameControl] = 1; // Ready to read
 }
@@ -460,7 +473,8 @@ function gpioUpdateTurn(turn) {
 
 	gpioUpdateDice(turn.throw || {}, gpio_Throw);
 	gpioUpdateDice(turn.side_dice || {}, gpio_SideDice);
-	gpioUpdateScore(turn);
+	gpioUpdateTurnScore(turn);
+	gpioUpdateScores();
 	gpioUpdateCounters(PHASE_IDS[turn.phase], md_game.active_player);
 	pico8_gpio[gpio_TurnCounters + 2] = turn.throw_count;
 
