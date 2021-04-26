@@ -1210,7 +1210,10 @@ function die_choices(g)
  for d in all(g.throw) do
   choice[d.tp]=true
  end
- assert(not choice[2])
+ assert(
+  not choice[2],
+  "tanks in throw"
+ )
 
  --remove collected earthlings
  for d in all(g.collected) do
@@ -1277,7 +1280,10 @@ function update_battle(old,new)
  for tp=1,2 do
   local x=8
   local y=30+tp*16
-  assert(new[tp]>=w[tp])
+  assert(
+   new[tp]>=w[tp],
+   "update_battle new<old"
+  )
   for i=1,new[tp] do
    if i>w[tp] then
     add(l,{tp=tp,x=x,y=y})
@@ -1322,7 +1328,10 @@ end
 function update_throw(
  old,new,removed
 )
- assert(#removed==0)
+ assert(
+  #removed==0,
+  "removed not empty"
+ )
  local l={}
  for d in all(old) do
   if d!=nil and new[d.tp]>0 then
@@ -1514,7 +1523,9 @@ function read_gpio_room()
  end
 
  local r=roomnew
- assert(r!=nil)
+ assert(
+  r!=nil,"roomnew is nil"
+ )
 
  local name=gpio_gets(a_pnam,6)
  local typ=peek(a_ptyp)
@@ -1526,8 +1537,14 @@ function read_gpio_room()
   r.pbots-=1
  end
  r.size+=1
- assert(r.pclients>=0)
- assert(r.pbots>=0)
+ assert(
+  r.pclients>=0,
+  "negative clients"
+ )
+ assert(
+  r.pbots>=0,
+  "negative bots"
+ )
 
  if r.pclients==0
  and r.pbots==0 then
@@ -1891,7 +1908,10 @@ function menu_edittext()
    menu.room,max_xpos,false
   )
  else
-  assert(false)
+  assert(
+   false,
+   "unexpected menu.ypos"
+  )
  end
 
  if actionbtnp() then
