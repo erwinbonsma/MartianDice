@@ -24,10 +24,39 @@ class MetaGameHandler(GameHandler):
 			"host": self.room.host()
 		})
 
+	def check_and_repair_host(self):
+		host = self.room.host()
+		clients = list(self.clients.values())
+
+		if len(clients) > 0 and not host in clients:
+			self.logger.warn(f"Host {host} is not one of the clients ({clients}). Initiating repair")
+
+			# Assign an (arbitrary) new host
+			new_host = self.room.set_host(list(self.clients.values())[0], old_host = host)
+
+			# Signal host change by returning True
+			return new_host is not None
+
+		if len(clients) == 0 and host is not None:
+			self.room.clear_host()
+
+			# No need to signal change, as room is empty
+			pass
+
 	async def send_clients_event(self):
 		"""Sends event with all connected clients (human players and observers)"""
-		message = self.clients_message()
-		await self.broadcast(message)
+		self.check_and_repair_host()
+
+		await self.broadcast(self.clients_message())
+
+	async def send_clients(self):
+		"""Returns clients info to requesting client"""
+		if self.check_and_repair_host():
+			# Host changed, so broadcast to all clients
+			await self.send_clients_event()
+		else:
+			# Only send clients info to requesting client
+			await self.send_message(self.clients_message())
 
 	def game_config_message(self, game_config):
 		return json.dumps({
@@ -101,11 +130,7 @@ class MetaGameHandler(GameHandler):
 				ErrorCode.InternalServerError
 			)
 		self.clients = updated_clients
-
-		host = self.room.host()
-		if host is None:
-			host = client_id
-			self.room.set_host(host)
+		self.client_id = client_id
 
 		await self.send_clients_event()
 
@@ -128,15 +153,6 @@ class MetaGameHandler(GameHandler):
 
 		self.db.clear_room_for_connection(self.connection)
 
-		host = self.room.host()
-		if self.client_id == host:
-			if self.clients:
-				# Assign an (arbitrary) new host
-				host = self.room.set_host(list(self.clients.values())[0], old_host = host)
-			else:
-				host = None
-				self.room.clear_host()
-
 		await self.send_clients_event()
 
 	async def switch_host(self):
@@ -156,9 +172,6 @@ class MetaGameHandler(GameHandler):
 			await self.send_message(self.game_config_message(game_config), dest_client = client)
 			if game_state is not None:
 				await self.send_message(self.game_state_message(game_state), dest_client = client)
-
-	async def send_clients(self):
-		await self.send_message(self.clients_message())
 
 	async def update_config(self, game_config):
 		self.check_can_configure_game("update game config")

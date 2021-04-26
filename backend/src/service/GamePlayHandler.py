@@ -128,4 +128,4 @@ class GamePlayHandler(GameHandler):
 		if cmd == "end-turn":
 			return await self.end_turn(game_state)
 
-		logger.warn(f"Unrecognized command {cmd}")
+		self.logger.warn(f"Unrecognized command {cmd}")
