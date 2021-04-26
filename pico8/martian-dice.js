@@ -1,3 +1,5 @@
+const serviceEndpoint = "ws://127.0.0.1:8765";
+
 const gpio_GameControl = 0;
 const gpio_RoomControl = 1;
 const gpio_OutControl = 2;
@@ -342,7 +344,7 @@ function leaveRoom() {
 function connectToServer(callback) {
 	console.log("Connecting to server");
 
-	const socket = new WebSocket("ws://127.0.0.1:8765");
+	const socket = new WebSocket(serviceEndpoint);
 	socket.addEventListener('open', () => {
 		console.log("Opened websocket");
 		md_socket = socket;
