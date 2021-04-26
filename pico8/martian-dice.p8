@@ -598,10 +598,10 @@ function game_draw()
 
  color(4)
  print("round "..game.round,0,0)
- print("throw "..game.thrownum,100,0)
+ print("room "..room.id,93,0)
 
  local ap=game.active_player
- local x=60-#ap.name*2
+ local x=58-#ap.name*2
  spr(ap.avatar,x,0)
  print(ap.name,x+7,0,ap.color)
 
@@ -612,9 +612,12 @@ function game_draw()
 
  for i=0,2 do
   rectfill(
-   6,7+37*i,121,41+37*i-i\2,4
+   13,7+37*i,127,41+37*i-i\2,4
   )
  end
+
+ rectfill(0,7,10,41,4)
+ print(game.thrownum,4,14,0)
  
  palt(14,true)
  palt(0,false)
@@ -649,6 +652,9 @@ function game_draw()
   draw_button(
    "no",86,27,12,game.pass
   )
+ elseif game.phase==phase.checkpass then
+  msg="waiting for "..ap.name
+  print(msg,64-2*#msg,22,5)
  end
 end
 
@@ -1255,7 +1261,7 @@ function update_collected(
   for i=1,num do
    add(l,{
     tp=tp,
-    x=(n%7)*16+8,
+    x=(n%7)*16+15,
     y=(n\7)*16+83
    })
    n+=1    
@@ -1278,7 +1284,7 @@ function update_battle(old,new)
  end
 
  for tp=1,2 do
-  local x=8
+  local x=15
   local y=30+tp*16
   assert(
    new[tp]>=w[tp],
@@ -1314,7 +1320,7 @@ function new_throw(dice)
  shuffle(l)
 
  for i,d in pairs(l) do
-  d.x=((i-1)%7)*16+8
+  d.x=((i-1)%7)*16+15
   d.y=((i-1)\7)*16+9
  end
 
@@ -2147,7 +2153,8 @@ function dev_init_game()
  add_chat(log,3,"hi")
  room={
   chatlog=log,
-  chatidx=0
+  chatidx=0,
+  id="test"
  }
 
  _update=game_update
@@ -2189,14 +2196,14 @@ function dev_init_room()
 end
 
 function _init()
- show_intro()
+ --show_intro()
 
  --show_qr()
 
  --poke(a_room_mgmt,0)
  --show_menu()
 
- --dev_init_game()
+ dev_init_game()
  
  --dev_init_room()
 
