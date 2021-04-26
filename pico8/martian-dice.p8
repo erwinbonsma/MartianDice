@@ -1475,6 +1475,7 @@ function read_gpio_game()
  local sameturn=(
   game!=nil
   and game.turn==g.turn
+  and game.round==g.round
  )
  local moving={}
  if sameturn
