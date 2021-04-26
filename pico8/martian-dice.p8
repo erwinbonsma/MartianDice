@@ -3,6 +3,7 @@ version 32
 __lua__
 -- martian dice
 -- (c) 2021, erwin bonsma
+version="0.9"
 
 phase={
  throwing=1,
@@ -796,8 +797,9 @@ function intro_draw()
  palt(14,true)
  spr(128,29,50,9,4)
  pal()
-
  palt()
+
+ print("v"..version,82,73,5)
 
  draw_animation()
 end
