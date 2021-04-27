@@ -41,11 +41,24 @@ menuitems={
 }
 
 --label,xpos
-buttons={
- {"start",0},
- {"help",29},
- {"send",82},
- {"exit",107}
+room_buttons={
+ {label="start",x=0,y=98},
+ {label="help",x=29,y=98},
+ {label="send",x=82,y=98},
+ {label="exit",x=107,y=98}
+}
+
+menu_go_button={
+ label="go",x=87,y=38
+}
+
+game_pass_buttons={
+ {label="yes",x=73,y=27},
+ {label="no",x=92,y=27}
+}
+
+game_exit_button={
+ label="exit",x=106,y=105
 }
 
 chatmsg={
@@ -249,25 +262,45 @@ end
 -->8
 --drawing
 function draw_rrect(
- x,y,w,h
+ x,y,w,h,c,cl,cd
 )
- rectfill(x+1,y+1,x+w-1,y+h-1)
+ rectfill(x+1,y+1,x+w-1,y+h-1,c)
 
- line(x,y+1,x,y+h-1,15)
- line(x+1,y,x+w-1,y,15)
- line(x+w,y+1,x+w,y+h-1,5)
- line(x+1,y+h,x+w-1,y+h,5)
+ cl=cl or 15
+ cd=cd or 5
+ line(x,y+1,x,y+h-1,cl)
+ line(x+1,y,x+w-1,y,cl)
+ line(x+w,y+1,x+w,y+h-1,cd)
+ line(x+1,y+h,x+w-1,y+h,cd)
 end
 
-function draw_button(
- label,x,y,w,selected,disabled
-)
- color(selected and 9 or 4)
- draw_rrect(x,y,w,8)
+function draw_button(b)
+ draw_rrect(
+  b.x,b.y,#b.label*4+4,8,
+  b.selected and 9 or 4,
+  b.pressed and 5,
+  b.pressed and 5
+ )
 
- color(selected and 7 or 15)
- if (disabled) color(5)
- print(label,x+3,y+2)
+ color(b.selected and 7 or 15)
+ if (b.disabled) color(5)
+ print(b.label,b.x+3,b.y+2)
+end
+
+function press_button(b)
+ b.pressed=true
+ b.press_count=10
+end
+
+function update_button(b)
+ if b.pressed then
+  b.press_count-=1
+  b.pressed=b.press_count>0
+ end
+end
+
+function reset_button(b)
+ b.pressed=false
 end
 
 function draw_vscroll(
@@ -275,13 +308,11 @@ function draw_vscroll(
 )
  line(x+3,y1,x+3,y2,5)
  local y=y1+(y2-y1-5)*progress
- color(4)
- draw_rrect(x,y,6,4)
- local c=15
- if (progress<0.01) c=5
+ draw_rrect(x,y,6,4,4)
+ local c
+ c=progress<0.01 and 5 or 15
  rectfill(x+2,y1-4,x+5,y1-2,c)
- c=15
- if (progress>0.99) c=5
+ c=progress>0.99 and 5 or 15
  rectfill(x+2,y2+1,x+5,y2+3,c)
  print("⬆️",x,y1-5,4)
  print("⬇️",x,y2,4)
@@ -541,10 +572,14 @@ function menu_draw()
 
   if menu.xpos>0
   and is_roomid_set() then
-   draw_button(
-    "go",87,38,12,menu.xpos==5
+   menu_go_button.selected=(
+    menu.xpos==5
    )
+   draw_button(menu_go_button)
   end
+ end
+ if menu_go_button.pressed then
+  draw_button(menu_go_button)
  end
 
  draw_animation()
@@ -680,19 +715,23 @@ function game_draw()
 
  if game.chkpass then
   print("continue?",35,29,15)
-  draw_button(
-   "yes",73,27,16,not game.pass
-  )
-  draw_button(
-   "no",92,27,12,game.pass
+
+  game_pass_buttons[
+   1
+  ].selected=not game.pass
+  game_pass_buttons[
+   2
+  ].selected=game.pass
+  foreach(
+   game_pass_buttons,draw_button
   )
  end
 
  if not game.is_player then
-  draw_button(
-   "exit",106,105,20,
+  game_exit_button.selected=(
    room.chatidx==0
   )
+  draw_button(game_exit_button)
  end
 end
 
@@ -791,19 +830,18 @@ function room_draw()
   draw_room_members()
  end
  
- local disabled={
-  not room.is_host,
-  false,
-  room.chatidx==0
-  or peek(a_chat_msg_out)!=0,
-  false
- }
- for i,b in pairs(buttons) do
-  draw_button(
-   b[1],b[2],98,#b[1]*4+4,
-   room.ypos==i,disabled[i]
-  )
+ room_buttons[
+  1
+ ].disabled=not room.is_host
+ room_buttons[
+  3
+ ].disabled=room.chatidx==0
+
+ for i,b in pairs(room_buttons) do
+  b.selected=room.ypos==i
+  draw_button(b)
  end
+
  rect(54,98,80,106,5)
  local msg=chatmsg[room.chatidx]
  if (msg==nil) msg="chat"
@@ -1737,6 +1775,7 @@ function game_update()
   and peek(a_room_mgmt)==3 then
    --initiate observer room exit
    poke(a_room_mgmt,4)
+   press_button(game_exit_button)
   end
  end
 
@@ -1760,6 +1799,8 @@ function game_update()
  if game.winner and done then
   show_game_end()
  end
+ 
+ update_button(game_exit_button)
 end
 
 function room_update()
@@ -1823,15 +1864,15 @@ function room_update()
   end
  end
 
- room.chat_active=(
-  room.ypos==3
- )
+ room.chat_active=room.ypos==3
  
  if actionbtnp() then
+  local press=false
   if room.ypos==1 then
    if room.is_host then
     --initiate game start
     poke(a_ctrl_in_game,5)
+    press=true
    else
     show_popup_msg(
      "only the host can start a game"
@@ -1847,12 +1888,14 @@ function room_update()
     room.help42=30
     room.helpdelta=0
    end
+   press=true
   elseif room.ypos==3 then
    if room.chatidx!=0 then
     poke(
      a_chat_out_msg,room.chatidx
     )
     room.chatidx=0
+    press=true
    else
     show_popup_msg(
      "select message using ⬆️ and ⬇️"
@@ -1862,8 +1905,18 @@ function room_update()
   and peek(a_room_mgmt)==3 then
    --initiate room exit
    poke(a_room_mgmt,4)
+   press=true
+  end
+  if press then
+   press_button(
+    room_buttons[room.ypos]
+   )
   end
  end
+
+ foreach(
+  room_buttons,update_button
+ )
 
  read_gpio()
  title_update()
@@ -1882,6 +1935,10 @@ function enter_room(room_id)
  room.help=nil
  room.error=nil
  title_init_earthlings(0)
+
+ foreach(
+  room_buttons,reset_button
+ )
 
  poke(a_chat_in_msg,0)
  poke(a_chat_out_msg,0)
@@ -1990,6 +2047,7 @@ function menu_edittext()
   if menu.ypos==4
   and menu.xpos==max_xpos then
    join_room(menu.room)
+   press_button(menu_go_button)
   end
   menu.xpos=0
  end
@@ -2122,7 +2180,8 @@ function menu_update()
  end
 
  title_update()
- animation_update() 
+ animation_update()
+ update_button(menu_go_button)
 end
 
 function show_game()
@@ -2130,6 +2189,8 @@ function show_game()
  for i=1,game.nplayer do
   add(draw_scores,0)
  end
+
+ reset_button(game_exit_button)
 
  if room.is_host then
   show_popup_msg(
@@ -2166,8 +2227,6 @@ function qr_update()
 end
 
 function show_qr()
- poke(a_handshke,7)
-
  _draw=qr_draw
  _update=qr_update
  title_init_earthlings(3)
@@ -2298,6 +2357,8 @@ function dev_init_room()
 end
 
 function _init()
+ poke(a_handshke,7)
+
  show_intro()
 
  --show_qr()
