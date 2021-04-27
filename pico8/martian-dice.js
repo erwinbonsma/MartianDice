@@ -426,6 +426,9 @@ function endGame() {
 	// Signal that game has ended
 	md_gameEnded = true;
 
+	// Update scores
+	md_game = md_gameNext;
+
 	if (!isDictEmpty(md_bots) && sizeOfDict(md_clients) > 1) {
 		// Remove any bots. This can happen when an observer joined during game play
 		md_bots = {}
@@ -512,7 +515,6 @@ function gpioUpdateScores() {
 function gpioUpdateCounters(phaseId, playerName) {
 	pico8_gpio[gpio_TurnCounters] = md_game.round;
 	pico8_gpio[gpio_TurnCounters + 1] = playerTurnOrder(playerName);
-	console.info("Set turn to:", pico8_gpio[gpio_TurnCounters + 1]);
 	pico8_gpio[gpio_TurnCounters + 3] = phaseId;
 	gpioSetStr(gpio_ActivePlayerName, maxPlayerNameLength, playerName);
 	const playerId = md_clients[playerName];
@@ -542,7 +544,6 @@ function gpioUpdateTurn(turn) {
 
 	// Signal when move is expected
 	pico8_gpio[gpio_OutControl] = isMyMove() ? 0 : 2;
-	console.info("isMyMove", isMyMove());
 
 	pico8_gpio[gpio_GameControl] = 1; // Ready to read
 }
@@ -640,22 +641,21 @@ function gpioUpdate() {
 	gpioHandleMove();
 	gpioHandleChat();
 
-	if (pico8_gpio[gpio_GameControl] == 0) {
+	if (pico8_gpio[gpio_GameControl] === 0) {
 		if (md_turnStates.length > 0) {
 			const turnState = md_turnStates[0];
 
 			md_turnStates = md_turnStates.slice(1);
 			console.log("turnState =", turnState);
 
-			if (md_turnStates.length === 0) {
+			if (
+				(turnState?.phase === "Throwing" && turnState?.throw_count === 0) ||
+				md_turnStates.length === 0
+			) {
 				md_game = md_gameNext;
 			}
 
 			if (turnState) {
-				if (turnState.phase === "Throwing" && turnState.throw_count === 0) {
-					md_game = md_gameNext;
-				}
-			
 				gpioUpdateTurn(turnState);
 			} else {
 				endGame();
@@ -663,7 +663,7 @@ function gpioUpdate() {
 			}
 
 		}
-	} else if (pico8_gpio[gpio_GameControl] == 5) {
+	} else if (pico8_gpio[gpio_GameControl] === 5) {
 		// Game start requested
 		console.assert(isHost(), "Only host can start game");
 
@@ -676,7 +676,7 @@ function gpioUpdate() {
 		pico8_gpio[gpio_GameControl] = 6; // Signal game starting
 	}
 
-	if (pico8_gpio[gpio_RoomControl] == 0) {
+	if (pico8_gpio[gpio_RoomControl] === 0) {
 		if (md_gpioRoomBatch) {
 			pico8_gpio[gpio_NumClients] = md_gpioRoomBatch.numClients;
 			pico8_gpio[gpio_NumBots] = md_gpioRoomBatch.numBots;
