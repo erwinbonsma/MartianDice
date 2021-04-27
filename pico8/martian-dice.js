@@ -169,6 +169,32 @@ function updateClients(clients) {
 	return addedClients;
 }
 
+function updateGameState(gameState, turnStates) {
+	if (md_gameNext && md_gameNext.id !== gameState.prev_id) {
+		console.warn(`Unexpected state transition: ${md_gameNext.id} != ${gameState.prev_id}`);
+	}
+
+	if (md_game !== md_gameNext) {
+		// This may happen when PICO-8 client does not consume all updates (e.g. when it is paused
+		// due to lack of focus) 
+		console.warn("Force updating game state");
+		md_game = md_gameNext;
+	}
+
+	md_gameNext = gameState;
+
+	if (!md_game) {
+		// Ensure md_game is always set when game is in progress
+		console.info("Game started");
+		md_game = md_gameNext;
+	}
+
+	md_turnStates = turnStates;
+	md_turnStates.push(md_gameNext.turn_state);
+	md_botMoveTriggered = false;
+	md_gameEnded = false;
+}
+
 function welcomeNewClients(newClients) {
 	console.log("Welcoming new clients:", newClients);
 	const optGameConfig = (
@@ -236,20 +262,7 @@ function handleMessage(event) {
 			gpioPrepareRoomUpdateBatch();
 			break;
 		case "game-state":
-			if (md_gameNext && md_gameNext.id !== msg.state.prev_id) {
-				console.warn(`Unexpected state transition: ${md_gameNext.id} != ${msg.state.prev_id}`);
-			}
-
-			md_gameNext = msg.state;
-			if (!md_game) {
-				md_game = md_gameNext;
-			}
-
-			md_turnStates = msg.turn_state_transitions;
-			md_turnStates.push(md_gameNext.turn_state);
-			md_botMoveTriggered = false;
-			md_gameEnded = false;
-
+			updateGameState(msg.state, msg.turn_state_transitions);
 			break;
 		case "chat":
 			if (msg.message_id) {
@@ -478,10 +491,6 @@ function gpioGameEnd() {
 }
 
 function gpioUpdateTurn(turn) {
-	if (turn.phase === "Throwing" && turn.throw_count === 0) {
-		md_game = md_gameNext;
-	}
-
 	gpioUpdateDice(turn.throw || {}, gpio_Throw);
 	gpioUpdateDice(turn.side_dice || {}, gpio_SideDice);
 	gpioUpdateTurnScore(turn);
@@ -601,6 +610,10 @@ function gpioUpdate() {
 			}
 
 			if (turnState) {
+				if (turnState.phase === "Throwing" && turnState.throw_count === 0) {
+					md_game = md_gameNext;
+				}
+			
 				gpioUpdateTurn(turnState);
 			} else {
 				md_gameEnded = true;

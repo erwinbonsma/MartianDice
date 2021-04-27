@@ -1321,7 +1321,7 @@ function update_battle(old,new)
   local y=30+tp*16
   assert(
    new[tp]>=w[tp],
-   "update_battle new<old"
+   "ub "..new[tp].."<"..w[tp].." "..info
   )
   for i=1,new[tp] do
    if i>w[tp] then
@@ -1499,6 +1499,10 @@ function read_gpio_game()
  dice={
   peek(a_side),peek(a_side+1)
  }
+
+ --tmp
+ info="st="..(sameturn and 1 or 0).." r="..g.round.." t="..g.turn
+
  g.battle=update_battle(
   prvb,dice
  )
