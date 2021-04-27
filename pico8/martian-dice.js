@@ -90,6 +90,10 @@ function sizeOfDict(d) {
 	return n;
 }
 
+function isDictEmpty(d) {
+	return sizeOfDict(d) === 0;
+}
+
 function playerTurnOrder(playerName) {
 	const players = md_game.players;
 	for (var i = 0; i < players.length; i++) {
@@ -119,7 +123,7 @@ function isHost() {
 }
 
 function isAwaitingMove() {
-	return md_turnStates.length == 0 && !!md_game;
+	return md_turnStates.length === 0 && !!md_game;
 }
 
 function isBotMove() {
@@ -216,6 +220,52 @@ function welcomeNewClients(newClients) {
 	}));
 }
 
+function handleClientsUpdate(clients, host) {
+	const addedClients = updateClients(clients);
+
+	md_host = host;
+	if (isHost()) {
+		if (addedClients.length > 0) {
+			if (!md_game || md_gameEnded) {
+				// No game in progress, so clear any bots
+				md_bots = {};
+			}
+
+			welcomeNewClients(addedClients);
+		} else if (sizeOfDict(md_clients) === 1 && isDictEmpty(md_bots)) {
+			// When alone, automatically add a bot as opponent
+			md_nextBotId += 1;
+			md_bots[`Bot-${md_nextBotId}`] = "smart";
+		}
+	}
+
+	gpioPrepareRoomUpdateBatch();
+}
+
+function handleIncomingChat(messageId, senderId) {
+	if (!messageId) {
+		// Message was free-format. Ignore it. The PICO-8 client cannot handle it
+		return;
+	}
+
+	md_gpioChats.push({
+		messageId: messageId,
+		sender: senderId
+	});
+}
+
+function shareGameConfigChange() {
+	// Let other clients know that the game configuration changed
+	md_socket.send(JSON.stringify({
+		action: "update-config",
+		room_id: md_roomId,
+		game_config: {
+			bots: md_bots,
+			next_bot_id: md_nextBotId
+		}
+	}));
+}
+
 function triggerBotMove() {
 	if (md_botMoveTriggered || !isHost() || !isBotMove()) {
 		return
@@ -238,23 +288,7 @@ function handleMessage(event) {
 	console.log("Message:", msg);
 	switch (msg.type) {
 		case "clients":
-			const addedClients = updateClients(msg.clients);
-			md_host = msg.host;
-			if (isHost()) {
-				if (addedClients.length > 0) {
-					if (!md_game || md_gameEnded) {
-						// No game in progress, so clear any bots
-						md_bots = {};
-					}
-					welcomeNewClients(addedClients);
-				} else if (sizeOfDict(md_clients) == 1 && sizeOfDict(md_bots) == 0) {
-					// When alone, automatically add a bot as opponent
-					md_nextBotId += 1;
-					md_bots[`Bot-${md_nextBotId}`] = "smart";
-				}
-
-			}
-			gpioPrepareRoomUpdateBatch();
+			handleClientsUpdate(msg.clients, msg.host);
 			break;
 		case "game-config":
 			md_bots = msg.game_config.bots;
@@ -265,12 +299,7 @@ function handleMessage(event) {
 			updateGameState(msg.state, msg.turn_state_transitions);
 			break;
 		case "chat":
-			if (msg.message_id) {
-				md_gpioChats.push({
-					messageId: msg.message_id,
-					sender: msg.client_id
-				});
-			}
+			handleIncomingChat(msg.message_id, msg.client_id);
 			break;
 		case "response":
 			if (msg.status === "error") {
@@ -391,6 +420,19 @@ function connectToServer(callback) {
 		md_socket = undefined;
 	})
 	socket.addEventListener('message', handleMessage);
+}
+
+function endGame() {
+	// Signal that game has ended
+	md_gameEnded = true;
+
+	if (!isDictEmpty(md_bots) && sizeOfDict(md_clients) > 1) {
+		// Remove any bots. This can happen when an observer joined during game play
+		md_bots = {}
+
+		shareGameConfigChange();
+		gpioPrepareRoomUpdateBatch();
+	}
 }
 
 function gpioPrepareRoomUpdateBatch() {
@@ -616,7 +658,7 @@ function gpioUpdate() {
 			
 				gpioUpdateTurn(turnState);
 			} else {
-				md_gameEnded = true;
+				endGame();
 				gpioGameEnd();
 			}
 
