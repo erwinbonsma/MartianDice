@@ -683,6 +683,13 @@ function game_draw()
    "no",92,27,12,game.pass
   )
  end
+
+ if not game.is_player then
+  draw_button(
+   "exit",106,105,20,
+   room.chatidx==0
+  )
+ end
 end
 
 function draw_help_line(i,x,y)
@@ -1721,6 +1728,11 @@ function game_update()
    game_pickdie()
   elseif game.chkpass then
    game_chkpass()
+  elseif actionbtnp()
+  and not game.is_player
+  and peek(a_room_mgmt)==3 then
+   --initiate observer room exit
+   poke(a_room_mgmt,4)
   end
  end
 
@@ -2119,7 +2131,7 @@ function show_game()
 
  if room.is_host then
   show_popup_msg(
-   "started game. good luck!"
+   "game started. good luck!"
   )
  elseif game.is_player then
   show_popup_msg(
