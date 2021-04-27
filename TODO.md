@@ -93,15 +93,21 @@ Done:
 	-	Add abduction animation to title
 	-	Show QR code
 	-	Enable chat in game screen
+	-	Add intro screen
+	-	Animate intro screen
+	-	Fixed: Non-existant host in room
+	-	Show scores in game
+	-	Show room ID in game screen
+	-	Wait with switching to end-game animation until score crossed the finish
+	-	Let observer leave room
+	-	Fixed: Assert failure in P8 client in battle_update
 
 TODO:
--	Add die movement animations
 -	Add public rooms
 	-	Add public/private toggle
 	-	Show available public rooms
 	-	Limit chat in public rooms
 -	Extend PICO-8 client
-	-	Track and show scores and wins in room screen
 	-	Handle disconnected/inactive players
 		-	Auto-skip turn for disconnected players
 		-	Remind/prod/skip inactive players
