@@ -190,10 +190,10 @@ function modchar(
   snew=sub(s,1,idx-1)
  end
  if idx<#s or to!=" " then
-  snew=snew..to
+  snew..=to
  end
  if idx<#s then
-  snew=snew..sub(s,idx+1)
+  snew..=sub(s,idx+1)
  end
  return snew
 end
@@ -1424,7 +1424,7 @@ function gpio_gets(a0,len)
   local v=peek(a0+i-1)
   if v!=0 then
    if (v>=65 and v<=90) v+=32
-   s=s..chr(v)
+   s..=chr(v)
   end
  end
 
