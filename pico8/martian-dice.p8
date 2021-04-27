@@ -605,15 +605,15 @@ function draw_game_scores()
  --finish
  for i=0,6 do
   rectfill(
-   i*2-1,9,i*2,10,(i%2)*6
+   i*2-1,12,i*2,13,(i%2)*6
   )
  end
  --start
- rectfill(0,110,11,111,6)
+ rectfill(0,113,11,114,6)
 
  for i=1,np do
   local pid=game.players[i]
-  local y0=110
+  local y0=113
   local x=x0+(i-1)*(w+sep)
   local c=pal1[pid]
   if (c==nil) c=pal2[pid-6]
@@ -625,8 +625,19 @@ function draw_game_scores()
  end
 end
 
-function game_draw()
+--common between game play and
+--game end animation
+function game_common_draw()
  cls()
+
+ draw_chatlog(117,2)
+ draw_animation()
+
+ draw_game_scores()
+end
+
+function game_draw()
+ game_common_draw()
 
  color(4)
  print("round "..game.round,0,0)
@@ -636,11 +647,6 @@ function game_draw()
  local x=58-#ap.name*2
  spr(ap.avatar,x,0)
  print(ap.name,x+7,0,ap.color)
-
- draw_chatlog(117,2)
- draw_animation()
-
- if (game.winner!=nil) return
 
  for i=0,2 do
   rectfill(
@@ -655,8 +661,6 @@ function game_draw()
  draw_dice(game.collected)
  palt()
  
- draw_game_scores()
-
  if game.endcause!=0 then
   local msg=endcause[game.endcause]
   print_outlined(
@@ -1032,15 +1036,13 @@ function set_game_animation(
  end
 end
 
-function animate_endgame()
- if (animate!=nil) return
-
+function animate_game_end()
  local path={}
  local ap={}
  
  local earthlings={}
  local ticks=300
- 
+
  --fairly complex function to
  --reduce jitter effects in the
  --animation. more specifically,
@@ -1107,8 +1109,8 @@ function animate_endgame()
  	 ticks-=1
 	  if (ticks<=0) enter_room()
 
-   local xc=64+flr(
-    0.5+32*sin(time()*0.1)
+   local xc=70+flr(
+    0.5+26*sin(time()*0.1)
    )
    local yc=50+flr(
     0.5+31*cos(time()*0.11)
@@ -1123,7 +1125,7 @@ function animate_endgame()
   
    for e in all(earthlings) do
     e.x+=e.dx*e.speed
-    if e.x<2 or e.x>109 then
+    if e.x<14 or e.x>109 then
      e.dx=-e.dx
     end
    end
@@ -1168,7 +1170,6 @@ function show_popup_msg(msg)
   end
  }
 end
-
 
 -->8
 --gpio
@@ -1326,9 +1327,10 @@ function update_battle(old,new)
  for tp=1,2 do
   local x=15
   local y=30+tp*16
+  if (tmpinfo==nil) tmpinfo=""
   assert(
    new[tp]>=w[tp],
-   "ub "..new[tp].."<"..w[tp].." "..info
+   "ub "..new[tp].."<"..w[tp].." "..tmpinfo
   )
   for i=1,new[tp] do
    if i>w[tp] then
@@ -1508,7 +1510,7 @@ function read_gpio_game()
  }
 
  --tmp
- info="st="..(sameturn and 1 or 0).." r="..g.round.." t="..g.turn
+ tmpinfo="st="..(sameturn and 1 or 0).." r="..g.round.." t="..g.turn
 
  g.battle=update_battle(
   prvb,dice
@@ -1716,14 +1718,16 @@ function game_chat()
  )
 end
 
-function game_update()
+function game_common_update()
  read_gpio()
 
- if game.winner then
-  animate_endgame()
- end
- 
- if not game_chat() then
+ animation_update()
+
+ return game_chat()
+end
+
+function game_update()
+ if not game_common_update() then
   if game.pickdie then
    game_pickdie()
   elseif game.chkpass then
@@ -1742,22 +1746,20 @@ function game_update()
   return
  end
 
- if btnp(❎) then
-  if peek(a_room_mgmt)==3 then
-   --initiate room exit
-   poke(a_room_mgmt,4)
-  end
- end
-
+ local done=true
  for i=1,game.nplayer do
   local delta=(
-   game.scores[i]-draw_scores[i]
+   min(game.scores[i],25)
+   -draw_scores[i]
   )
   delta=max(-0.2,min(0.2,delta))
   draw_scores[i]+=delta
+  if (abs(delta)>0.1) done=false
  end
 
- animation_update()
+ if game.winner and done then
+  show_game_end()
+ end
 end
 
 function room_update()
@@ -1872,13 +1874,13 @@ function enter_room(room_id)
  if room_id!=nil then
   room.id=room_id
   room.chatlog={}
+  title.room=room_id
  end
 
  room.ypos=1
  room.chatidx=0
  room.help=nil
  room.error=nil
- title.room=room_id
  title_init_earthlings(0)
 
  poke(a_chat_in_msg,0)
@@ -2183,6 +2185,13 @@ function show_intro()
  _update=intro_update
 end
 
+function show_game_end()
+ animate_game_end()
+
+ _draw=game_common_draw
+ _update=game_common_update
+end
+
 -->8
 function dev_init_game()
  local t0=new_throw(
@@ -2219,10 +2228,14 @@ function dev_init_game()
   scores={24,13,0},
   players={1,3,0}
  }
+
  --game.pickdie=die_choices(game)
  game.die_idx=1
  --game.chkpass=true
  --game.pass=false
+
+ show_game()
+
  animate_game_throw(game.throw)
 
  if false then
@@ -2248,7 +2261,6 @@ function dev_init_game()
   id="test"
  }
 
- show_game()
  poke(a_ctrl_out,0)
  poke(a_room_mgmt,3)
 end
