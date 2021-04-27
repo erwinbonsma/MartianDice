@@ -26,6 +26,7 @@ const gpio_ChatIn_SenderId = 66;
 const gpio_NumPlayers = 80;
 const gpio_Scores = 81; // Listed in turn order
 const gpio_TurnOrder = 87; // Client Ids in turn order, 0 when player is not present
+const gpio_IsPlayer = 93;
 const gpio_Handshake = gpio_GameControl;
 
 const maxPlayerNameLength = 6;
@@ -437,16 +438,22 @@ function gpioUpdateTurnScore(turn) {
 
 function gpioUpdateScores() {
 	pico8_gpio[gpio_NumPlayers] = md_game.players.length;
+	var isPlayer = false;
 	md_game.players.forEach((name, index) => {
 		pico8_gpio[gpio_Scores + index] = md_game.scores[name];
 		// Zero when player is currently not present in room
 		pico8_gpio[gpio_TurnOrder + index] = playerNameToId(name);
+		if (name === md_myName) {
+			isPlayer = true;
+		}
 	});
+	pico8_gpio[gpio_IsPlayer] = isPlayer;
 }
 
 function gpioUpdateCounters(phaseId, playerName) {
 	pico8_gpio[gpio_TurnCounters] = md_game.round;
 	pico8_gpio[gpio_TurnCounters + 1] = playerTurnOrder(playerName);
+	console.info("Set turn to:", pico8_gpio[gpio_TurnCounters + 1]);
 	pico8_gpio[gpio_TurnCounters + 3] = phaseId;
 	gpioSetStr(gpio_ActivePlayerName, maxPlayerNameLength, playerName);
 	const playerId = md_clients[playerName];

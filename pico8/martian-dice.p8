@@ -781,7 +781,7 @@ function room_draw()
  end
  
  local disabled={
-  room.host!=1,
+  not room.is_host,
   false,
   room.chatidx==0
   or peek(a_chat_msg_out)!=0,
@@ -1225,7 +1225,7 @@ a_anam=0x5fa5 -- 6 bytes
 a_ncli=0x5fb0
 a_nbot=0x5fb1
 --0/1: 1=>player is host
-a_host=0x5fb2
+a_ihst=0x5fb2
 --1..6 :client, id=value
 --7..10:bot,    tp=value-6
 a_ptyp=0x5fb3
@@ -1240,6 +1240,7 @@ a_nply=0x5fd0
 --scores & players in turn order
 a_ascr=0x5fd1 -- 6 bytes
 a_aply=0x5fd7 -- 6 bytes
+a_iply=0x5fdd
 
 function die_choices(g)
  local choice={}
@@ -1439,6 +1440,7 @@ function read_gpio_game()
  g.scored=peek(a_trsc)
 
  g.nplayer=peek(a_nply)
+ g.is_player=peek(a_iply)==1
  g.scores={}
  g.players={}
  for i=1,g.nplayer do
@@ -1555,7 +1557,7 @@ function read_gpio_room()
   roomnew={
    pclients=peek(a_ncli),
    pbots=peek(a_nbot),
-   host=peek(a_host),
+   is_host=peek(a_ihst)==1,
    size=0,
    clients={},
    bots={}
@@ -1601,7 +1603,7 @@ function read_gpio_room()
   room.clients=r.clients
   room.bots=r.bots
   room.size=r.size
-  room.host=r.host
+  room.is_host=r.is_host
   roomnew=nil
  end
 
@@ -1809,7 +1811,7 @@ function room_update()
  
  if actionbtnp() then
   if room.ypos==1 then
-   if room.host==1 then
+   if room.is_host then
     --initiate game start
     poke(a_ctrl_in_game,5)
    else
@@ -2109,6 +2111,20 @@ function show_game()
  draw_scores={}
  for i=1,game.nplayer do
   add(draw_scores,0)
+ end
+
+ if room.is_host then
+  show_popup_msg(
+   "started game. good luck!"
+  )
+ elseif game.is_player then
+  show_popup_msg(
+   "joined new game. good luck!"
+  )
+ else
+  show_popup_msg(
+   "observing game in progress"
+  )
  end
 
  _draw=game_draw
