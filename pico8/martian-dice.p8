@@ -675,13 +675,12 @@ function game_draw()
  end
 
  if game.chkpass then
-  rectfill(27,26,99,36,4)
-  print("continue?",29,29,15)
+  print("continue?",35,29,15)
   draw_button(
-   "yes",67,27,16,not game.pass
+   "yes",73,27,16,not game.pass
   )
   draw_button(
-   "no",86,27,12,game.pass
+   "no",92,27,12,game.pass
   )
  end
 end
