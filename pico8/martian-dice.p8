@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 32
 __lua__
--- martian dice
+-- martian dice v0.9
 -- (c) 2021, erwin bonsma
 version="0.9"
 
