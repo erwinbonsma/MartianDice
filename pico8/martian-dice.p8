@@ -366,7 +366,7 @@ end
 
 function draw_popup_msg(msg,y)
  rectfill(0,y,127,y+7,5)
- print(msg,2,y+1,9)
+ print(msg,64-2*#msg,y+1,9)
 end
 
 function draw_thrown_die(
