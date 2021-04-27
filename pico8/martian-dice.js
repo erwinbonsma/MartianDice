@@ -82,6 +82,7 @@ var md_game;
 var md_gameNext;
 var md_turnStates = [];
 var md_botMoveTriggered;
+var md_gameEnded;
 
 function sizeOfDict(d) {
 	let n = 0;
@@ -215,8 +216,10 @@ function handleMessage(event) {
 			md_host = msg.host;
 			if (isHost()) {
 				if (addedClients.length > 0) {
-					// Clear any bots
-					md_bots = {};
+					if (!md_game || md_gameEnded) {
+						// No game in progress, so clear any bots
+						md_bots = {};
+					}
 					welcomeNewClients(addedClients);
 				} else if (sizeOfDict(md_clients) == 1 && sizeOfDict(md_bots) == 0) {
 					// When alone, automatically add a bot as opponent
@@ -245,6 +248,7 @@ function handleMessage(event) {
 			md_turnStates = msg.turn_state_transitions;
 			md_turnStates.push(md_gameNext.turn_state);
 			md_botMoveTriggered = false;
+			md_gameEnded = false;
 
 			break;
 		case "chat":
@@ -599,6 +603,7 @@ function gpioUpdate() {
 			if (turnState) {
 				gpioUpdateTurn(turnState);
 			} else {
+				md_gameEnded = true;
 				gpioGameEnd();
 			}
 
