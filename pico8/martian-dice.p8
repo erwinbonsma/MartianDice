@@ -528,18 +528,58 @@ function title_draw(c2)
  pal()
 end
 
-function edit_draw(s,x,y)
- color(15) --default
- if textedit then
-  local t=textedit
-  if t.xpos<=t.editlen then
-   color(9)
-   if t.blink<0.5 then
-    s=modchar(s,t.xpos,"_")
+function draw_scrolling_str(
+ s,x,y,offset,c
+)
+ local px={}
+ for i=0,4 do
+  local yr=i+offset
+  if yr<0 or yr>4 then
+   for j=0,#s*3-1 do
+    add(px,pget(x+j,y+yr))
    end
   end
  end
- print(s,x,y)
+
+ print(s,x,y+offset,c)
+
+ for i=4,0,-1 do
+  local yr=i+offset
+  if yr<0 or yr>4 then
+   for j=#s*3-1,0,-1 do
+    pset(x+j,y+yr,deli(px))
+   end
+  end
+ end
+end
+
+function edit_draw(s,x,y)
+ local c=15
+ if textedit then
+  local t=textedit
+  if t.xpos<=t.editlen then
+   c=9
+   if t.blink<0.5 then
+    s=modchar(s,t.xpos,"_")
+   elseif t.scroll then
+    local xchar=x+t.xpos*4-4
+    draw_scrolling_str(
+     sub(s,t.xpos,t.xpos),
+     xchar,y,
+     t.scroll,
+     c
+    )
+    draw_scrolling_str(
+     t.oldchar,
+     xchar,y,
+     t.scroll-sgn(t.scroll)*6,
+     c
+    )
+    s=modchar(s,t.xpos," ")
+   end
+  end
+ end
+ print(s,x,y,c)
 end
 
 function menu_draw()
@@ -2013,20 +2053,32 @@ function edittext(
   t.blink=0
  elseif btnp(⬆️)
  and t.xpos<=t.editlen then
+  t.oldchar=sub(s,t.xpos,t.xpos)
   s=modchar(
    s,t.xpos,⬆️,allowspace
   )
+  t.scroll=-6
   t.blink=0.5
  elseif btnp(⬇️)
  and t.xpos<=t.editlen then
+  t.oldchar=sub(s,t.xpos,t.xpos)
   s=modchar(
    s,t.xpos,⬇️,allowspace
   )
+  t.scroll=6
   t.blink=0.5
  else
   t.blink+=(1/30)
   if t.blink>1 then
    t.blink=0
+  end
+  if t.scroll then
+   if t.scroll>0 then
+    t.scroll-=1
+   else
+    t.scroll+=1
+   end
+   if (t.scroll==0) t.scroll=nil
   end
  end
  
