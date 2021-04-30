@@ -530,11 +530,12 @@ end
 
 function edit_draw(s,x,y)
  color(15) --default
- if menu.xpos>0 then
-  if menu.xpos<=menu.editlen then
+ if textedit then
+  local t=textedit
+  if t.xpos<=t.editlen then
    color(9)
-   if menu.blink<0.5 then
-    s=modchar(s,menu.xpos,"_")
+   if t.blink<0.5 then
+    s=modchar(s,t.xpos,"_")
    end
   end
  end
@@ -556,7 +557,7 @@ function menu_draw()
   print_select(
    txt,x,y,
    menu.ypos==i,
-   menu.xpos==0
+   edittext!=nil
   )
  end
 
@@ -570,10 +571,10 @@ function menu_draw()
  if menu.ypos==4 then
   edit_draw(menu.room,67,40)
 
-  if menu.xpos>0
+  if textedit
   and is_roomid_set() then
    menu_go_button.selected=(
-    menu.xpos==5
+    textedit.xpos==5
    )
    draw_button(menu_go_button)
   end
@@ -1986,70 +1987,81 @@ function create_room()
  poke(a_room_mgmt,6)
 end
 
+--s: text to edit
 function edittext(
- s,max_xpos,allowspace
+ s
 )
- if btnp(➡️) then
-  menu.xpos=menu.xpos%max_xpos+1
-  menu.blink=0
- elseif btnp(⬅️) then
-  menu.xpos=(
-   menu.xpos+max_xpos-2
-  )%max_xpos+1
-  menu.blink=0
- elseif btnp(⬆️)
- and menu.xpos<=menu.editlen then
-  s=modchar(
-   s,menu.xpos,⬆️,allowspace
-  )
-  menu.blink=0.5
- elseif btnp(⬇️)
- and menu.xpos<=menu.editlen then
-  s=modchar(
-   s,menu.xpos,⬇️,allowspace
-  )
-  menu.blink=0.5
- else
-  menu.blink+=(1/30)
-  if menu.blink>1 then
-   menu.blink=0
-  end
+ local t=textedit
+
+ --never allow space as 1st char
+ local allowspace=(
+  t.allowspace and t.xpos>1
+ )
+
+ local max_xpos=t.max_xpos
+ if max_xpos==nil then
+  max_xpos=min(#s+1,t.editlen)
  end
 
+ if btnp(➡️) then
+  t.xpos=t.xpos%max_xpos+1
+  t.blink=0
+ elseif btnp(⬅️) then
+  t.xpos=(
+   t.xpos+max_xpos-2
+  )%max_xpos+1
+  t.blink=0
+ elseif btnp(⬆️)
+ and t.xpos<=t.editlen then
+  s=modchar(
+   s,t.xpos,⬆️,allowspace
+  )
+  t.blink=0.5
+ elseif btnp(⬇️)
+ and t.xpos<=t.editlen then
+  s=modchar(
+   s,t.xpos,⬇️,allowspace
+  )
+  t.blink=0.5
+ else
+  t.blink+=(1/30)
+  if t.blink>1 then
+   t.blink=0
+  end
+ end
+ 
  return s
 end
 
-function menu_edittext()
- local max_xpos=menu.editlen
+function start_edit(
+ editlen,xpos,allowspace
+)
+ textedit={
+  editlen=editlen,
+  xpos=xpos,
+  allowspace=allowspace,
+  blink=0
+ }
+end
 
+function menu_edittext()
  if menu.ypos==1 then
-  menu.name=edittext(
-   menu.name,
-   min(#menu.name+1,max_xpos),
-   menu.xpos>1
-  )
+  menu.name=edittext(menu.name)
  elseif menu.ypos==4 then
-  if is_roomid_set() then
-   --can move to go button
-   max_xpos+=1
-  end
-  menu.room=edittext(
-   menu.room,max_xpos,false
+  --allow move to go button?
+  textedit.max_xpos=(
+   is_roomid_set() and 5 or 4
   )
- else
-  assert(
-   false,
-   "unexpected menu.ypos"
-  )
+  menu.room=edittext(menu.room)
  end
 
  if actionbtnp() then
   if menu.ypos==4
-  and menu.xpos==max_xpos then
+  and textedit.xpos==5 then
    join_room(menu.room)
    press_button(menu_go_button)
   end
-  menu.xpos=0
+  textedit=nil
  end
 end
 
@@ -2062,21 +2074,16 @@ function menu_itemselect()
   menu.ypos=(menu.ypos+2)%4+1
  elseif actionbtnp() then
   if menu.ypos==1 then
-   menu.editlen=6
-   menu.xpos=1
+   start_edit(6,1,true)
   elseif menu.ypos==2 then
    join_room(public_room)
   elseif menu.ypos==3 then
    create_room()
   elseif menu.ypos==4 then
-   menu.editlen=4
-   if is_roomid_set() then
-    --can directly enter
-    menu.xpos=5
-   else
-    --need to specify id first
-    menu.xpos=1
-   end
+   start_edit(
+    4,
+    is_roomid_set() and 5 or 1
+   )
   end
  end
 
@@ -2173,7 +2180,7 @@ function menu_update()
   poke(a_room_mgmt,0)
  end
 
- if menu.xpos!=0 then
+ if textedit then
   menu_edittext()
  else
   menu_itemselect()
@@ -2360,12 +2367,12 @@ end
 function _init()
  poke(a_handshke,7)
 
- show_intro()
+ --show_intro()
 
  --show_qr()
 
- --poke(a_room_mgmt,0)
- --show_menu()
+ poke(a_room_mgmt,0)
+ show_menu()
 
  --dev_init_game()
  
