@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 32
 __lua__
 -- martian dice v0.9
--- (c) 2021, erwin bonsma
+-- (c) 2021  eriban
 version="0.9"
 
 phase={
@@ -2261,19 +2261,19 @@ function dev_init_game()
   t0,{2,0,2,1,1},moving
  )
  local b0=update_battle(
-  {},{1,0}
+  {},{0,1}
  )
  local b1=update_battle(
-  b0,{1,2}
+  b0,{0,3}
  )
- animate_move(b0,b1,moving)
+ --animate_move(b0,b1,moving)
  game={
   throw=t1,
   battle=b1,
   collected=update_collected(
    {},{[4]=2}
   ),
-  round=1,
+  round=6,
   turn=2,
   phase=phase.pickdice,
   thrownum=3,
@@ -2283,9 +2283,10 @@ function dev_init_game()
    avatar=32,
    color=pal1[1]
   },
-  nplayer=3,
-  scores={24,13,0},
-  players={1,3,0}
+  nplayer=2,
+  scores={17,13},
+  players={1,3},
+  is_player=true
  }
 
  --game.pickdie=die_choices(game)
@@ -2312,7 +2313,7 @@ function dev_init_game()
  cls()
 
  local log={}
- add_chat(log,2,"hi")
+ add_chat(log,1,"hi")
  add_chat(log,3,"hi")
  room={
   chatlog=log,
