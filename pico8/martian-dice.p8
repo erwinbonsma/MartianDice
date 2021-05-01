@@ -335,7 +335,9 @@ function add_chat(
   msg=msg,
   clr=pal1[sender]
  }
- if (wip) entry.clr=9
+ if wip and abs(time()%1)<0.5 then
+  entry.clr=1
+ end
  
  if #log>0 then
   local l=log[#log]
