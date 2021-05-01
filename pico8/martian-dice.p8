@@ -2414,6 +2414,7 @@ function show_game_end()
  register_win(
   game.winner.name,stats.game_id
  )
+ rank_players()
  animate_game_end()
 
  _draw=game_common_draw
