@@ -57,6 +57,12 @@ game_pass_buttons={
  {label="no",x=92,y=27}
 }
 
+slow_buttons={
+ {label="wait",x=31,y=44},
+ {label="skip",x=58,y=44},
+ {label="eject",x=85,y=44}
+}
+
 game_exit_button={
  label="exit",x=106,y=105
 }
@@ -410,7 +416,7 @@ function add_chat(
   msg=msg,
   clr=pal1[sender]
  }
- if wip and abs(time()%1)<0.5 then
+ if wip then
   entry.clr=1
  end
  
@@ -812,6 +818,20 @@ function game_common_draw()
  draw_game_scores()
 end
 
+function slow_player_draw()
+ rectfill(26,32,115,54,4)
+ rect(26,32,115,54,5)
+
+ local msg=game.active_player.name
+ msg..=" is slow to act"
+ print(msg,71-2*#msg,35,15)
+ 
+ for i,b in pairs(slow_buttons) do
+  b.selected=game.slowidx==i
+  draw_button(b)
+ end
+end
+
 function draw_chkpass()
  print("continue?",35,29,15)
 
@@ -850,6 +870,10 @@ function game_draw()
  draw_dice(game.battle)
  draw_dice(game.collected)
  palt()
+ 
+ if game.slowidx then
+  slow_player_draw()
+ end
  
  if game.endcause!=0 then
   local msg=endcause[game.endcause]
@@ -1718,8 +1742,15 @@ function read_gpio_game()
     draw=draw_chkpass
    }
   end
-  g.inputwait=0
   poke(a_ctrl_out,3)
+ end
+ 
+ if g.phase==phase.checkpass
+ or g.phase==phase.pickdice then
+  g.inputwait=0
+ else
+  g.inputwait=nil
+  g.slowidx=nil
  end
 
  game=g
@@ -1834,6 +1865,27 @@ function animation_update()
  if (animate) animate.update()
 end
 
+function slow_player_update()
+ if btnp(⬅️) then
+  game.slowidx=(
+   game.slowidx+2
+  )%3
+ elseif btnp(➡️) then
+  game.slowidx=game.slowidx%3+1
+ elseif btnp(⬆️) or btnp(⬇️) then
+  game.slowidx=nil 
+ elseif actionbtnp() then
+  if game.slowidx==2 then
+   --skip turn
+  elseif game.slowidx==3 then
+   --eject from game
+  else
+   --wait
+  end
+  game.slowidx=nil
+ end
+end
+
 function game_pickdie()
  local n=#game.die_choices
  if n>1 then
@@ -1915,18 +1967,31 @@ function game_update()
  if not game_common_update() then
   if game.inputhandler then
    game.inputhandler.update()
-   game.inputwait+=1
-   if game.inputwait%300==0 then
-    show_popup_msg(
-     "please make a move"
-    )
-   end
+  elseif game.slowidx then
+   slow_player_update()
   elseif actionbtnp()
   and not game.is_player
   and peek(a_room_mgmt)==3 then
    --initiate observer room exit
    poke(a_room_mgmt,4)
    press_button(game_exit_button)
+  end
+ end
+
+ if game.inputwait then
+  game.inputwait+=1
+  if game.inputwait%300==0 then
+   if game.inputhandler then
+    --remind slow player
+    show_popup_msg(
+     "please make a move"
+    )
+   elseif game.slowidx==nil
+   and game.inputwait%600==0 then
+    --allow other players to act
+    game.slowidx=1
+    room.chatidx=0
+   end
   end
  end
 
@@ -2450,26 +2515,23 @@ function dev_init_game()
   collected=update_collected(
    {},{[4]=2}
   ),
+  games=1,
   round=6,
   turn=2,
   phase=phase.pickdice,
   thrownum=3,
   endcause=0,
   active_player={
-   name="me",
+   name="george",
    avatar=32,
    color=pal1[1]
   },
   nplayer=2,
   scores={17,13},
   players={1,3},
-  is_player=true
+  is_player=true,
+  inputwait=550,
  }
-
- --game.pickdie=die_choices(game)
- game.die_idx=1
- --game.chkpass=true
- --game.pass=false
 
  show_game()
 
