@@ -557,17 +557,12 @@ function draw_dice(dice)
  end
 end
 
-function draw_throw(throw)
- local selected=0
- if game.pickdie
- and animate==nil then
-  selected=game.pickdie[
-   game.die_idx
-  ]
- end
+function draw_selecteddice()
+ local selected=game.die_choices[
+  game.die_idx
+ ]
 
- draw_dice(throw)
- for d in all(throw) do
+ for d in all(game.throw) do
   if d.tp==selected then
    roundrect(
     d.x-1,d.y-1,d.x+15,d.y+15,15
@@ -817,6 +812,20 @@ function game_common_draw()
  draw_game_scores()
 end
 
+function draw_chkpass()
+ print("continue?",35,29,15)
+
+ game_pass_buttons[
+  1
+ ].selected=not game.pass
+ game_pass_buttons[
+  2
+ ].selected=game.pass
+ foreach(
+  game_pass_buttons,draw_button
+ )
+end
+
 function game_draw()
  game_common_draw()
 
@@ -837,7 +846,7 @@ function game_draw()
 
  palt(14,true)
  palt(0,false)
- draw_throw(game.throw)
+ draw_dice(game.throw)
  draw_dice(game.battle)
  draw_dice(game.collected)
  palt()
@@ -859,18 +868,8 @@ function game_draw()
   )
  end
 
- if game.chkpass then
-  print("continue?",35,29,15)
-
-  game_pass_buttons[
-   1
-  ].selected=not game.pass
-  game_pass_buttons[
-   2
-  ].selected=game.pass
-  foreach(
-   game_pass_buttons,draw_button
-  )
+ if game.inputhandler then
+  game.inputhandler.draw()
  end
 
  if not game.is_player then
@@ -1705,12 +1704,19 @@ function read_gpio_game()
  if peek(a_ctrl_out)==0 then
   --move expected
   if g.phase==phase.pickdice then
-   g.pickdie=die_choices(g)
+   g.die_choices=die_choices(g)
    g.die_idx=1
+   g.inputhandler={
+    update=game_pickdie,
+    draw=draw_selecteddice
+   }
   end
   if g.phase==phase.checkpass then
-   g.chkpass=true
    g.pass=false
+   g.inputhandler={
+    update=game_chkpass,
+    draw=draw_chkpass
+   }
   end
   poke(a_ctrl_out,3)
  end
@@ -1828,7 +1834,7 @@ function animation_update()
 end
 
 function game_pickdie()
- local n=#game.pickdie
+ local n=#game.die_choices
  if n>1 then
   if btnp(⬅️) then
    game.die_idx=(
@@ -1844,10 +1850,10 @@ function game_pickdie()
  if actionbtnp() then
   poke(
    a_move,
-   game.pickdie[game.die_idx]
+   game.die_choices[game.die_idx]
   )
   poke(a_ctrl_out,1)
-  game.pickdie=nil
+  game.inputhandler=nil
  end
 end
 
@@ -1859,10 +1865,10 @@ function game_chkpass()
  if actionbtnp() then
   poke(
    a_move,
-   game.pass and 6
+   game.pass and 6 or 0
   )
   poke(a_ctrl_out,1)
-  game.chkpass=false
+  game.inputhandler=nil
  end
 end
 
@@ -1906,10 +1912,8 @@ end
 
 function game_update()
  if not game_common_update() then
-  if game.pickdie then
-   game_pickdie()
-  elseif game.chkpass then
-   game_chkpass()
+  if game.inputhandler then
+   game.inputhandler.update()
   elseif actionbtnp()
   and not game.is_player
   and peek(a_room_mgmt)==3 then
