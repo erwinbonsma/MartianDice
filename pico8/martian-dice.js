@@ -12,9 +12,13 @@ const gpio_Throw = 16;
 const gpio_SideDice = 21;
 const gpio_EndCause = 26;
 const gpio_TurnScore = 27; // Only valid when EndCause != 0
-const gpio_TurnCounters = 32;
-const gpio_ActivePlayerType = 36;
-const gpio_ActivePlayerName = 37;
+const gpio_GameCounter = 32;
+const gpio_RoundCounter = 33;
+const gpio_TurnCounter = 34;
+const gpio_ThrowCounter = 35;
+const gpio_PhaseCounter = 36;
+const gpio_ActivePlayerType = 37;
+const gpio_ActivePlayerName = 38;
 const gpio_NumClients = 48;
 const gpio_NumBots = 49;
 const gpio_IsHost = 50;
@@ -78,6 +82,7 @@ var md_gpioRoomUpdates = [];
 var md_gpioChats = [];
 
 // Game status
+var md_gameCount;
 var md_game;
 var md_gameNext;
 var md_turnStates = [];
@@ -173,7 +178,7 @@ function updateClients(clients) {
 	return addedClients;
 }
 
-function updateGameState(gameState, turnStates) {
+function updateGameState(gameState, turnStates, gameCount) {
 	if (md_gameNext && md_gameNext.id !== gameState.prev_id) {
 		console.warn(`Unexpected state transition: ${md_gameNext.id} != ${gameState.prev_id}`);
 	}
@@ -197,6 +202,7 @@ function updateGameState(gameState, turnStates) {
 	md_turnStates.push(md_gameNext.turn_state);
 	md_botMoveTriggered = false;
 	md_gameEnded = false;
+	md_gameCount = gameCount;
 }
 
 function welcomeNewClients(newClients) {
@@ -296,7 +302,7 @@ function handleMessage(event) {
 			gpioPrepareRoomUpdateBatch();
 			break;
 		case "game-state":
-			updateGameState(msg.state, msg.turn_state_transitions);
+			updateGameState(msg.state, msg.turn_state_transitions, msg.game_count);
 			break;
 		case "chat":
 			handleIncomingChat(msg.message_id, msg.client_id);
@@ -513,9 +519,10 @@ function gpioUpdateScores() {
 }
 
 function gpioUpdateCounters(phaseId, playerName) {
-	pico8_gpio[gpio_TurnCounters] = md_game.round;
-	pico8_gpio[gpio_TurnCounters + 1] = playerTurnOrder(playerName);
-	pico8_gpio[gpio_TurnCounters + 3] = phaseId;
+	pico8_gpio[gpio_GameCounter] = md_gameCount;
+	pico8_gpio[gpio_RoundCounter] = md_game.round;
+	pico8_gpio[gpio_TurnCounter] = playerTurnOrder(playerName);
+	pico8_gpio[gpio_PhaseCounter] = phaseId;
 	gpioSetStr(gpio_ActivePlayerName, maxPlayerNameLength, playerName);
 	const playerId = md_clients[playerName];
 	pico8_gpio[gpio_ActivePlayerType] = (
@@ -540,7 +547,7 @@ function gpioUpdateTurn(turn) {
 	gpioUpdateTurnScore(turn);
 	gpioUpdateScores();
 	gpioUpdateCounters(PHASE_IDS[turn.phase], md_game.active_player);
-	pico8_gpio[gpio_TurnCounters + 2] = turn.throw_count;
+	pico8_gpio[gpio_ThrowCounter] = turn.throw_count;
 
 	// Signal when move is expected
 	pico8_gpio[gpio_OutControl] = isMyMove() ? 0 : 2;
