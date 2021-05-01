@@ -4,7 +4,7 @@ import hashlib
 import logging
 import time
 import traceback
-from service.Config import Config
+from service.Common import Config
 
 logger = logging.getLogger('dynamodb')
 logger.setLevel(logging.INFO)

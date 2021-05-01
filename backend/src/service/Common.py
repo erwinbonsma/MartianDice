@@ -9,3 +9,6 @@ class Config:
 	ROOMS_TABLE = "MartianDice-Rooms-dev"
 	GAMES_TABLE = "MartianDice-Games-dev"
 	ROOM_EXPIRATION = timedelta(days = 1)
+
+def is_bot_name(name):
+	return name.startswith("Bot-") or name == "Bot"

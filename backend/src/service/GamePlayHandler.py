@@ -1,7 +1,7 @@
 import itertools
 import json
 from service.BaseHandler import GameHandler, HandlerException, ok_message, error_message
-from service.Config import Config
+from service.Common import is_bot_name, Config
 from service.GameState import GameState
 from game.DataTypes import TurnState, TurnPhase, DieFace
 from game.Game import RandomPlayer, AggressivePlayer, DefensivePlayer
@@ -35,14 +35,14 @@ class GamePlayHandler(GameHandler):
 
 	def check_bot_move(self, game_state):
 		self.check_expect_move(game_state)
-		if not game_state.active_player.startswith("Bot-"):
+		if not is_bot_name(game_state.active_player):
 			raise HandlerException("Bot move initiated while it's not a bot's turn")
 
 	def check_can_end_turn(self, game_state):
 		if game_state.age_in_seconds < Config.MAX_MOVE_TIME_IN_SECONDS:
 			raise HandlerException("Cannot forcefully end the current turn yet")
 
-		if game_state.active_player.startswith("Bot-"):
+		if is_bot_name(game_state.active_player):
 			raise HandlerException("Can only end turns of human players")
 
 	async def update_state_until_blocked(self, game_state):

@@ -2,7 +2,7 @@ import asyncio
 import json
 import random
 from service.BaseHandler import ErrorCode, GameHandler, HandlerException, ok_message
-from service.Config import Config
+from service.Common import is_bot_name, Config
 from service.GamePlayHandler import bot_behaviours
 from service.GameState import GameState
 
@@ -93,7 +93,7 @@ class MetaGameHandler(GameHandler):
 
 	async def join_room(self, room_id, client_id):
 		# Avoid possible bot name clash here, as this check is cheap
-		if client_id.startswith("Bot-"):
+		if is_bot_name(client_id):
 			raise HandlerException(
 				f"Name {client_id} is restricted to non-sentients",
 				ErrorCode.InvalidClientName
@@ -182,7 +182,7 @@ class MetaGameHandler(GameHandler):
 			raise HandlerException(f"Room {self.room.room_id} cannot exceed bot capacity limit")
 
 		for name, behaviour in bots.items():
-			if not name.startswith("Bot-"):
+			if not is_bot_name(name):
 				raise HandlerException(f"Invalid bot name '{name}'")
 			if not behaviour in bot_behaviours:
 				raise HandlerException(f"Unknown bot behaviour '{behaviour}'")

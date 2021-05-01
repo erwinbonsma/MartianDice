@@ -240,8 +240,10 @@ function handleClientsUpdate(clients, host) {
 			welcomeNewClients(addedClients);
 		} else if (sizeOfDict(md_clients) === 1 && isDictEmpty(md_bots)) {
 			// When alone, automatically add a bot as opponent
-			md_nextBotId += 1;
-			md_bots[`Bot-${md_nextBotId}`] = "smart";
+
+			// Do not add ID. This only creates a single bot at most, so there will never be a
+			// clash. This way the name looks better. It also ensures all bot stats are combined.
+			md_bots[`Bot`] = "smart";
 		}
 	}
 
