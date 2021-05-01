@@ -99,6 +99,8 @@ vector={
 
 public_room="pico"
 
+no_stats={wins=0,games=0}
+
 --client colors
 pal1={12,13,2,15,6,3,[0]=1}
 --bot colors
@@ -551,9 +553,9 @@ function title_draw(c2)
 
  pal(7,c2)
  if title.public then
-  spr(49,38,38)
+  spr(49,37,38)
  else
-  spr(48,38,38)
+  spr(48,37,38)
  end
  pal()
 end
@@ -852,31 +854,24 @@ function draw_help()
  )
 end
 
-function draw_room_member_1col(
+function draw_room_member(
  n,sprite,name,c
 )
- local y=56+n*8
- spr(sprite,51,y)
- print(name,58,y,c)
-end
-
-function draw_room_member_2cols(
- n,sprite,name,c
-)
- local x=32+(n%2)*34
- local y=56+(n\2)*8
- spr(sprite,x,y)
- print(name,x+7,y,c)
+ local y=50+n*8
+ spr(sprite,39,y)
+ print(name,47,y,c)
+ local s=stats[name]
+ if (s==nil) s=no_stats
+ print(
+  ""..s.wins.."/"..s.games,
+  75,y,c
+ )
 end
 
 function draw_room_members()
  local n=0
- local drawfun=draw_room_member_1col
- if room.size>4 then
-  drawfun=draw_room_member_2cols
- end
  for id,name in pairs(room.clients) do
-  drawfun(
+  draw_room_member(
    n,31+id,name,pal1[id]
   )
   n+=1
@@ -2438,6 +2433,12 @@ function dev_init_room()
  title.room="pico"
  title.public=true
 
+ stats={
+  bob={wins=2,games=3},
+  simon={wins=0,games=1},
+  george={wins=1,games=3}
+ }
+
  _update=room_update
  _draw=room_draw
  poke(a_room_mgmt,3)
@@ -2450,12 +2451,12 @@ function _init()
 
  --show_qr()
 
- poke(a_room_mgmt,0)
- show_menu()
+ --poke(a_room_mgmt,0)
+ --show_menu()
 
  --dev_init_game()
  
- --dev_init_room()
+ dev_init_room()
 
  --_draw=draw_all_help()
  --_update=function() end
