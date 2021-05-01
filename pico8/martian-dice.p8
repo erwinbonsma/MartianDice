@@ -263,16 +263,19 @@ function clone_log(log)
  return out
 end
 
-function init_stats(pname)
- if stats[pname]==nil then
-  stats[pname]={wins=0,games=0}
- end 
+function get_stats(pname)
+ local s=stats[pname]
+ if s==nil then
+  s={wins=0,games=0}
+  stats[pname]=s
+ end
+ return s
 end
 
 function register_gameplay(
  pname,game_id
 )
- local s=stats[pname]
+ local s=get_stats(pname)
 
  if (s.lastgame==game_id) return
 
@@ -283,7 +286,7 @@ end
 function register_win(
  pname,game_id
 )
- local s=stats[pname]
+ local s=get_stats(pname)
 
  if s.lastgame!=game_id then
   --only register win once and
@@ -306,13 +309,11 @@ function rank_players()
   add(p,bot[1])
  end
 
- foreach(p,init_stats)
-
  --returns true if p1 ranks 
  --higher than p2
  local cmp=function(p1,p2)
-  local s1=stats[p1]
-  local s2=stats[p2]
+  local s1=get_stats(p1)
+  local s2=get_stats(p2)
 
   if s1.wins!=s2.wins then
    return s1.wins>s2.wins
