@@ -1718,6 +1718,7 @@ function read_gpio_game()
     draw=draw_chkpass
    }
   end
+  g.inputwait=0
   poke(a_ctrl_out,3)
  end
 
@@ -1914,6 +1915,12 @@ function game_update()
  if not game_common_update() then
   if game.inputhandler then
    game.inputhandler.update()
+   game.inputwait+=1
+   if game.inputwait%300==0 then
+    show_popup_msg(
+     "please make a move"
+    )
+   end
   elseif actionbtnp()
   and not game.is_player
   and peek(a_room_mgmt)==3 then
