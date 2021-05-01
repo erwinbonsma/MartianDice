@@ -263,14 +263,16 @@ function clone_log(log)
  return out
 end
 
+function init_stats(pname)
+ if stats[pname]==nil then
+  stats[pname]={wins=0,games=0}
+ end 
+end
+
 function register_gameplay(
  pname,game_id
 )
  local s=stats[pname]
- if s==nil then
-  s={wins=0,games=0}
-  stats[pname]=s
- end
 
  if (s.lastgame==game_id) return
 
@@ -283,8 +285,7 @@ function register_win(
 )
  local s=stats[pname]
 
- if s==nil
- or s.lastgame!=game_id then
+ if s.lastgame!=game_id then
   --only register win once and
   --when play was registered
   return
@@ -292,6 +293,45 @@ function register_win(
 
  s.wins+=1
  s.lastgame=nil
+end
+
+function rank_players()
+ --create list of players in room
+ local p={}
+ 
+ for id,name in pairs(room.clients) do
+  add(p,name)
+ end
+ for bot in all(room.bots) do
+  add(p,bot[1])
+ end
+
+ foreach(p,init_stats)
+
+ --returns true if p1 ranks 
+ --higher than p2
+ local cmp=function(p1,p2)
+  local s1=stats[p1]
+  local s2=stats[p2]
+
+  if s1.wins!=s2.wins then
+   return s1.wins>s2.wins
+  end
+
+  return s1.games<s2.games
+ end
+ 
+ --poor man's sorting
+ local rank=1
+ while #p>0 do
+  local best=1
+  for j=2,#p do
+   if (cmp(p[j],p[best])) best=j
+  end
+  stats[p[best]].rank=rank
+  rank+=1
+  deli(p,best)
+ end
 end
 -->8
 --drawing
@@ -887,9 +927,9 @@ function draw_help()
 end
 
 function draw_room_member(
- n,sprite,name,c
+ sprite,name,c
 )
- local y=50+n*8
+ local y=42+stats[name].rank*8
  spr(sprite,39,y)
  print(name,47,y,c)
  local s=stats[name]
@@ -901,19 +941,16 @@ function draw_room_member(
 end
 
 function draw_room_members()
- local n=0
  for id,name in pairs(room.clients) do
   draw_room_member(
-   n,31+id,name,pal1[id]
+   31+id,name,pal1[id]
   )
-  n+=1
  end
  for bot in all(room.bots) do
   local tp=bot[2]
   draw_room_member(
-   n,49+tp,bot[1],pal2[tp]
+   49+tp,bot[1],pal2[tp]
   )
-  n+=1
  end
 end
 
@@ -1756,6 +1793,8 @@ function read_gpio_room()
   room.size=r.size
   room.is_host=r.is_host
   roomnew=nil
+
+  rank_players()
  end
 
  poke(a_ctrl_in_room,0)
@@ -2482,6 +2521,7 @@ function dev_init_room()
   simon={wins=0,games=1},
   george={wins=1,games=3}
  }
+ rank_players()
 
  _update=room_update
  _draw=room_draw
