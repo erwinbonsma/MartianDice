@@ -101,6 +101,12 @@ Done:
 	-	Wait with switching to end-game animation until score crossed the finish
 	-	Let observer leave room
 	-	Fixed: Assert failure in P8 client in battle_update
+v0.9.1
+	-	Add text scroll animation
+	-	Track player performance
+
+ISSUES:
+	-	Single turn defeat caused "UB" assert failure
 
 TODO:
 -	Add public rooms
@@ -108,10 +114,18 @@ TODO:
 	-	Show available public rooms
 	-	Limit chat in public rooms
 -	Extend PICO-8 client
+	-	Use in-game dialog at more places
+		-	Check pass
+		-	End-turn cause
+	-	Limit chat spamming
+		-	PICO-8 cooldown
 	-	Handle disconnected/inactive players
 		-	Auto-skip turn for disconnected players
 		-	Remind/prod/skip inactive players
-	-	Sounds
+	-	Improve game end animation
+		-	Gradually transition from game screen
+		-	Keep abductees in lower box, also let them roam in y-direction
+		-	Gradually transition to room screen (let title appear?)
 -	Remove memcache dependency
 	-	From Dockerfile
 	-	From layer
