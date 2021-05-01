@@ -128,6 +128,8 @@ room={
  id=""
 }
 
+stats={}
+
 function shuffle(l)
  for i=1,#l do
   local j=flr(rnd(#l-i+1))+i
@@ -261,6 +263,36 @@ function clone_log(log)
  return out
 end
 
+function register_gameplay(
+ pname,game_id
+)
+ local s=stats[pname]
+ if s==nil then
+  s={wins=0,games=0}
+  stats[pname]=s
+ end
+
+ if (s.lastgame==game_id) return
+
+ s.games+=1
+ s.lastgame=game_id
+end
+
+function register_win(
+ pname,game_id
+)
+ local s=stats[pname]
+
+ if s==nil
+ or s.lastgame!=game_id then
+  --only register win once and
+  --when play was registered
+  return
+ end
+
+ s.wins+=1
+ s.lastgame=nil
+end
 -->8
 --drawing
 function draw_rrect(
@@ -878,7 +910,7 @@ function draw_room_members()
  end
  for bot in all(room.bots) do
   local tp=bot[2]
-  drawfun(
+  draw_room_member(
    n,49+tp,bot[1],pal2[tp]
   )
   n+=1
@@ -1318,14 +1350,16 @@ a_trsc=0x5f9b --turn score
 a_ttsc=0x5f9c --tot. score
 a_cpos=0x5f9d --cur. position
 
---round/turn/throw/phase counters
-a_crou=0x5fa0
-a_ctur=0x5fa1
-a_cthr=0x5fa2
-a_cpha=0x5fa3
+--game/round/turn/throw/phase
+--counters
+a_cgam=0x5fa0
+a_crou=0x5fa1
+a_ctur=0x5fa2
+a_cthr=0x5fa3
+a_cpha=0x5fa4
 --active player, see a_ptyp
-a_atyp=0x5fa4
-a_anam=0x5fa5 -- 6 bytes
+a_atyp=0x5fa5
+a_anam=0x5fa6 -- 6 bytes
 
 --- room status ---
 --num clients/bots
@@ -1539,6 +1573,7 @@ function read_gpio_game()
  end
  
  local g={}
+ g.games=peek(a_cgam)
  g.round=peek(a_crou)
  g.turn=peek(a_ctur)
  g.thrownum=peek(a_cthr)
@@ -1569,6 +1604,10 @@ function read_gpio_game()
  end
  ap.name=gpio_gets(a_anam,6)
  g.active_player=ap
+
+ register_gameplay(
+  ap.name,stats.game_id
+ )
 
  if g.phase==phase.endgame then
   g.winner=ap
@@ -2273,6 +2312,8 @@ function show_game()
 
  reset_button(game_exit_button)
 
+ stats.game_id=room.id..game.games
+
  if room.is_host then
   show_popup_msg(
    "game started. good luck!"
@@ -2326,6 +2367,9 @@ function show_intro()
 end
 
 function show_game_end()
+ register_win(
+  game.winner.name,stats.game_id
+ )
  animate_game_end()
 
  _draw=game_common_draw
@@ -2449,14 +2493,14 @@ function _init()
 
  --show_intro()
 
- --show_qr()
+ show_qr()
 
  --poke(a_room_mgmt,0)
  --show_menu()
 
  --dev_init_game()
  
- dev_init_room()
+ --dev_init_room()
 
  --_draw=draw_all_help()
  --_update=function() end
