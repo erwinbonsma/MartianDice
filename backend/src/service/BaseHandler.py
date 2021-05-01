@@ -64,6 +64,7 @@ class GameHandler(BaseHandler):
 	def game_state_message(self, game_state, turn_state_transitions = []):
 		return jsonpickle.encode({
 			"game_id": self.room.game_id,
+			"game_count": self.room.game_count,
 			"type": "game-state",
 			"state": game_state,
 			"turn_state_transitions": turn_state_transitions

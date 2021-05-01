@@ -125,6 +125,13 @@ class DynamoDbRoom:
 	def game_id(self):
 		return self.room_id
 
+	@property
+	def game_count(self):
+		instance = self.__instance_item()
+		if "GameCount" in instance:
+			return int(instance["GameCount"]["N"])
+		return 0
+
 	def __instance_item(self):
 		for item in self.__items:
 			if item["SKEY"]["S"] == "Instance":
@@ -205,6 +212,25 @@ class DynamoDbRoom:
 			return host
 		except Exception as e:
 			logger.warn(f"Failed to set host for Room {self.room_id} to {host}: {e}")
+
+	def inc_game_count(self):
+		try:
+			response = self.client.update_item(
+				TableName = Config.ROOMS_TABLE,
+				Key = {
+					"PKEY": { "S": f"Room#{self.room_id}" },
+					"SKEY": { "S": "Instance" }
+				},
+				UpdateExpression = "ADD GameCount :inc",
+				ExpressionAttributeValues = {
+					":inc": { "N": "1" }
+				},
+				ReturnValues = "UPDATED_NEW"
+			)
+
+			self.__instance_item()["GameCount"] = response["Attributes"]["GameCount"]
+		except Exception as e:
+			logger.warn(f"Failed to increase game count for Room {self.room_id}: {e}")
 
 	def clients(self):
 		if self.__clients is None:

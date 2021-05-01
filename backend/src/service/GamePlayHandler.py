@@ -108,6 +108,7 @@ class GamePlayHandler(GameHandler):
 		bots = game_config["bots"]
 		game_state = GameState( itertools.chain(self.clients.values(), bots.keys()) )
 
+		self.room.inc_game_count()
 		self.db.log_game_start(self.room.room_id, game_state)
 
 		await self.update_state_until_blocked(game_state)
