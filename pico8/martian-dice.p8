@@ -395,6 +395,34 @@ function draw_chatlog(y0,n)
  _draw_chatlog(log,y0,n)
 end
 
+function draw_chatfield()
+ rect(54,98,80,106,5)
+
+ local msg=chatmsg[room.chatidx]
+ if (msg==nil) msg="chat"
+
+ local c=4
+ if (room.ypos==3) c=9
+ 
+ if room.chatscroll then
+  draw_scrolling_str(
+   msg,68-2*#msg,100,
+   room.chatscroll,c
+  )
+  if room.prevchatmsg then
+   draw_scrolling_str(
+    room.prevchatmsg,
+    68-2*#room.prevchatmsg,100,
+    room.chatscroll-6*sgn(room.chatscroll),
+    c
+   )
+  end
+ else
+  print(msg,68-2*#msg,100,c)
+  room.prevchatmsg=msg
+ end
+end
+
 function draw_popup_msg(msg,y)
  rectfill(0,y,127,y+7,5)
  print(msg,64-2*#msg,y+1,9)
@@ -534,8 +562,8 @@ function draw_scrolling_str(
  local px={}
  for i=0,4 do
   local yr=i+offset
-  if yr<0 or yr>4 then
-   for j=0,#s*3-1 do
+  if yr<-1 or yr>5 then
+   for j=0,#s*4 do
     add(px,pget(x+j,y+yr))
    end
   end
@@ -545,8 +573,8 @@ function draw_scrolling_str(
 
  for i=4,0,-1 do
   local yr=i+offset
-  if yr<0 or yr>4 then
-   for j=#s*3-1,0,-1 do
+  if yr<-1 or yr>5 then
+   for j=#s*4,0,-1 do
     pset(x+j,y+yr,deli(px))
    end
   end
@@ -883,12 +911,7 @@ function room_draw()
   draw_button(b)
  end
 
- rect(54,98,80,106,5)
- local msg=chatmsg[room.chatidx]
- if (msg==nil) msg="chat"
- color(4)
- if (room.ypos==3) color(9)
- print(msg,68-2*#msg,100)
+ draw_chatfield()
 
  draw_chatlog(110,3)
  draw_animation()
@@ -1873,6 +1896,7 @@ function room_update()
    room.chatidx=(
     room.chatidx+#chatmsg-2
    )%#chatmsg+1
+   room.chatscroll=-6
    room.ypos=3
   end
  elseif btnp(⬇️) then
@@ -1882,6 +1906,7 @@ function room_update()
    room.chatidx=(
     room.chatidx%#chatmsg+1
    )
+   room.chatscroll=6
    room.ypos=3
   end
  end
@@ -1902,6 +1927,13 @@ function room_update()
   room.help42-=1
   if room.help42==0 then
    room.help42=nil
+  end
+ end
+
+ if room.chatscroll then
+  room.chatscroll-=sgn(room.chatscroll)
+  if room.chatscroll==0 then
+   room.chatscroll=nil
   end
  end
 
@@ -2027,10 +2059,7 @@ function create_room()
  poke(a_room_mgmt,6)
 end
 
---s: text to edit
-function edittext(
- s
-)
+function edittext(s)
  local t=textedit
 
  --never allow space as 1st char
@@ -2073,11 +2102,7 @@ function edittext(
    t.blink=0
   end
   if t.scroll then
-   if t.scroll>0 then
-    t.scroll-=1
-   else
-    t.scroll+=1
-   end
+   t.scroll-=sgn(t.scroll)
    if (t.scroll==0) t.scroll=nil
   end
  end
