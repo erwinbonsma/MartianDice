@@ -58,9 +58,9 @@ game_pass_buttons={
 }
 
 slow_buttons={
- {label="wait",x=31,y=44},
- {label="skip",x=58,y=44},
- {label="eject",x=85,y=44}
+ {label="wait",x=29,y=44},
+ {label="skip",x=56,y=44},
+ {label="remove",x=83,y=44}
 }
 
 game_exit_button={
@@ -819,8 +819,8 @@ function game_common_draw()
 end
 
 function slow_player_draw()
- rectfill(26,32,115,54,4)
- rect(26,32,115,54,5)
+ rectfill(26,32,114,54,4)
+ rect(26,32,114,54,5)
 
  local msg=game.active_player.name
  msg..=" is slow to act"
