@@ -582,9 +582,10 @@ function gpioHandleMove() {
 		return
 	}
 
-	assert(isMyMove());
 	const move = pico8_gpio[gpio_Move];
 	if (move >= 1 && move <= 5) {
+		assert(isMyMove());
+		// Pick dice
 		assert(move != 2);
 		md_socket.send(JSON.stringify({
 			action: "move",
@@ -592,11 +593,20 @@ function gpioHandleMove() {
 			pick_die: DIE_NAMES[move],
 			game_state: md_game
 		}));
-	} else {
+	} else if (move >= 6 && move <= 7) {
+		assert(isMyMove());
+		// Check pass
 		md_socket.send(JSON.stringify({
 			action: "move",
 			game_id: md_roomId,
 			pass: move == 6,
+			game_state: md_game
+		}));
+	} else if (move == 9) {
+		// Skip turn
+		md_socket.send(JSON.stringify({
+			action: "end-turn",
+			game_id: md_roomId,
 			game_state: md_game
 		}));
 	}

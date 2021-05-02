@@ -1133,10 +1133,10 @@ function animate_move(
 )
  assert(
   #old<#new,
-  "#old="..#old..",#new="..#new
+  "#old="..#old..",#new="..#new.." "..tmpinfo
  )
  local moving={}
- 
+
  for i=#new,#old+1,-1 do
   local j=#src
   local d=new[i]
@@ -1210,8 +1210,9 @@ function set_game_animation(
   animate_move(
    game.battle,g.battle,moving
   )
- elseif p==phase.pickeddice then
-  if #game.battle<#g.battle then
+ elseif p==phase.pickeddice
+ and #moving>0 then
+  if moving[1].tp==1 then
    animate_move(
     game.battle,g.battle,moving
    )
@@ -1380,7 +1381,8 @@ a_handshke=0x5f80
 --4:start batch/reset
 a_ctrl_in_room=0x5f81
 
---2:null
+--2:null/can write (vs 0:write
+--  expected)
 --3:awaiting input (set by p8)
 a_ctrl_out=0x5f82
 
@@ -1680,11 +1682,11 @@ function read_gpio_game()
  for i=1,5 do
   dice[i]=peek(a_thrw+i-1)
  end
-
  local sameturn=(
   game!=nil
   and game.turn==g.turn
   and game.round==g.round
+  and game.games==g.games
  )
  local moving={}
  if sameturn
@@ -1709,11 +1711,16 @@ function read_gpio_game()
  }
 
  --tmp
- tmpinfo="st="..(sameturn and 1 or 0).." r="..g.round.." t="..g.turn
+ tmpinfo="st="..(sameturn and 1 or 0)
+ tmpinfo..=" r="..g.round
+ tmpinfo..=" t="..g.turn
+ tmpinfo..=" #b0="..#prvb
+ tmpinfo..=" #c0="..#prvc
 
  g.battle=update_battle(
   prvb,dice
  )
+ tmpinfo..=" #b="..#g.battle
 
  dice={}
  for i=3,5 do
@@ -1722,6 +1729,7 @@ function read_gpio_game()
  g.collected=update_collected(
   prvc,dice
  )
+ tmpinfo..=" #c="..#g.collected
 
  set_game_animation(g,moving)
 
@@ -1877,6 +1885,10 @@ function slow_player_update()
  elseif actionbtnp() then
   if game.slowidx==2 then
    --skip turn
+   if peek(a_ctrl_out)==2 then
+    poke(a_move,9)
+    poke(a_ctrl_out,1)
+   end
   elseif game.slowidx==3 then
    --eject from game
   else
@@ -1918,7 +1930,7 @@ function game_chkpass()
  if actionbtnp() then
   poke(
    a_move,
-   game.pass and 6 or 0
+   game.pass and 6 or 7
   )
   poke(a_ctrl_out,1)
   game.inputhandler=nil
