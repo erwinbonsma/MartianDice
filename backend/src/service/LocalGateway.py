@@ -11,6 +11,7 @@ logger = logging.getLogger('gateway')
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
+game_cmds = {"start-game", "move", "bot-move", "end-turn", "remove-player"}
 
 class LocalGateway:
 	def __init__(self):
@@ -41,7 +42,7 @@ class LocalGateway:
 
 				if cmd == "create-room":
 					cmd_handler = RegistrationHandler(self.db, self.comms, socket_id)
-				elif cmd == "start-game" or cmd == "move" or cmd == "bot-move" or cmd == "end-turn":
+				elif cmd in game_cmds:
 					cmd_handler = GamePlayHandler(self.db, self.comms, socket_id)
 				else:
 					cmd_handler = MetaGameHandler(self.db, self.comms, socket_id)

@@ -55,6 +55,13 @@ class GameState:
 	def age_in_seconds(self):
 		return time.time() - self.last_update
 
+	@property
+	def num_players(self):
+		return len(self.scores)
+
+	def has_player(self, id):
+		return id in self.scores
+
 	def next(self, input = None):
 		assert(not self.done)
 
@@ -68,22 +75,42 @@ class GameState:
 			self._end_turn()
 		self.last_update = time.time()
 
+	def remove_player(self):
+		del self.scores[self.active_player]
+		self.players[self.active_player_index] = ""
+
+	def _next_turn(self):
+		start_index = self.active_player_index
+
+		while True:
+			self.active_player_index += 1
+			if self.active_player_index == len(self.players):
+				self.active_player_index = 0
+				self.round += 1
+
+			# Skip players that have been removed from the game
+			if self.active_player != "":
+				break
+
+			# Guard against endless loop
+			assert(self.active_player_index != start_index)
+
+		self.turn_state = TurnState()
+
 	def _end_turn(self):
 		assert(not self.done)
 		assert(self.turn_state.done)
 
-		self.scores[self.active_player] += self.turn_state.score
-		if self.scores[self.active_player] >= TARGET_SCORE:
-			self.winner = self.active_player
-			self.turn_state = None
-			self.active_player_index = None
-			return
+		if self.active_player != "":
+			# Only update score when player was not just removed
+			self.scores[self.active_player] += self.turn_state.score
+			if self.scores[self.active_player] >= TARGET_SCORE:
+				self.winner = self.active_player
+				self.turn_state = None
+				self.active_player_index = None
+				return
 
-		self.active_player_index += 1
-		if self.active_player_index == len(self.players):
-			self.active_player_index = 0
-			self.round += 1
-		self.turn_state = TurnState()
+		self._next_turn()
 
 	def __getstate__(self):
 		state = {

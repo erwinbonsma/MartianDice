@@ -110,10 +110,8 @@ class BackendStack(core.Stack):
 		game_play_integration = apigateway_integrations.LambdaWebSocketIntegration(
 			handler = game_play_handler
 		)
-		api.add_route('start-game', integration = game_play_integration)
-		api.add_route('move', integration = game_play_integration)
-		api.add_route('bot-move', integration = game_play_integration)
-		api.add_route('end-turn', integration = game_play_integration)
+		for game_cmd in ["start-game", "move", "bot-move", "end-turn", "remove-player"]:
+			api.add_route(game_cmd, integration = game_play_integration)
 
 		websocket_send_statement = iam.PolicyStatement(
 			effect = iam.Effect.ALLOW,

@@ -609,6 +609,13 @@ function gpioHandleMove() {
 			game_id: md_roomId,
 			game_state: md_game
 		}));
+	} else if (move == 10) {
+		// Remove from game
+		md_socket.send(JSON.stringify({
+			action: "remove-player",
+			game_id: md_roomId,
+			game_state: md_game
+		}));
 	}
 
 	pico8_gpio[gpio_OutControl] = 2;

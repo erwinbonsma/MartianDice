@@ -1883,16 +1883,13 @@ function slow_player_update()
  elseif btnp(⬆️) or btnp(⬇️) then
   game.slowidx=nil 
  elseif actionbtnp() then
-  if game.slowidx==2 then
-   --skip turn
+  if game.slowidx==2 
+  or game.slowidx==3 then
+   --skip turn/remove from game
    if peek(a_ctrl_out)==2 then
-    poke(a_move,9)
+    poke(a_move,7+game.slowidx)
     poke(a_ctrl_out,1)
    end
-  elseif game.slowidx==3 then
-   --eject from game
-  else
-   --wait
   end
   game.slowidx=nil
  end

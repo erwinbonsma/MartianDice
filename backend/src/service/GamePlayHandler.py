@@ -40,10 +40,20 @@ class GamePlayHandler(GameHandler):
 
 	def check_can_end_turn(self, game_state):
 		if game_state.age_in_seconds < Config.MAX_MOVE_TIME_IN_SECONDS:
-			raise HandlerException("Cannot forcefully end the current turn yet")
+			raise HandlerException("You cannot yet forcefully end the current turn")
 
 		if is_bot_name(game_state.active_player):
-			raise HandlerException("Can only end turns of human players")
+			raise HandlerException("You can only end the turn of a human player")
+
+	def check_can_remove_player(self, game_state):
+		if game_state.age_in_seconds < Config.MAX_MOVE_TIME_IN_SECONDS:
+			raise HandlerException("You cannot yet remove the active player")
+
+		if is_bot_name(game_state.active_player):
+			raise HandlerException("You can only remove human players")
+		
+		if game_state.num_players == 1:
+			raise HandlerException("The last player cannot be removed")
 
 	async def update_state_until_blocked(self, game_state):
 		turn_state_transitions = []
@@ -101,6 +111,12 @@ class GamePlayHandler(GameHandler):
 
 		await self.handle_move(game_state, "end-turn")
 
+	async def remove_player(self, game_state):
+		self.check_can_remove_player(game_state)
+
+		game_state.remove_player()
+		await self.handle_move(game_state, "end-turn")
+
 	async def start_game(self, game_config):
 		self.check_can_configure_game("start game")
 
@@ -128,5 +144,8 @@ class GamePlayHandler(GameHandler):
 
 		if cmd == "end-turn":
 			return await self.end_turn(game_state)
+
+		if cmd == "remove-player":
+			return await self.remove_player(game_state)
 
 		self.logger.warn(f"Unrecognized command {cmd}")
