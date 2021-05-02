@@ -53,8 +53,8 @@ menu_go_button={
 }
 
 game_pass_buttons={
- {label="yes",x=73,y=27},
- {label="no",x=92,y=27}
+ {label="yes",x=53,y=44},
+ {label="no",x=76,y=44}
 }
 
 slow_buttons={
@@ -818,31 +818,51 @@ function game_common_draw()
  draw_game_scores()
 end
 
-function slow_player_draw()
- rectfill(26,32,114,54,4)
- rect(26,32,114,54,5)
+function show_dialog(
+ msg,w,buttons,msg2
+)
+ local x0=70-w\2
+ local x1=x0+w
+ rectfill(x0,32,x1,54,4)
+ rect(x0,32,x1,54,5)
+ line(x0+1,55,x1+1,55,0)
+ line(x1+1,33,0)
 
- local msg=game.active_player.name
- msg..=" is slow to act"
  print(msg,71-2*#msg,35,15)
- 
- for i,b in pairs(slow_buttons) do
-  b.selected=game.slowidx==i
-  draw_button(b)
+
+ if msg2 then
+  print_outlined(
+   msg2,71-2*#msg2,45,9,0
+  )
+ else
+  foreach(buttons,draw_button)
  end
 end
 
-function draw_chkpass()
- print("continue?",35,29,15)
+function slow_player_draw()
+ local msg=game.active_player.name
+ msg..=" is slow to act"
 
+ for i,b in pairs(slow_buttons) do
+  b.selected=game.slowidx==i
+ end
+
+ show_dialog(
+  msg,88,slow_buttons
+ )
+end
+
+function draw_chkpass()
  game_pass_buttons[
   1
  ].selected=not game.pass
  game_pass_buttons[
   2
  ].selected=game.pass
- foreach(
-  game_pass_buttons,draw_button
+
+ show_dialog(
+  "continue?",41,
+  game_pass_buttons
  )
 end
 
@@ -876,19 +896,15 @@ function game_draw()
  end
  
  if game.endcause!=0 then
-  local msg=endcause[game.endcause]
-  print_outlined(
-   msg,70-2*#msg,26,9,0
-  )
-
+  local msg="no points"
   if game.scored>0 then
    msg="+"..game.scored.." point"
    if (game.scored>1) msg..="s"
-  else
-   msg="no points"
   end
-  print_outlined(
-   msg,70-2*#msg,34,9,0
+
+  show_dialog(  
+   endcause[game.endcause],
+   88,nil,msg
   )
  end
 
@@ -2527,7 +2543,7 @@ function dev_init_game()
   games=1,
   round=6,
   turn=2,
-  phase=phase.pickdice,
+  phase=phase.checkpass,
   thrownum=3,
   endcause=0,
   active_player={
@@ -2539,18 +2555,17 @@ function dev_init_game()
   scores={17,13},
   players={1,3},
   is_player=true,
-  inputwait=550,
+  --inputwait=550,
  }
 
  show_game()
 
- animate_game_throw(game.throw)
+ --animate_game_throw(game.throw)
 
  if false then
-  game.endcause=1
+  game.endcause=6
   game.scored=2
   game.score=2
-  game.position=1
  end
  if false then
   game.score=27
@@ -2558,7 +2573,12 @@ function dev_init_game()
   game.phase=phase.endgame
   animate_endgame()
  end
- cls()
+ if true then
+  game.inputhandler={
+   update=game_chkpass,
+   draw=draw_chkpass
+  }
+ end
 
  local log={}
  add_chat(log,1,"hi")
