@@ -184,9 +184,11 @@ function updateGameState(gameState, turnStates, gameCount) {
 	}
 
 	if (md_game !== md_gameNext) {
-		// This may happen when PICO-8 client does not consume all updates (e.g. when it is paused
-		// due to lack of focus) 
-		console.warn("Force updating game state");
+		if (md_gameNext) {
+			// This may happen when PICO-8 client does not consume all updates (e.g. when it is
+			// paused due to lack of focus) 
+			console.warn("Force updating game state. Some moves may have been skipped.");
+		}
 		md_game = md_gameNext;
 	}
 
@@ -436,6 +438,7 @@ function endGame() {
 
 	// Update scores
 	md_game = md_gameNext;
+	md_gameNext = null;
 
 	if (!isDictEmpty(md_bots) && sizeOfDict(md_clients) > 1) {
 		// Remove any bots. This can happen when an observer joined during game play
