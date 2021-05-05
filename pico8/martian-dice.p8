@@ -122,12 +122,10 @@ title={
 
 menu={
  ypos=1, --menu-item
- xpos=0, --pos in text entry
  room="****",
  name="p8-"..chr(
   ord("a")+flr(rnd(26))
- ),
- blink=0,
+ )
 }
 
 room={
@@ -151,27 +149,15 @@ end
 function print_outlined(
  msg,x,y,c1,c2
 )
- color(c2)
- print(msg,x-1,y)
- print(msg,x+1,y)
- print(msg,x,y-1)
- print(msg,x,y+1)
-
- color(c1)
- print(msg,x,y)
-end
-
-function print_select(
- msg,x,y,selected,active
-)
- if selected and active then
-  print_outlined(msg,x,y,15,5)
- else
-  print(
-   msg,x,y,
-   selected and 15 or 14,0,0
-  )
+ if c2!=nil then
+  color(c2)
+  print(msg,x-1,y)
+  print(msg,x+1,y)
+  print(msg,x,y-1)
+  print(msg,x,y+1)
  end
+
+ print(msg,x,y,c1)
 end
 
 function modchar(
@@ -232,15 +218,17 @@ function is_roomid_set()
  return true
 end
 
-function roundrect(x0,y0,x1,y1,c)
- line(x0+2,y0,x1-2,y0,c)
- line(x0+2,y1,x1-2,y1,c)
- line(x0,y0+2,x0,y1-2,c)
- line(x1,y0+2,x1,y1-2,c)
- pset(x0+1,y0+1,c)
- pset(x0+1,y1-1,c)
- pset(x1-1,y0+1,c)
- pset(x1-1,y1-1,c)
+function dieframe(x,y)
+ camera(-x,-y)
+ line( 1,-1,13,-1)
+ line( 1,15,13,15)
+ line(-1, 1,-1,13)
+ line(15, 1,15,13)
+ pset( 0, 0)
+ pset( 0,14)
+ pset(14, 0)
+ pset(14,14)
+ camera()
 end
 
 function actionbtnp()
@@ -354,14 +342,15 @@ end
 function draw_rrect(
  x,y,w,h,c,cl,cd
 )
- rectfill(x+1,y+1,x+w-1,y+h-1,c)
+ camera(-x,-y)
 
- cl=cl or 14
- cd=cd or 5
- line(x,y+1,x,y+h-1,cl)
- line(x+1,y,x+w-1,y,cl)
- line(x+w,y+1,x+w,y+h-1,cd)
- line(x+1,y+h,x+w-1,y+h,cd)
+ rectfill(1,1,w-1,h-1,c)
+ line(0,1,0,h-1,cl)
+ line(1,0,w-1,0,cl)
+ line(w,1,w,h-1,cd)
+ line(1,h,w-1,h,cd)
+
+ camera()
 end
 
 paln={4,5,1,14,1}
@@ -402,12 +391,15 @@ function draw_vscroll(
 )
  line(x+3,y1,x+3,y2,5)
  local y=y1+(y2-y1-5)*progress
- draw_rrect(x,y,6,4,4)
- local c
- c=progress<0.01 and 5 or 15
- rectfill(x+2,y1-4,x+5,y1-2,c)
- c=progress>0.99 and 5 or 15
- rectfill(x+2,y2+1,x+5,y2+3,c)
+ draw_rrect(x,y,6,4,4,14,5)
+ rectfill(
+  x+2,y1-4,x+5,y1-2,
+  progress<0.01 and 5 or 15
+ )
+ rectfill(
+  x+2,y2+1,x+5,y2+3,
+  progress>0.99 and 5 or 15
+ )
  print("⬆️",x,y1-5,4)
  print("⬇️",x,y2,4)
 end
@@ -532,14 +524,15 @@ function draw_thrown_die(
 
  local frac=
   max(0,min(1,1-d.shift*2))
- 
- if flr(d.rolldir)>=2 then
+
+ local rd=flr(d.rolldir)
+ if rd>=2 then
   local tmp=tp1
   tp1=tp2
   tp2=tmp
   frac=1-frac
  end
- if flr(d.rolldir)%2==0 then
+ if rd%2==0 then
   w1*=frac
   w2=sz-w1
  else
@@ -571,16 +564,13 @@ function draw_dice(dice)
 end
 
 function draw_selecteddice()
- local selected=game.die_choices[
+ local s=game.die_choices[
   game.die_idx
  ]
 
+ color(15)
  for d in all(game.throw) do
-  if d.tp==selected then
-   roundrect(
-    d.x-1,d.y-1,d.x+15,d.y+15,15
-   )
-  end
+  if (d.tp==s) dieframe(d.x,d.y)
  end
 end
 
@@ -702,17 +692,18 @@ function menu_draw()
   local txt=menuitems[i]
   local x=64-2*#txt
   local y=54+i*10
-  
+  local chosen=menu.ypos==i
+  local active=textedit==nil
+
   rectfill(
    24,y-2,103,y+6,
-   menu.ypos==i and textedit==nil
-   and 4 or 5
+   chosen and active and 4 or 5
   )
 
-  print_select(
+  print_outlined(
    txt,x,y,
-   menu.ypos==i,
-   textedit==nil
+   chosen and 15 or 14,
+   active and 5 or nil
   )
  end
 
@@ -2573,7 +2564,9 @@ function dev_init_game()
   scores={17,13},
   players={1,2},
   is_player=true,
-  inputwait=550,
+  die_choices={1,3,5},
+  die_idx=1
+  --inputwait=550,
  }
 
  show_game()
@@ -2591,10 +2584,10 @@ function dev_init_game()
   game.phase=phase.endgame
   animate_endgame()
  end
- if false then
+ if true then
   game.inputhandler={
-   update=game_chkpass,
-   draw=draw_chkpass
+   update=game_pickdie,
+   draw=draw_selecteddice
   }
  end
 
