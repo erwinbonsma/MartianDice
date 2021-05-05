@@ -830,6 +830,11 @@ function game_common_draw()
  draw_game_scores()
 end
 
+function draw_game_end()
+ game_common_draw()
+ custom_pal()
+end
+
 function show_dialog(
  msg,w,buttons,msg2
 )
@@ -973,12 +978,12 @@ function draw_help()
  for i=1,7 do
   draw_help_line(
    i+room.help\helpscroll,
-   0,6*i+37-ysub
+   1,6*i+37-ysub
   )
  end
  
  draw_vscroll(
-  121,46,81,room.help/helpmax
+  120,46,81,room.help/helpmax
  )
 end
 
@@ -2532,7 +2537,7 @@ function show_game_end()
  rank_players()
  animate_game_end()
 
- _draw=game_common_draw
+ _draw=draw_game_end
  _update=game_common_update
 end
 
@@ -2578,6 +2583,18 @@ function dev_init_game()
   --inputwait=550,
  }
 
+ local log={}
+ for i=0,8 do
+  add_chat(log,1+i%2,"hi")
+ end
+
+ room={
+  chatlog=log,
+  chatidx=0,
+  id="test"
+ }
+ room_label.id=room.id
+
  show_game()
 
  --animate_game_throw(game.throw)
@@ -2587,28 +2604,18 @@ function dev_init_game()
   game.scored=2
   game.score=2
  end
- if false then
+ if true then
   game.score=27
   game.winner=game.active_player
   game.phase=phase.endgame
-  animate_endgame()
+  --animate_game_end()
  end
- if true then
+ if false then
   game.inputhandler={
    update=game_pickdie,
    draw=draw_selecteddice
   }
  end
-
- local log={}
- for i=0,8 do
-  add_chat(log,1+i%2,"hi")
- end
- room={
-  chatlog=log,
-  chatidx=0,
-  id="test"
- }
 
  poke(a_ctrl_out,0)
  poke(a_room_mgmt,3)
@@ -2652,9 +2659,9 @@ function _init()
  --poke(a_room_mgmt,0)
  --show_menu()
 
- --dev_init_game()
+ dev_init_game()
  
- dev_init_room()
+ --dev_init_room()
 
  --_draw=draw_all_help()
  --_update=function() end
