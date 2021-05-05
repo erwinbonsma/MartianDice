@@ -5,6 +5,8 @@ __lua__
 -- (c) 2021  eriban
 version="0.9.1"
 
+public_room="pico"
+
 phase={
  throwing=1,
  thrown=2,
@@ -38,6 +40,13 @@ menuitems={
  "enter public room",
  "create private room",
  "enter private room"
+}
+
+menu_room_ids={
+ nil,
+ public_room,
+ "????",
+ ""
 }
 
 --label,xpos
@@ -103,8 +112,6 @@ vector={
  {1,0},{0,1},{-1,0},{0,-1}
 }
 
-public_room="pico"
-
 no_stats={wins=0,games=0}
 
 --client colors
@@ -116,8 +123,7 @@ pal3={11,8,10,7,12}
 
 title={
  --flying saucer movement
- delta={{0,0},{0,0}},
- room=nil
+ delta={{0,0},{0,0}}
 }
 
 menu={
@@ -128,9 +134,8 @@ menu={
  )
 }
 
-room={
- id=""
-}
+room={}
+room_label={}
 
 stats={}
 
@@ -574,7 +579,7 @@ function draw_selecteddice()
  end
 end
 
-function title_draw(croom,xroom)
+function draw_title()
  rectfill(0,0,127,35,5)
 
  palt(14,true)
@@ -612,20 +617,21 @@ function title_draw(croom,xroom)
  end
 
  palt(0,true)
- 
- if (title.room==nil) return
+end
 
+function draw_room_label()
  print(
-  "room "..title.room,
-  xroom+10,40,croom
+  "room "..room_label.id,
+  room_label.x+10,40,
+  room_label.c
  )
 
- pal(5,croom)
- if title.public then
-  spr(49,xroom,38)
- else
-  spr(48,xroom,38)
- end
+ pal(5,room_label.c)
+ spr(
+  room_label.id==public_room
+  and 49 or 48,
+  room_label.x,38
+ )
  pal(5,5)
 end
 
@@ -686,7 +692,8 @@ end
 function menu_draw()
  cls(1)
 
- title_draw(4,37)
+ draw_title()
+ if (room_label.id) draw_room_label()
 
  for i=1,4 do
   local txt=menuitems[i]
@@ -738,7 +745,7 @@ end
 function qr_draw()
  cls(1)
  
- title_draw()
+ draw_title()
 
  rectfill(31,42,96,107,7)
  palt(0,false)
@@ -928,23 +935,25 @@ function game_draw()
 end
 
 function draw_help_line(i,x,y)
+ camera(-x,-y)
  palt(14,true)
- print(help[i],x,y,15)
+ print(help[i],0,0,15)
  if i==1 then
-  spr(8,x+72,y-2,6,2)
+  spr(8,72,-2,6,2)
  elseif i==6 then
-  spr(4,x+72,y-2,2,2)
-  spr(6,x+100,y-2,2,2,true)
-  spr(3,x+90,y-2,1,2)
+  spr(4,72,-2,2,2)
+  spr(6,100,-2,2,2,true)
+  spr(3,90,-2,1,2)
  elseif i==9 then
-  x+=40
+  local dx=40
   for j=1,6 do
-   x+=10
-   rectfill(x+1,y-2,x+7,y+6,1)
-   rectfill(x,y-1,x+8,y+5,1)
-   spr(37+j,x+1,y-1)
+   dx+=10
+   rectfill(dx+1,-2,dx+7,6,5)
+   rectfill(dx,-1,dx+8,5,5)
+   spr(37+j,dx+1,-1)
   end
  end
+ camera()
 end
 
 function draw_all_help()
@@ -964,12 +973,12 @@ function draw_help()
  for i=1,7 do
   draw_help_line(
    i+room.help\helpscroll,
-   0,6*i+46-ysub
+   0,6*i+37-ysub
   )
  end
  
  draw_vscroll(
-  121,52,89,room.help/helpmax
+  121,46,81,room.help/helpmax
  )
 end
 
@@ -1004,11 +1013,12 @@ end
 function room_draw()
  cls()
 
- title_draw(5,8)
+ draw_title()
 
  if room.help!=nil then
   draw_help()
  else
+  draw_room_label()
   draw_room_members()
  end
  
@@ -2184,10 +2194,15 @@ end
 
 function enter_room(room_id)
  if room_id!=nil then
+  --newly entered room (instead
+  --of re-entry)
   room.id=room_id
   room.chatlog={}
-  title.room=room_id
+  room_label.id=room_id
  end
+ 
+ room_label.x=8
+ room_label.c=5
 
  room.ypos=1
  room.chatidx=0
@@ -2329,8 +2344,6 @@ function menu_edittext()
 end
 
 function menu_itemselect()
- local yposold=menu.ypos
-
  if btnp(⬇️) then
   menu.ypos=menu.ypos%4+1
  elseif btnp(⬆️) then
@@ -2350,18 +2363,9 @@ function menu_itemselect()
   end
  end
 
- if menu.ypos!=yposold then
-  if menu.ypos==1 then
-   title.room=nil
-  elseif menu.ypos==2 then
-   title.room=public_room
-  elseif menu.ypos==3 then
-   title.room="????"
-  else
-   title.room=""
-  end
-  title.public=(menu.ypos==2)
- end
+ room_label.id=menu_room_ids[
+  menu.ypos
+ ]
 end
 
 function title_init_earthlings(
@@ -2483,12 +2487,17 @@ function show_game()
 end
 
 function show_menu()
- _draw=menu_draw
- _update=menu_update
-
- if (menu.ypos==4) title.room=""
+ room_label.x=37
+ room_label.c=4
+ 
+ --avoid draw interference from
+ --room_label set on room entry
+ if (menu.ypos==4) room_label.id=""
 
  title_init_earthlings(3)
+
+ _draw=menu_draw
+ _update=menu_update
 end
 
 function qr_update()
@@ -2606,31 +2615,22 @@ function dev_init_game()
 end
 
 function dev_init_room()
+ enter_room(public_room)
+
  local log={}
  add_chat(log,2,"hi")
  add_chat(log,3,"hi")
+ room.chatlog=log
 
- room={
-  clients={
-   [1]="bob",
-   [2]="eriban",
-   [3]="alice",
-   [5]="george",
-   [4]="simon",
-   [6]="rich"
-  },
-  bots={
-   ["bot-1"]=3,
-   ["bot-2"]=4
-  },
-  size=8,
-  ypos=1,
-  help=nil,
-  chatidx=0,
-  chatlog=log
+ room.clients={
+  "bob",
+  "eriban",
+  "alice",
+  "george",
+  "simon",
+  "rich"
  }
- title.room="pico"
- title.public=true
+ room.size=6
 
  stats={
   bob={wins=2,games=3},
@@ -2639,8 +2639,6 @@ function dev_init_room()
  }
  rank_players()
 
- _update=room_update
- _draw=room_draw
  poke(a_room_mgmt,3)
 end
 
@@ -2679,13 +2677,13 @@ cccccccc7777777700a0a0a0ee99eeee000000000000000e000000000000000e000000aaaa00000e
 cc0cc0cc7707707700a0a0a0e99eeeee000000000000000e000000000000000e000000000000000e000077777770000e000000000000000e000000000000000e
 0cc00cc077777777aa00a0aae9eeeeeee0000000000000eee0000000000000eee0000000000000eee0000000000000eee0000000000000eee0000000000000ee
 00cccc0007777770aa00a0aaeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-04440000ddddd00002220000ff0ff00006660000330330001111111e1111111e1111111e1a1a1a1e1711171e11ccc11eeeeeeeeeeeeeeeee0000000000000000
-4040400000d000002020200000f00000006000003303300011bbb11e11bbb11e8888811e11aaa11e1777771e1ccccc1eeeeeeeeeeeeeeeee0000000000000000
-44444000ddddd0002222200000f00000606060000030000011bbb11e11bbb11e1188811e1a1aaa1e1717171ecc1c1cceeeeeeeeeeeeeeeee0000000000000000
-40004000d000d00022022000f000f0006000600030003000bbbbbbbebbbbbbbe8888888e1aaaaa1e1717171eccccccceeeeeee000eeeeeee0000000000000000
-044400000ddd0000222220000fff00000666000003330000bbbbbbbebbbbbbbe8888888eaaaaaa1e7777777ec1ccc1ceeeeee09990eeeeee0000000000000000
-0000000000000000000000000000000000000000000000001111111e1111111e1888881e11aaa11e7717177e1c111c1eeeee0900090eeeee0000000000000000
-0000000000000000000000000000000000000000000000001111111e1111111e1111111e1111111e1777771e11ccc11eee00090009000eee0000000000000000
+04440000ddddd00002220000ff0ff0000666000033033000eeeeeeeeeeeeeeeeeeeeeeeeeaeaeaeee7eee7eeeeccceeeeeeeeeeeeeeeeeee0000000000000000
+4040400000d000002020200000f000000060000033033000eebbbeeeeebbbeee88888eeeeeaaaeeee77777eeeccccceeeeeeeeeeeeeeeeee0000000000000000
+44444000ddddd0002222200000f000006060600000300000eebbbeeeeebbbeeeee888eeeeaeaaaeee7e7e7eeccececceeeeeeeeeeeeeeeee0000000000000000
+40004000d000d00022022000f000f0006000600030003000bbbbbbbebbbbbbbe8888888eeaaaaaeee7e7e7eeccccccceeeeeee000eeeeeee0000000000000000
+044400000ddd0000222220000fff00000666000003330000bbbbbbbebbbbbbbe8888888eaaaaaaee7777777ececcceceeeeee09990eeeeee0000000000000000
+000000000000000000000000000000000000000000000000eeeeeeeeeeeeeeeee88888eeeeaaaeee77e7e77eeceeeceeeeee0900090eeeee0000000000000000
+000000000000000000000000000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee77777eeeeccceeeee00090009000eee0000000000000000
 000000000000000000000000000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee0999999999990ee0000000000000000
 55555550005555007777700088888000bbbbb000aaaa0000000004000000000055555000000000000000000000000000090000000000090e0000000000000000
 50000050055555507070700088888000bbbbb000000aa000000049400000000055500000000000000000000000000000090eeeeeeeee090e0000000000000000
