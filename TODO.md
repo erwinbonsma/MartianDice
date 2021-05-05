@@ -104,6 +104,14 @@ Done:
 v0.9.1
 	-	Add text scroll animation
 	-	Track player performance
+	-	Handle slow/unresponsive players:
+		-	Remind active player
+		-	Allow other players to intervene: Wait/Skip turn/Remove from game
+	-	Add dialog for in-game interactions
+	-	Fixed: Occassional unexpected state transitions vs undefined
+v0.9.2
+	-	Update palette to use "secret" colors
+	-	Improve screen layout
 
 ISSUES:
 	-	Single turn defeat caused "UB" assert failure
@@ -114,14 +122,9 @@ TODO:
 	-	Show available public rooms
 	-	Limit chat in public rooms
 -	Extend PICO-8 client
-	-	Use in-game dialog at more places
-		-	Check pass
-		-	End-turn cause
+	-	Check host changes automatically when bot does not make a move
 	-	Limit chat spamming
 		-	PICO-8 cooldown
-	-	Handle disconnected/inactive players
-		-	Auto-skip turn for disconnected players
-		-	Remind/prod/skip inactive players
 	-	Improve game end animation
 		-	Gradually transition from game screen
 		-	Keep abductees in lower box, also let them roam in y-direction
