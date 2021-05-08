@@ -962,12 +962,14 @@ function draw_help_line(i,x,y)
 end
 
 function draw_all_help()
- cls(4)
+ cls(5)
  palt(0,false)
  pal(1,0)
+ pal(5,0)
  for i=1,#help do
   draw_help_line(i,5,i*6-2)
  end
+ custom_pal()
 end
 
 function draw_help()
@@ -2568,10 +2570,13 @@ function dev_init_game()
   t0,{2,0,2,1,1},moving
  )
  local b0=update_battle(
-  {},{0,1}
+  update_battle(
+   {},{0,1}
+  ),
+  {2,1}
  )
  local b1=update_battle(
-  b0,{0,3}
+  b0,{2,3}
  )
  --animate_move(b0,b1,moving)
  game={
@@ -2601,7 +2606,7 @@ function dev_init_game()
  }
 
  local log={}
- for i=0,8 do
+ for i=0,1 do
   add_chat(log,1+i%2,"hi")
  end
 
@@ -2621,7 +2626,7 @@ function dev_init_game()
   game.scored=2
   game.score=2
  end
- if true then
+ if false then
   game.score=27
   game.winner=game.active_player
   game.phase=phase.endgame
