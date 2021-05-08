@@ -780,7 +780,7 @@ function draw_winner(
 
  for e in all(earthlings) do
   spr(
-   4+2*e.tp,e.x,100,2,2,e.dx>0
+   4+2*e.tp,e.x,e.y,2,2,e.dx>0
   )
  end
 
@@ -1274,7 +1274,7 @@ function animate_game_end()
  local ap={}
  
  local earthlings={}
- local ticks=300
+ local ticks=0
 
  --fairly complex function to
  --reduce jitter effects in the
@@ -1328,6 +1328,7 @@ function animate_game_end()
   add(earthlings,{
    tp=i%3+2,
    x=56,
+   y=100-i*1.4,
    dx=(i%2)*2-1,
    speed=0.2+rnd(2)
   })
@@ -1339,35 +1340,43 @@ function animate_game_end()
 
  animate={
   update=function()
- 	 ticks-=1
-	  if (ticks<=0) enter_room()
+ 	 ticks+=1
+	  if (ticks>=450) enter_room()
 
    local xc=70+flr(
-    0.5+26*sin(time()*0.1)
+    0.5+26*sin(ticks*0.011)
    )
-   local yc=50+flr(
-    0.5+31*cos(time()*0.11)
+   local yc=36+flr(
+    0.5+22*cos(max(0,ticks-120)*0.03)
    )
    local p=getpoint(xc,yc)
    avatar_x=p.x
    avatar_y=p.y
 
    avatar_r=4+flr(
-    0.5+sin(time())
+    0.5+sin(ticks/30)
    )
   
    for e in all(earthlings) do
     e.x+=e.dx*e.speed
-    if e.x<14 or e.x>109 then
+    if e.x<13 or e.x>113 then
      e.dx=-e.dx
     end
    end
   end,
   draw=function()
+   rectfill(13,81,127,114,5)
+   
    draw_winner(
     avatar_r,avatar_x,avatar_y,
     earthlings
    )
+
+   local h=35-min(35,ticks*0.35)
+   if h>0 then
+    rectfill(13,7,127,6+h,5)
+    rectfill(13,79-h,127,78,5)
+   end
   end
  }
 end
