@@ -1372,7 +1372,7 @@ function animate_game_end()
     earthlings
    )
 
-   local h=35-min(35,ticks*0.35)
+   local h=35-min(35,ticks\3)
    if h>0 then
     rectfill(13,7,127,6+h,5)
     rectfill(13,79-h,127,78,5)
