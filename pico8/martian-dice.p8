@@ -929,7 +929,7 @@ function game_draw()
   game.inputhandler.draw()
  end
 
- if not game.is_player then
+ if game.can_exit then
   game_exit_button.selected=(
    room.chatidx==0
   )
@@ -2019,9 +2019,8 @@ function game_update()
   elseif game.slowidx then
    slow_player_update()
   elseif actionbtnp()
-  and not game.is_player
+  and game.can_exit
   and peek(a_room_mgmt)==3 then
-   --initiate observer room exit
    poke(a_room_mgmt,4)
    press_button(game_exit_button)
   end
@@ -2464,10 +2463,19 @@ function menu_update()
 end
 
 function show_game()
+ local nbots=0
  draw_scores={}
  for i=1,game.nplayer do
   add(draw_scores,0)
+  if game.players[i]>6 then
+   nbots+=1
+  end
  end
+
+ game.can_exit=(
+  not game.is_player or
+  game.nplayer-nbots==1
+ )
 
  reset_button(game_exit_button)
 
