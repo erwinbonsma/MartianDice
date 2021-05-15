@@ -342,6 +342,7 @@ function custom_pal()
  poke(0x5f13,0x8d)
  --poke(0x5f1c,0x8c)
 end
+
 -->8
 --drawing
 function draw_rrect(
@@ -907,7 +908,7 @@ function game_draw()
  draw_dice(game.battle)
  draw_dice(game.collected)
  palt()
- 
+
  if game.slowidx then
   slow_player_draw()
  end
@@ -929,7 +930,7 @@ function game_draw()
   game.inputhandler.draw()
  end
 
- if game.can_exit then
+ if not game.is_player then
   game_exit_button.selected=(
    room.chatidx==0
   )
@@ -1700,9 +1701,12 @@ function read_gpio_game()
  g.is_player=peek(a_iply)==1
  g.scores={}
  g.players={}
- for i=1,g.nplayer do
-  add(g.scores,peek(a_ascr+i-1))
-  add(g.players,peek(a_aply+i-1))
+ g.nbots=0
+ for i=0,g.nplayer-1 do
+  local player_id=peek(a_aply+i)
+  add(g.players,player_id)
+  if (player_id>6) g.nbots+=1
+  add(g.scores,peek(a_ascr+i))
  end
 
  local ap={}
@@ -2030,7 +2034,7 @@ function game_update()
   elseif game.slowidx then
    slow_player_update()
   elseif actionbtnp()
-  and game.can_exit
+  and not game.is_player
   and peek(a_room_mgmt)==3 then
    poke(a_room_mgmt,4)
    press_button(game_exit_button)
@@ -2474,19 +2478,10 @@ function menu_update()
 end
 
 function show_game()
- local nbots=0
  draw_scores={}
  for i=1,game.nplayer do
   add(draw_scores,0)
-  if game.players[i]>6 then
-   nbots+=1
-  end
  end
-
- game.can_exit=(
-  not game.is_player or
-  game.nplayer-nbots==1
- )
 
  reset_button(game_exit_button)
 
