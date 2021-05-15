@@ -112,6 +112,22 @@ v0.9.1
 v0.9.2
 	-	Update palette to use "secret" colors
 	-	Improve screen layout
+	-	Allow exit of in progress game when playing a bot
+	-	Improve game end animation
+-	PICO-8 page
+	-	Set background color to dark brown
+	-	Use PICO-8 like favicon
+	-	Update screenshots
+	-	Add empty row below screen to work around layout issue
+v0.9.3
+	-	Allow player to resign game
+	-	Switch host when bot move takes too long
+	-	Let player win immediatly after all other players have left
+	-	Do not prod slow player when playing against a bot
+	-	Fix: Also show bot avatar after observer joined
+	-	Fix: Stop die roll sounds when exiting room
+	-	Fix: Room label was not always showing correctly
+	-	Fix: Occassional wrong room join message was shown
 
 ISSUES:
 	-	Single turn defeat caused "UB" assert failure
@@ -122,13 +138,9 @@ TODO:
 	-	Show available public rooms
 	-	Limit chat in public rooms
 -	Extend PICO-8 client
-	-	Check host changes automatically when bot does not make a move
+	-	Remove temp code
 	-	Limit chat spamming
 		-	PICO-8 cooldown
-	-	Improve game end animation
-		-	Gradually transition from game screen
-		-	Keep abductees in lower box, also let them roam in y-direction
-		-	Gradually transition to room screen (let title appear?)
 -	Remove memcache dependency
 	-	From Dockerfile
 	-	From layer
