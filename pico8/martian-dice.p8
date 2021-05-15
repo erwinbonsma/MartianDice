@@ -2253,7 +2253,7 @@ end
 function enter_room(room_id)
  if room_id!=nil then
   --newly entered room (instead
-  --of re-entry)
+  --of re-entry from game)
   room.id=room_id
   room.chatlog={}
   room_label.id=room_id
@@ -2486,6 +2486,8 @@ function menu_update()
    menu.room=room.id
    menu.ypos=4
   end
+
+  return
  end
 
  if peek(a_room_mgmt)==8 then
