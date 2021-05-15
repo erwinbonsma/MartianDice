@@ -931,6 +931,15 @@ function show_chkpass_dialog(
  )
 end
 
+function enable_pickdie(game)
+ game.die_choices=die_choices(game)
+ game.die_idx=1
+ game.inputhandler={
+  update=game_pickdie,
+  draw=draw_selecteddice
+ }
+end
+
 function show_endcause_dialog(
  game
 )
@@ -1830,18 +1839,13 @@ function read_gpio_game()
 
  if peek(a_ctrl_out)==0 then
   --move expected
-  g.mymove=true
   if g.phase==phase.pickdice then
-   g.die_choices=die_choices(g)
-   g.die_idx=1
-   g.inputhandler={
-    update=game_pickdie,
-    draw=draw_selecteddice
-   }
+   g.mymove=enable_pickdie
   end
   if g.phase==phase.checkpass then
-   show_chkpass_dialog(g)
+   g.mymove=show_chkpass_dialog
   end
+  g.mymove(g)  
   poke(a_ctrl_out,3)
  end
 
@@ -2098,7 +2102,12 @@ function game_update()
   game.inputwait+=1
   if game.inputwait%300==0 then
    if game.mymove then
-    if not is_botgame() then
+    if not game.inputhandler then
+     --player made a move but it
+     --was not handled. should
+     --not really happen.
+     game.mymove(game)
+    elseif not is_botgame() then
      --remind slow player
      show_popup_msg(
       "please make a move"
