@@ -1849,11 +1849,6 @@ function read_gpio_game()
   poke(a_ctrl_out,3)
  end
 
- if g.is_observer then
-  g.inputhandler=
-   observer_inputhandler
- end
-
  if g.phase==phase.checkpass
  or g.phase==phase.pickdice then
   g.inputwait=0
@@ -2096,6 +2091,12 @@ function game_update()
  if not game_common_update()
  and game.inputhandler then
   game.inputhandler.update()
+ end
+ 
+ if game.is_observer 
+ and game.inputhandler==nil then
+  game.inputhandler=
+   observer_inputhandler
  end
 
  if game.inputwait then
