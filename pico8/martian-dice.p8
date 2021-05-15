@@ -783,6 +783,10 @@ function draw_winner(
  pal()
 end
 
+function draw_observer_ctrls()
+ draw_button(game_exit_button)
+end
+
 function draw_game_scores()
  local np=game.nplayer
  local w=2
@@ -962,13 +966,6 @@ function game_draw()
 
  if game.inputhandler then
   game.inputhandler.draw()
- end
-
- if not game.is_player then
-  game_exit_button.selected=(
-   room.chatidx==0
-  )
-  draw_button(game_exit_button)
  end
 
  custom_pal()
@@ -1730,7 +1727,7 @@ function read_gpio_game()
  g.scored=peek(a_trsc)
 
  g.nplayer=peek(a_nply)
- g.is_player=peek(a_iply)==1
+ g.is_observer=peek(a_iply)!=1
  g.scores={}
  g.players={}
  g.nbots=0
@@ -1840,12 +1837,15 @@ function read_gpio_game()
   end
   poke(a_ctrl_out,3)
  end
- 
+
+ if g.is_observer then
+  g.inputhandler=
+   observer_inputhandler
+ end
+
  if g.phase==phase.checkpass
  or g.phase==phase.pickdice then
   g.inputwait=0
- else
-  g.inputwait=nil
  end
 
  game=g
@@ -2056,6 +2056,18 @@ function game_chat()
  )
 end
 
+function observer_update()
+ game_exit_button.selected=(
+  room.chatidx==0
+ )
+
+ if actionbtnp()
+ and peek(a_room_mgmt)==3 then
+  poke(a_room_mgmt,4)
+  press_button(game_exit_button)
+ end
+end
+
 function game_common_update()
  read_gpio()
 
@@ -2065,15 +2077,9 @@ function game_common_update()
 end
 
 function game_update()
- if not game_common_update() then
-  if game.inputhandler then
-   game.inputhandler.update()
-  elseif actionbtnp()
-  and not game.is_player
-  and peek(a_room_mgmt)==3 then
-   poke(a_room_mgmt,4)
-   press_button(game_exit_button)
-  end
+ if not game_common_update()
+ and game.inputhandler then
+  game.inputhandler.update()
  end
 
  if game.inputwait then
@@ -2524,13 +2530,13 @@ function show_game()
   show_popup_msg(
    "game started. good luck!"
   )
- elseif game.is_player then
+ elseif game.is_observer then
   show_popup_msg(
-   "joined new game. good luck!"
+   "observing game in progress"
   )
  else
   show_popup_msg(
-   "observing game in progress"
+   "joined new game. good luck!"
   )
  end
 
@@ -2589,6 +2595,11 @@ function show_game_end()
 end
 
 -->8
+observer_inputhandler={
+ update=observer_update,
+ draw=draw_observer_ctrls
+}
+
 function dev_init_game()
  local t0=new_throw(
   {2,2,2,1,1}
@@ -2627,7 +2638,6 @@ function dev_init_game()
   nplayer=2,
   scores={17,13},
   players={1,2},
-  is_player=true,
   die_choices={1,3,5},
   die_idx=1
   --inputwait=550,
@@ -2667,9 +2677,8 @@ function dev_init_game()
    draw=draw_selecteddice
   }
  end
- if true then
-  show_chkpass_dialog(game)
- end
+ --show_chkpass_dialog(game)
+ game.inputhandler=observer_inputhandler
 
  poke(a_ctrl_out,0)
  poke(a_room_mgmt,3)
