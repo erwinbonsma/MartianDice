@@ -97,6 +97,11 @@ class GameState:
 
 		self.turn_state = TurnState()
 
+	def _active_player_wins(self):
+		self.winner = self.active_player
+		self.turn_state = None
+		self.active_player_index = None
+
 	def _end_turn(self):
 		assert(not self.done)
 		assert(self.turn_state.done)
@@ -105,12 +110,13 @@ class GameState:
 			# Only update score when player was not just removed
 			self.scores[self.active_player] += self.turn_state.score
 			if self.scores[self.active_player] >= TARGET_SCORE:
-				self.winner = self.active_player
-				self.turn_state = None
-				self.active_player_index = None
-				return
+				return self._active_player_wins()
 
 		self._next_turn()
+
+		if len(self.scores) == 1:
+			# When only one player remains, they have won
+			return self._active_player_wins()
 
 	def __getstate__(self):
 		state = {
