@@ -345,6 +345,7 @@ end
 function is_botgame()
  return game.nplayer-game.nbots==1
 end
+
 -->8
 --drawing
 function draw_rrect(
@@ -1882,14 +1883,19 @@ end
 
 function read_gpio_room()
  if peek(a_ctrl_in_room)==4 then
+  --do not update room 
+  --participants directly to
+  --avoid exposing batcn update
+  --when updating an existing
+  --room
   roomnew={
    pclients=peek(a_ncli),
    pbots=peek(a_nbot),
-   is_host=peek(a_ihst)==1,
-   size=0,
    clients={},
    bots={}
   }
+  room.is_host=peek(a_ihst)==1
+
   poke(a_ctrl_in_room,0)
   return
  end
@@ -1911,7 +1917,6 @@ function read_gpio_room()
   add(r.bots,{name,typ-6})
   r.pbots-=1
  end
- r.size+=1
  assert(
   r.pclients>=0,
   "negative clients"
@@ -1930,8 +1935,6 @@ function read_gpio_room()
 
   room.clients=r.clients
   room.bots=r.bots
-  room.size=r.size
-  room.is_host=r.is_host
   roomnew=nil
 
   rank_players()
@@ -1954,8 +1957,8 @@ function read_gpio_chat()
 end
 
 function read_gpio()
- read_gpio_game()
  read_gpio_room()
+ read_gpio_game()
  read_gpio_chat()
 end
 
@@ -2279,7 +2282,7 @@ function enter_room(room_id)
   --newly entered room (instead
   --of re-entry from game)
   room.id=room_id
-  room.chatlog={}
+
   room_label.id=room_id
  end
  
@@ -2309,9 +2312,11 @@ function enter_room(room_id)
 end
 
 function clear_room_status()
- room.bots={}
- room.clients={}
- room.size=0
+ room={
+  bots={},
+  clients={},
+  chatlog={}
+ }
  poke(a_ctrl_in_room,0)
 end
 
@@ -2729,7 +2734,6 @@ function dev_init_room()
   "simon",
   "rich"
  }
- room.size=6
 
  stats={
   bob={wins=2,games=3},
