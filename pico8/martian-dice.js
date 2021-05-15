@@ -648,18 +648,6 @@ function gpioHandleChat() {
 	}
 }
 
-function dump() {
-	console.log("CTRL_IN_GAME  =", pico8_gpio[gpio_GameControl]);
-	console.log("CTRL_IN_ROOM  =", pico8_gpio[gpio_RoomControl]);
-	console.log("CTRL_OUT      =", pico8_gpio[gpio_OutControl]);
-	console.log("ROOM_STATUS   =", pico8_gpio[gpio_RoomStatus]);
-	console.log("ROOM          =", gpioGetStr(gpio_Room, 4));
-
-	console.log("md_game =", md_game);
-	console.log("md_gameNext =", md_gameNext);
-	console.log("md_turnStates =", md_turnStates);
-}
-
 function gpioUpdate() {
 	if (pico8_gpio[gpio_Handshake] === 7) {
 		console.log("Pico-8 client started");
@@ -728,4 +716,3 @@ function md_update() {
 }
 
 window.setInterval(md_update, 30);
-console.log("Loaded martian-dice.js");
