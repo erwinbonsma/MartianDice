@@ -61,15 +61,10 @@ menu_go_button={
  label="go",x=87,y=38
 }
 
-game_pass_buttons={
- {label="yes",x=53,y=44},
- {label="no",x=76,y=44}
-}
+chkpass_labels={"yes","no"}
 
-slow_buttons={
- {label="wait",x=29,y=44},
- {label="skip",x=56,y=44},
- {label="remove",x=83,y=44}
+slowplayer_labels={
+ "wait","skip","remove"
 }
 
 game_exit_button={
@@ -836,51 +831,107 @@ function draw_game_end()
  custom_pal()
 end
 
-function show_dialog(
- msg,w,buttons,msg2
-)
- local x0=70-w\2
- local x1=x0+w
+function draw_dialog()
+ local x0=70-dialog.w\2
+ local x1=x0+dialog.w
  rectfill(x0,32,x1,54,5)
  rect(x0,32,x1,54,1)
  line(x0+1,55,x1+1,55,0)
  line(x1+1,33,0)
 
- print(msg,71-2*#msg,35,14)
+ print(
+  dialog.msg,
+  71-2*#dialog.msg,
+  35,14
+ )
 
- if msg2 then
+ if dialog.msg2 then
   print_outlined(
-   msg2,71-2*#msg2,45,9,0
+   dialog.msg2,
+   71-2*#dialog.msg2,
+   45,9,0
   )
  else
-  foreach(buttons,draw_button)
+  for i,b in pairs(dialog.buttons) do
+   b.selected=(
+    dialog.button_idx==i
+   )
+   draw_button(b)
+  end
  end
 end
 
-function slow_player_draw()
- local msg=game.active_player.name
- msg..=" is slow to act"
+function init_dialog(
+ game,msg,msg2,button_labels,
+ actionhandler
+)
+ dialog={
+  msg=msg,
+  msg2=msg2,
+  buttons={},
+  w=max(#msg,#(msg2 or ""))*4+8,
+  button_idx=1,
+  actionhandler=actionhandler
+ }
 
- for i,b in pairs(slow_buttons) do
-  b.selected=game.slowidx==i
+ --place buttons
+ if button_labels then
+  local bw=0
+  for l in all(button_labels) do
+   bw+=#l*4
+  end
+  
+  bw+=(#button_labels-1)*11
+  dialog.w=max(dialog.w,bw+8)
+
+  local x=68-bw\2
+  for l in all(button_labels) do
+   add(
+    dialog.buttons,
+    {label=l,y=44,x=x}
+   )
+   x+=#l*4+11
+  end
  end
 
- show_dialog(
-  msg,88,slow_buttons
+ game.inputhandler={
+  update=update_dialog,
+  draw=draw_dialog
+ }
+end
+
+function show_slowplayer_dialog()
+ local msg=game.active_player.name
+ msg..=" is slow to act"
+ init_dialog(
+  game,msg,nil,
+  slowplayer_labels,
+  slowplayer_handler
  )
 end
 
-function draw_chkpass()
- game_pass_buttons[
-  1
- ].selected=not game.pass
- game_pass_buttons[
-  2
- ].selected=game.pass
+function show_chkpass_dialog(
+ game
+)
+ init_dialog(
+  game,"continue?",nil,
+  chkpass_labels,
+  chkpass_handler
+ )
+end
 
- show_dialog(
-  "continue?",41,
-  game_pass_buttons
+function show_endcause_dialog(
+ game
+)
+ local msg="no points"
+ if game.scored>0 then
+  msg="+"..game.scored.." point"
+  if (game.scored>1) msg..="s"
+ end
+
+ init_dialog(
+  game,
+  endcause[game.endcause],msg
  )
 end
 
@@ -908,23 +959,6 @@ function game_draw()
  draw_dice(game.battle)
  draw_dice(game.collected)
  palt()
-
- if game.slowidx then
-  slow_player_draw()
- end
- 
- if game.endcause!=0 then
-  local msg="no points"
-  if game.scored>0 then
-   msg="+"..game.scored.." point"
-   if (game.scored>1) msg..="s"
-  end
-
-  show_dialog(  
-   endcause[game.endcause],
-   88,nil,msg
-  )
- end
 
  if game.inputhandler then
   game.inputhandler.draw()
@@ -1680,10 +1714,8 @@ function gpio_gets(a0,len)
 end
 
 function read_gpio_game()
- if peek(a_ctrl_in_game)!=1 then
-  return
- end
- if animate!=nil then
+ if peek(a_ctrl_in_game)!=1
+ or animate!=nil then
   return
  end
  
@@ -1726,6 +1758,10 @@ function read_gpio_game()
  register_gameplay(
   ap.name,stats.game_id
  )
+
+ if g.endcause!=0 then
+  show_endcause_dialog(g)
+ end
 
  if g.phase==phase.endgame then
   g.winner=ap
@@ -1790,6 +1826,7 @@ function read_gpio_game()
 
  if peek(a_ctrl_out)==0 then
   --move expected
+  g.mymove=true
   if g.phase==phase.pickdice then
    g.die_choices=die_choices(g)
    g.die_idx=1
@@ -1799,11 +1836,7 @@ function read_gpio_game()
    }
   end
   if g.phase==phase.checkpass then
-   g.pass=false
-   g.inputhandler={
-    update=game_chkpass,
-    draw=draw_chkpass
-   }
+   show_chkpass_dialog(g)
   end
   poke(a_ctrl_out,3)
  end
@@ -1813,7 +1846,6 @@ function read_gpio_game()
   g.inputwait=0
  else
   g.inputwait=nil
-  g.slowidx=nil
  end
 
  game=g
@@ -1928,25 +1960,35 @@ function animation_update()
  if (animate) animate.update()
 end
 
-function slow_player_update()
+function update_dialog()
+ local nb=#dialog.buttons
+ if (nb==0) return
+ 
  if btnp(⬅️) then
-  game.slowidx=(
-   game.slowidx+2
-  )%3
+  dialog.button_idx=(
+   dialog.button_idx+nb-1
+  )%nb
  elseif btnp(➡️) then
-  game.slowidx=game.slowidx%3+1
- elseif btnp(⬆️) or btnp(⬇️) then
-  game.slowidx=nil 
- elseif actionbtnp() then
-  if game.slowidx==2 
-  or game.slowidx==3 then
-   --skip turn/remove from game
-   if peek(a_ctrl_out)==2 then
-    poke(a_move,7+game.slowidx)
-    poke(a_ctrl_out,1)
-   end
-  end
-  game.slowidx=nil
+  dialog.button_idx=(
+   dialog.button_idx%nb+1
+  )
+ end
+ if actionbtnp() then
+  dialog.actionhandler(
+   dialog.button_idx
+  )
+  game.inputhandler=nil
+ end
+end
+
+function slowplayer_handler(
+ button_idx
+)
+ if button_idx>1 
+ and peek(a_ctrl_out)==2 then
+  --skip turn/remove from game
+  poke(a_move,7+button_idx)
+  poke(a_ctrl_out,1)
  end
 end
 
@@ -1974,19 +2016,14 @@ function game_pickdie()
  end
 end
 
-function game_chkpass()
- if btnp(⬅️) or btnp(➡️) then
-  game.pass=not game.pass
- end
-
- if actionbtnp() then
-  poke(
-   a_move,
-   game.pass and 6 or 7
-  )
-  poke(a_ctrl_out,1)
-  game.inputhandler=nil
- end
+function chkpass_handler(
+ button_idx
+)
+ local pass=button_idx==2
+ poke(
+  a_move,pass and 6 or 7
+ )
+ poke(a_ctrl_out,1)
 end
 
 function game_chat()
@@ -2031,8 +2068,6 @@ function game_update()
  if not game_common_update() then
   if game.inputhandler then
    game.inputhandler.update()
-  elseif game.slowidx then
-   slow_player_update()
   elseif actionbtnp()
   and not game.is_player
   and peek(a_room_mgmt)==3 then
@@ -2044,16 +2079,14 @@ function game_update()
  if game.inputwait then
   game.inputwait+=1
   if game.inputwait%300==0 then
-   if game.inputhandler then
+   if game.mymove then
     --remind slow player
     show_popup_msg(
      "please make a move"
     )
-   elseif game.slowidx==nil
-   and game.inputwait%600==0 then
+   elseif game.inputwait%600==0 then
     --allow other players to act
-    game.slowidx=1
-    room.chatidx=0
+    show_slowplayer_dialog()
    end
   end
  end
@@ -2620,6 +2653,7 @@ function dev_init_game()
   game.endcause=6
   game.scored=2
   game.score=2
+  show_endcause_dialog(game)
  end
  if false then
   game.score=27
@@ -2632,6 +2666,9 @@ function dev_init_game()
    update=game_pickdie,
    draw=draw_selecteddice
   }
+ end
+ if true then
+  show_chkpass_dialog(game)
  end
 
  poke(a_ctrl_out,0)
