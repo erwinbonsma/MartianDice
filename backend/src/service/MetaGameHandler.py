@@ -155,8 +155,7 @@ class MetaGameHandler(GameHandler):
 
 		await self.send_clients_event()
 
-	async def switch_host(self):
-		game_state = self.room.game_state()
+	async def switch_host(self, game_state):
 		if game_state is None:
 			raise HandlerException("Can only switch host when game is in progress")
 		if game_state.age_in_seconds < Config.MAX_MOVE_TIME_IN_SECONDS:
@@ -216,7 +215,8 @@ class MetaGameHandler(GameHandler):
 			return await self.leave_room()
 
 		if cmd == "switch-host":
-			return await self.switch_host()
+			game_state = GameState.from_dict(cmd_message["game_state"])
+			return await self.switch_host(game_state)
 
 		if cmd == "update-config":
 			return await self.update_config(cmd_message["game_config"])

@@ -87,6 +87,7 @@ var md_game;
 var md_gameNext;
 var md_turnStates = [];
 var md_botMoveTriggered;
+var md_botMoveWatchdog;
 var md_gameEnded;
 
 function sizeOfDict(d) {
@@ -137,6 +138,13 @@ function isBotMove() {
 
 function isMyMove() {
 	return isAwaitingMove() && md_game.active_player === md_myName;
+}
+
+function clearBotMoveWatchdog() {
+	if (md_botMoveWatchdog) {
+		window.clearTimeout(md_botMoveWatchdog);
+		md_botMoveWatchdog = null;
+	}
 }
 
 // Updates md_clients so that it contains all clients in clients list. It ensures that:
@@ -205,6 +213,8 @@ function updateGameState(gameState, turnStates, gameCount) {
 	md_botMoveTriggered = false;
 	md_gameEnded = false;
 	md_gameCount = gameCount;
+
+	clearBotMoveWatchdog();
 }
 
 function welcomeNewClients(newClients) {
@@ -247,6 +257,9 @@ function handleClientsUpdate(clients, host) {
 			// clash. This way the name looks better. It also ensures all bot stats are combined.
 			md_bots[`Bot`] = "smart";
 		}
+
+		// Ensure that a bot move will be triggered immediately after a host switch
+		clearBotMoveWatchdog();
 	}
 
 	gpioPrepareRoomUpdateBatch();
@@ -277,8 +290,26 @@ function shareGameConfigChange() {
 }
 
 function triggerBotMove() {
-	if (md_botMoveTriggered || !isHost() || !isBotMove()) {
+	if (md_botMoveTriggered || md_botMoveWatchdog || !isBotMove()) {
 		return
+	}
+
+	if (!isHost()) {
+		clearBotMoveWatchdog();
+
+		console.log("Scheduling bot watchdog");
+		md_botMoveWatchdog = window.setTimeout(() => {
+			console.log("Bot watchdog awoken");
+			md_socket.send(JSON.stringify({
+				action: "switch-host",
+				game_id: md_roomId,
+				game_state: md_game
+			}));
+
+			md_botMoveWatchdog = null;
+		}, 20000);
+
+		return;
 	}
 
 	const activePlayer = md_game.active_player;
@@ -520,7 +551,7 @@ function gpioUpdateScores() {
 			isPlayer = true;
 		}
 	});
-	pico8_gpio[gpio_IsPlayer] = isPlayer;
+	pico8_gpio[gpio_IsPlayer] = isPlayer ? 1 : 0;
 }
 
 function gpioUpdateCounters(phaseId, playerName) {
