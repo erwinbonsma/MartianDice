@@ -46,14 +46,14 @@ class GamePlayHandler(GameHandler):
 			raise HandlerException("You can only end the turn of a human player")
 
 	def check_can_remove_player(self, game_state):
-		if game_state.age_in_seconds < Config.MAX_MOVE_TIME_IN_SECONDS:
+		if (
+			game_state.active_player != self.client_id and
+			game_state.age_in_seconds < Config.MAX_MOVE_TIME_IN_SECONDS
+		):
 			raise HandlerException("You cannot yet remove the active player")
 
 		if is_bot_name(game_state.active_player):
 			raise HandlerException("You can only remove human players")
-		
-		if game_state.num_players == 1:
-			raise HandlerException("The last player cannot be removed")
 
 	async def update_state_until_blocked(self, game_state):
 		turn_state_transitions = []

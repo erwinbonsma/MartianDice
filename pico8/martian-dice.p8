@@ -61,7 +61,9 @@ menu_go_button={
  label="go",x=87,y=38
 }
 
-chkpass_labels={"yes","no"}
+chkpass_labels={
+ "yes","no","resign"
+}
 
 slowplayer_labels={
  "wait","skip","remove"
@@ -338,6 +340,11 @@ function custom_pal()
  --poke(0x5f1c,0x8c)
 end
 
+--returns true iff there's only
+--one human playing
+function is_botgame()
+ return game.nplayer-game.nbots==1
+end
 -->8
 --drawing
 function draw_rrect(
@@ -918,7 +925,7 @@ function show_chkpass_dialog(
  game
 )
  init_dialog(
-  game,"continue?",nil,
+  game,"continue turn?",nil,
   chkpass_labels,
   chkpass_handler
  )
@@ -1966,8 +1973,8 @@ function update_dialog()
  
  if btnp(⬅️) then
   dialog.button_idx=(
-   dialog.button_idx+nb-1
-  )%nb
+   dialog.button_idx+nb-2
+  )%nb+1
  elseif btnp(➡️) then
   dialog.button_idx=(
    dialog.button_idx%nb+1
@@ -2019,11 +2026,16 @@ end
 function chkpass_handler(
  button_idx
 )
- local pass=button_idx==2
- poke(
-  a_move,pass and 6 or 7
- )
+ if button_idx==3 then
+  poke(a_move,10) --resign
+ else
+  local pass=button_idx==2
+  poke(
+   a_move,pass and 6 or 7
+  )
+ end
  poke(a_ctrl_out,1)
+ game.inputwait=150
 end
 
 function game_chat()
@@ -2086,10 +2098,12 @@ function game_update()
   game.inputwait+=1
   if game.inputwait%300==0 then
    if game.mymove then
-    --remind slow player
-    show_popup_msg(
-     "please make a move"
-    )
+    if not is_botgame() then
+     --remind slow player
+     show_popup_msg(
+      "please make a move"
+     )
+    end
    elseif game.inputwait%600==0 then
     --allow other players to act
     show_slowplayer_dialog()
