@@ -277,13 +277,13 @@ function handleIncomingChat(messageId, senderId) {
 	});
 }
 
-function shareGameConfigChange() {
+function changeGameConfig(newBots) {
 	// Let other clients know that the game configuration changed
 	md_socket.send(JSON.stringify({
 		action: "update-config",
 		room_id: md_roomId,
 		game_config: {
-			bots: md_bots,
+			bots: newBots,
 			next_bot_id: md_nextBotId
 		}
 	}));
@@ -471,12 +471,9 @@ function endGame() {
 	md_game = md_gameNext;
 	md_gameNext = null;
 
-	if (!isDictEmpty(md_bots) && sizeOfDict(md_clients) > 1) {
+	if (isHost() && !isDictEmpty(md_bots) && sizeOfDict(md_clients) > 1) {
 		// Remove any bots. This can happen when an observer joined during game play
-		md_bots = {}
-
-		shareGameConfigChange();
-		gpioPrepareRoomUpdateBatch();
+		changeGameConfig({});
 	}
 }
 
