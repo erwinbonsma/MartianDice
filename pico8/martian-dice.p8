@@ -2579,6 +2579,9 @@ function show_menu()
 
  title_init_earthlings(3)
 
+ --clear game animation, if any
+ animate=nil
+ 
  _draw=menu_draw
  _update=menu_update
 end
