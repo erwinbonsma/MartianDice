@@ -693,10 +693,10 @@ function gpioHandleChat() {
 			console.info("Sending chat", chat.messageId, senderId);
 			pico8_gpio[gpio_ChatIn_Msg] = chat.messageId;
 			pico8_gpio[gpio_ChatIn_SenderId] = senderId;
-			md_gpioChats = md_gpioChats.slice(1);
 		} else {
 			console.warn("Unknown sender", chat.sender);
 		}
+		md_gpioChats = md_gpioChats.slice(1);
 	}
 }
 
