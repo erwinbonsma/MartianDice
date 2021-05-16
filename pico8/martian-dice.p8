@@ -325,7 +325,7 @@ function rank_players()
   for j=2,#p do
    if (cmp(p[j],p[best])) best=j
   end
-  stats[p[best]].rank=rank
+  get_stats(p[best]).rank=rank
   rank+=1
   deli(p,best)
  end
@@ -2748,9 +2748,9 @@ end
 function _init()
  poke(a_handshke,7)
  
- show_intro()
+ --show_intro()
 
- --show_qr()
+ show_qr()
 
  --poke(a_room_mgmt,0)
  --show_menu()

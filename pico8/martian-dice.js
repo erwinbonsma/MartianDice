@@ -162,7 +162,11 @@ function updateClients(clients) {
 	// Transfer existing clients
 	clients.forEach(name => {
 		const id = clientsOld[name];
-		if (id) {
+
+		// Note: Excluding ID 1 to enable rejoining a room under a different name, where there's
+		// still a ghost-client for the local player from a previous session. If so, it will be
+		// assigned a different ID to ensure all IDs are unique. 
+		if (id && id!==1) {
 			md_clients[name] = id;
 			availableIds.delete(id);
 		}
@@ -429,6 +433,14 @@ function createRoom() {
 	}));
 }
 
+function clearRoomState() {
+	pico8_gpio[gpio_RoomStatus] = 0;
+
+	md_game = null;
+	md_turnStates = [];
+	md_gameNext = null;
+}
+
 function leaveRoom() {
 	md_socket.send(JSON.stringify({
 		action: "leave-room",
@@ -437,11 +449,8 @@ function leaveRoom() {
 
 	md_socket.close();
 	md_socket = null;
-	pico8_gpio[gpio_RoomStatus] = 0;
 
-	md_game = null;
-	md_turnStates = [];
-	md_gameNext = null;
+	clearRoomState();
 }
 
 function connectToServer(callback) {
@@ -459,7 +468,18 @@ function connectToServer(callback) {
 		console.error("Websocket error:", event.data);
 		socket.close();
 		md_socket = undefined;
-	})
+
+		clearRoomState();
+	});
+	socket.addEventListener('close', (event) => {
+		if (md_socket) {
+			console.error("Websocket closed");
+			md_socket = undefined;
+	
+			clearRoomState();
+		}
+	});
+
 	socket.addEventListener('message', handleMessage);
 }
 
