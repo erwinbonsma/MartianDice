@@ -122,15 +122,18 @@ v0.9.2
 v0.9.3
 	-	Allow player to resign game
 	-	Switch host when bot move takes too long
-	-	Let player win immediatly after all other players have left
+	-	Let player win immediately after all other players have left
 	-	Do not prod slow player when playing against a bot
-	-	Fix: Also show bot avatar after observer joined
+	-	Handle websocket disconnect (e.g. due to network problem)
+	-	Fix: Also show winning bot avatar when observer joined
 	-	Fix: Stop die roll sounds when exiting room
 	-	Fix: Room label was not always showing correctly
 	-	Fix: Occassional wrong room join message was shown
+	-	Fix: Rejoin room with ghost client fails
+	-	Fix: Ranking fails when number of clients is one
 
 ISSUES:
-	-	Single turn defeat caused "UB" assert failure
+	-	Single turn defeat caused "UB" assert failure??
 
 TODO:
 -	Add public rooms
@@ -138,7 +141,6 @@ TODO:
 	-	Show available public rooms
 	-	Limit chat in public rooms
 -	Extend PICO-8 client
-	-	Remove temp code
 	-	Limit chat spamming
 		-	PICO-8 cooldown
 -	Remove memcache dependency
