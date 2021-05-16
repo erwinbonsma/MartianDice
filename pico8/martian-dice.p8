@@ -65,6 +65,10 @@ chkpass_labels={
  "yes","no","resign"
 }
 
+confirm_labels={
+ "no","yes"
+}
+
 slowplayer_labels={
  "wait","skip","remove"
 }
@@ -929,6 +933,14 @@ function show_chkpass_dialog(
   game,"continue turn?",nil,
   chkpass_labels,
   chkpass_handler
+ )
+end
+
+function show_chkresign_dialog()
+ init_dialog(
+  game,"resign, really?",nil,
+  confirm_labels,
+  chkresign_handler
  )
 end
 
@@ -1973,10 +1985,10 @@ function update_dialog()
   )
  end
  if actionbtnp() then
+  game.inputhandler=nil
   dialog.actionhandler(
    dialog.button_idx
   )
-  game.inputhandler=nil
  end
 end
 
@@ -2019,15 +2031,26 @@ function chkpass_handler(
  button_idx
 )
  if button_idx==3 then
-  poke(a_move,10) --resign
+  show_chkresign_dialog()
  else
   local pass=button_idx==2
   poke(
    a_move,pass and 6 or 7
   )
+  poke(a_ctrl_out,1)
+  game.inputwait=150
  end
- poke(a_ctrl_out,1)
- game.inputwait=150
+end
+
+function chkresign_handler(
+ button_idx
+)
+ if button_idx==2 then
+  poke(a_move,10) --resign
+  poke(a_ctrl_out,1)
+ else
+  show_chkpass_dialog(game)
+ end 
 end
 
 function game_chat()
@@ -2701,8 +2724,8 @@ function dev_init_game()
    draw=draw_selecteddice
   }
  end
- --show_chkpass_dialog(game)
- game.inputhandler=observer_inputhandler
+ show_chkpass_dialog(game)
+ --game.inputhandler=observer_inputhandler
 
  poke(a_ctrl_out,0)
  poke(a_room_mgmt,3)
