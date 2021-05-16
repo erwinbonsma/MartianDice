@@ -1224,7 +1224,7 @@ function animate_move(
 )
  assert(
   #old<#new,
-  "#old="..#old..",#new="..#new.." "..tmpinfo
+  "#old="..#old..",#new="..#new
  )
  local moving={}
 
@@ -1623,10 +1623,9 @@ function update_battle(old,new)
  for tp=1,2 do
   local x=15
   local y=30+tp*16
-  if (tmpinfo==nil) tmpinfo=""
   assert(
    new[tp]>=w[tp],
-   "ub "..new[tp].."<"..w[tp].." "..tmpinfo
+   "ub "..new[tp].."<"..w[tp]
   )
   for i=1,new[tp] do
    if i>w[tp] then
@@ -1815,17 +1814,9 @@ function read_gpio_game()
   peek(a_side),peek(a_side+1)
  }
 
- --tmp
- tmpinfo="st="..(sameturn and 1 or 0)
- tmpinfo..=" r="..g.round
- tmpinfo..=" t="..g.turn
- tmpinfo..=" #b0="..#prvb
- tmpinfo..=" #c0="..#prvc
-
  g.battle=update_battle(
   prvb,dice
  )
- tmpinfo..=" #b="..#g.battle
 
  dice={}
  for i=3,5 do
@@ -1834,7 +1825,6 @@ function read_gpio_game()
  g.collected=update_collected(
   prvc,dice
  )
- tmpinfo..=" #c="..#g.collected
 
  set_game_animation(g,moving)
 
