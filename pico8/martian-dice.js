@@ -120,7 +120,8 @@ function playerNameToId(playerName) {
 		return 6 + BEHAVIOUR_IDS[botBehaviour]; 
 	}
 
-	// Unknown or disconnected player
+	// Unknown player or player not present in room.
+	// Also used when player has resigned (or been removed from game) as name is then cleared.
 	return 0;
 }
 
@@ -561,9 +562,12 @@ function gpioUpdateScores() {
 	pico8_gpio[gpio_NumPlayers] = md_game.players.length;
 	var isPlayer = false;
 	md_game.players.forEach((name, index) => {
-		pico8_gpio[gpio_Scores + index] = md_game.scores[name];
+		// Zero when player has resigned or has been removed from the game
+		pico8_gpio[gpio_Scores + index] = md_game.scores[name] || 0;
+
 		// Zero when player is currently not present in room
 		pico8_gpio[gpio_TurnOrder + index] = playerNameToId(name);
+
 		if (name === md_myName) {
 			isPlayer = true;
 		}
