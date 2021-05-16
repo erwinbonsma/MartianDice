@@ -97,6 +97,8 @@ class GameHandler(BaseHandler):
 		if self.room.exists():
 			self.clients = self.room.clients()
 			self.client_id = self.clients.get(self.connection, None)
+			if self.client_id is None:
+				self.logger.warn(f"No client ID for connection {self.connection}. #clients={len(self.clients)}")
 			return True
 
 	async def handle_command(self, cmd_message):
