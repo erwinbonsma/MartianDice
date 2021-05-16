@@ -116,7 +116,7 @@ vector={
 no_stats={wins=0,games=0}
 
 --client colors
-pal1={4,13,2,15,6,3,[0]=1}
+pal1={4,13,2,15,6,3,[0]=0}
 --bot colors
 pal2={7,8,11,10}
 --die colors
