@@ -189,7 +189,7 @@ class MetaGameHandler(GameHandler):
 		# Share with other clients
 		await self.send_game_config_event(game_config)
 
-	async def handle_game_command(self, cmd_message):
+	async def _handle_game_command(self, cmd_message):
 		cmd = cmd_message["action"]
 
 		if cmd == "chat":

@@ -1,10 +1,10 @@
 import random
-from service.BaseHandler import BaseHandler, ok_message, error_message
+from service.BaseHandler import BaseMessageHandler, ok_message, error_message
 
 def create_room_id():
 	return ''.join(chr(random.randint(ord('A'), ord('Z'))) for _ in range(4))
 
-class RegistrationHandler(BaseHandler):
+class RegistrationHandler(BaseMessageHandler):
 
 	async def create_room(self):
 		attempts = 0
@@ -18,7 +18,7 @@ class RegistrationHandler(BaseHandler):
 		
 		raise RuntimeError("Failed to create room")
 
-	async def handle_command(self, cmd_message):
+	async def _handle_message(self, cmd_message):
 		cmd = cmd_message["action"]
 
 		if cmd == "create-room":

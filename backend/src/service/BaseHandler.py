@@ -59,7 +59,24 @@ class BaseHandler:
 	async def send_error_message(self, details, error_code = ErrorCode.UnspecifiedError):
 		return await self.send_message(error_message(details, error_code))
 
-class GameHandler(BaseHandler):
+class BaseMessageHandler(BaseHandler):
+	async def _handle_message(self, message):
+		pass
+
+	async def handle_message(self, message):
+		try:
+			self.logger.info(f"Handling message {message}")
+			await self._handle_message(message)
+			self.logger.info("Handled message")
+		except HandlerException as e:
+			self.logger.warn(e.message)
+			return await self.send_error_message(e.message, error_code = e.error_code)
+		except Exception as e:
+			self.logger.warn(e)
+			traceback.print_exc()
+			raise e
+
+class GameHandler(BaseMessageHandler):
 
 	def game_state_message(self, game_state, turn_state_transitions = []):
 		return jsonpickle.encode({
@@ -72,7 +89,7 @@ class GameHandler(BaseHandler):
 
 	async def broadcast(self, message):
 		if self.clients:
-			print("broadcasting:", message)
+			self.logger.info(f"broadcasting {message} to {len(self.clients)} clients")
 			await asyncio.wait([self.comms.send(ws, message) for ws in self.clients])
 
 	def check_is_host(self, action):
@@ -88,7 +105,7 @@ class GameHandler(BaseHandler):
 		self.check_is_host(action)
 		self.check_is_recruiting(action)
 
-	async def handle_game_command(self, cmd_message):
+	async def _handle_game_command(self, cmd_message):
 		pass
 
 	def fetch_room(self, room_id):
@@ -101,20 +118,13 @@ class GameHandler(BaseHandler):
 				self.logger.warn(f"No client ID for connection {self.connection}. #clients={len(self.clients)}")
 			return True
 
-	async def handle_command(self, cmd_message):
+	async def _handle_message(self, cmd_message):
 		room_id = cmd_message["room_id"] if "room_id" in cmd_message else cmd_message["game_id"]
-		try:
-			if not self.fetch_room(room_id):
-				raise HandlerException(
-					f"Room {room_id} not found",
-					ErrorCode.RoomNotFound
-				)
 
-			await self.handle_game_command(cmd_message)
-		except HandlerException as e:
-			self.logger.warn(e.message)
-			return await self.send_error_message(e.message, error_code = e.error_code)
-		except Exception as e:
-			self.logger.warn(e)
-			traceback.print_exc()
-			raise e
+		if not self.fetch_room(room_id):
+			raise HandlerException(
+				f"Room {room_id} not found",
+				ErrorCode.RoomNotFound
+			)
+
+		await self._handle_game_command(cmd_message)

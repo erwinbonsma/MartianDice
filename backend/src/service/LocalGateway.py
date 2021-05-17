@@ -41,13 +41,14 @@ class LocalGateway:
 				cmd = cmd_message["action"]
 
 				if cmd == "create-room":
-					cmd_handler = RegistrationHandler(self.db, self.comms, socket_id)
+					cmd_handler_class = RegistrationHandler
 				elif cmd in game_cmds:
-					cmd_handler = GamePlayHandler(self.db, self.comms, socket_id)
+					cmd_handler_class = GamePlayHandler
 				else:
-					cmd_handler = MetaGameHandler(self.db, self.comms, socket_id)
+					cmd_handler_class = MetaGameHandler
+				cmd_handler = cmd_handler_class(self.db, self.comms, socket_id)
 
-				await cmd_handler.handle_command(cmd_message)
+				await cmd_handler.handle_message(cmd_message)
 		except Exception as e:
 			self.logger.info(e)
 			raise e

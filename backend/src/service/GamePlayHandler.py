@@ -129,7 +129,7 @@ class GamePlayHandler(GameHandler):
 
 		await self.update_state_until_blocked(game_state)
 
-	async def handle_game_command(self, cmd_message):
+	async def _handle_game_command(self, cmd_message):
 		cmd = cmd_message["action"]
 
 		if cmd == "start-game":

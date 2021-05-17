@@ -25,42 +25,29 @@ class AwsWebsocketComms:
 		)
 
 	async def send(self, connection_id, message):
-		print(f"sending to {connection_id}")
 		self.gateway_client.post_to_connection(
 			ConnectionId = connection_id,
 			Data = message
 		)
-		print("message sent")
+
+def handle_message_event(handler_class, event):
+	request_context = event['requestContext']
+	connection_id = request_context['connectionId']
+	message = json.loads(event['body'])
+
+	handler = handler_class(db, AwsWebsocketComms(request_context), connection_id)
+	asyncio.get_event_loop().run_until_complete(handler.handle_message(message))
+
+	return REQUEST_HANDLED
 
 def handle_registration(event, context):
-	request_context = event['requestContext']
-	connection_id = request_context['connectionId']
-	message = json.loads(event['body'])
-
-	handler = RegistrationHandler(db, AwsWebsocketComms(request_context), connection_id)
-	asyncio.get_event_loop().run_until_complete(handler.handle_command(message))
-
-	return REQUEST_HANDLED
+	return handle_message_event(RegistrationHandler, event)
 
 def handle_meta_game(event, context):
-	request_context = event['requestContext']
-	connection_id = request_context['connectionId']
-	message = json.loads(event['body'])
-
-	handler = MetaGameHandler(db, AwsWebsocketComms(request_context), connection_id)
-	asyncio.get_event_loop().run_until_complete(handler.handle_command(message))
-
-	return REQUEST_HANDLED
+	return handle_message_event(MetaGameHandler, event)
 
 def handle_game_play(event, context):
-	request_context = event['requestContext']
-	connection_id = request_context['connectionId']
-	message = json.loads(event['body'])
-
-	handler = GamePlayHandler(db, AwsWebsocketComms(request_context), connection_id)
-	asyncio.get_event_loop().run_until_complete(handler.handle_command(message))
-
-	return REQUEST_HANDLED
+	return handle_message_event(GamePlayHandler, event)
 
 def handle_disconnect(event, context):
 	request_context = event['requestContext']
