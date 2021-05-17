@@ -148,4 +148,4 @@ class GamePlayHandler(GameHandler):
 		if cmd == "remove-player":
 			return await self.remove_player(game_state)
 
-		self.logger.warn(f"Unrecognized command {cmd}")
+		self.logger.warn("Unrecognized command %s", cmd)

@@ -24,4 +24,4 @@ class RegistrationHandler(BaseMessageHandler):
 		if cmd == "create-room":
 			return await self.create_room()
 
-		self.logger.warn(f"Unrecognized command {cmd}")
+		self.logger.warn("Unrecognized command %s", cmd)

@@ -221,4 +221,4 @@ class MetaGameHandler(GameHandler):
 		if cmd == "update-config":
 			return await self.update_config(cmd_message["game_config"])
 
-		self.logger.warn(f"Unrecognized command {cmd}")
+		self.logger.warn("Unrecognized command %s", cmd)
