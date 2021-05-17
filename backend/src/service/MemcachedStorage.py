@@ -3,9 +3,7 @@ import jsonpickle
 import logging
 from pymemcache.client import base
 
-logger = logging.getLogger('memcached')
-logger.setLevel(logging.INFO)
-logger.addHandler(logging.StreamHandler())
+logger = logging.getLogger('backend.memcached')
 
 DEFAULT_EXPIRY = 3600
 

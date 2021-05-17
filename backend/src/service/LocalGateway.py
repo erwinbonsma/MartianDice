@@ -7,9 +7,7 @@ from service.MetaGameHandler import MetaGameHandler
 from service.RegistrationHandler import RegistrationHandler
 from service.DynamoDbStorage import DynamoDbStorage
 
-logger = logging.getLogger('gateway')
-logger.setLevel(logging.INFO)
-logger.addHandler(logging.StreamHandler())
+logger = logging.getLogger('backend.gateway')
 
 game_cmds = {"start-game", "move", "bot-move", "end-turn", "remove-player"}
 

@@ -5,9 +5,7 @@ import logging
 import traceback
 from enum import IntEnum
 
-logger = logging.getLogger('handlers')
-logger.setLevel(logging.INFO)
-logger.addHandler(logging.StreamHandler())
+logger = logging.getLogger('backend.handlers')
 
 class ErrorCode(IntEnum):
 	UnspecifiedError = 0
@@ -65,7 +63,7 @@ class BaseMessageHandler(BaseHandler):
 
 	async def handle_message(self, message):
 		try:
-			self.logger.info(f"Handling message {message}")
+			self.logger.info("Handling message %s", message)
 			await self._handle_message(message)
 			self.logger.info("Handled message")
 		except HandlerException as e:
@@ -89,7 +87,7 @@ class GameHandler(BaseMessageHandler):
 
 	async def broadcast(self, message):
 		if self.clients:
-			self.logger.info(f"broadcasting {message} to {len(self.clients)} clients")
+			self.logger.info("broadcasting %s to %d clients", message, len(self.clients))
 			await asyncio.wait([self.comms.send(ws, message) for ws in self.clients])
 
 	def check_is_host(self, action):
@@ -115,7 +113,10 @@ class GameHandler(BaseMessageHandler):
 			self.clients = self.room.clients()
 			self.client_id = self.clients.get(self.connection, None)
 			if self.client_id is None:
-				self.logger.warn(f"No client ID for connection {self.connection}. #clients={len(self.clients)}")
+				self.logger.warn(
+					"No client ID for connection %s. #clients=%d",
+					self.connection, len(self.clients)
+				)
 			return True
 
 	async def _handle_message(self, cmd_message):

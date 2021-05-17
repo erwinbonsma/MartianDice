@@ -6,9 +6,7 @@ import time
 import traceback
 from service.Common import Config
 
-logger = logging.getLogger('dynamodb')
-logger.setLevel(logging.INFO)
-logger.addHandler(logging.StreamHandler())
+logger = logging.getLogger('backend.dynamodb')
 
 DEFAULT_CLIENT = boto3.client('dynamodb')
 
@@ -152,7 +150,7 @@ class DynamoDbRoom:
 			)
 
 			self.__items = response["Items"]
-			print(f"Data for room {self.room_id}:", self.__items)
+			logger.info("Data for room %s: %s", self.room_id, self.__items)
 
 			return len(self.__items) > 0
 		except Exception as e:

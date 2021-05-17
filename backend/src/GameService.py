@@ -4,6 +4,8 @@ import websockets
 from service.LocalGateway import LocalGateway
 
 logging.setLogRecordFactory(logging.LogRecord)
+logging.getLogger('backend').setLevel(logging.INFO)
+logging.getLogger('backend').addHandler(logging.StreamHandler())
 
 gateway = LocalGateway()
 start_server = websockets.serve(gateway.main, "", 8765)

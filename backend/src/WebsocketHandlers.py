@@ -1,6 +1,7 @@
 import asyncio
 import boto3
 import json
+import logging
 import os
 from service.BaseHandler import ok_message
 from service.DisconnectionHandler import DisconnectionHandler
@@ -10,6 +11,7 @@ from service.RegistrationHandler import RegistrationHandler
 from service.DynamoDbStorage import DynamoDbStorage
 
 db = DynamoDbStorage()
+logging.getLogger('backend').setLevel(logging.INFO)
 
 REQUEST_HANDLED = { "statusCode": 200 }
 
