@@ -133,9 +133,11 @@ v0.9.3
 	-	Fix: Ranking fails when number of clients is one
 
 ISSUES:
+	-	OptimalPlay.should_stop() is not stateless. It fails on new service instance
 	-	Single turn defeat caused "UB" assert failure??
 
 TODO:
+-	Add "chop" to chat message repetoire
 -	Add public rooms
 	-	Add public/private toggle
 	-	Show available public rooms
