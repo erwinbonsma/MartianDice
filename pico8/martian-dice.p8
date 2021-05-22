@@ -80,7 +80,7 @@ game_exit_button={
 chatmsg={
  "hi","bye","yes","no","okay",
  "thx","wow","oops","gg",
- "play?","wait?"
+ "play?","wait?","chop"
 }
 
 help={

@@ -7,7 +7,7 @@ from service.GamePlayHandler import bot_behaviours
 from service.GameState import GameState
 
 CHAT_MESSAGES = [
-	"Hi", "Bye", "Yes", "No", "Okay", "Thx", "Wow", "Oops", "GG", "Play?", "Wait?"
+	"Hi", "Bye", "Yes", "No", "Okay", "Thx", "Wow", "Oops", "GG", "Play?", "Wait?", "Chop"
 ]
 CHAT_MESSAGE_LOOKUP = {
 	msg.lower(): i + 1 for i, msg in enumerate(CHAT_MESSAGES)
