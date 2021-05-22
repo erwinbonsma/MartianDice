@@ -43,22 +43,22 @@ class TestOptimalActionSelector(unittest.TestCase):
 	def testExpectedScoreOfTwoDieThrow7(self):
 		state = SearchState(5, 6, 0, 0)
 		# Should not fail any assert built-in asserts
-		expected_score = self.action_selector.expected_score(state, trace = False)
+		expected_score = self.action_selector.expected_score(state)
 
 	def testExpectedScoreOfTwoDieThrow8(self):
 		state = SearchState(0, 8, 3, 2)
 		# Should not fail any assert built-in asserts
-		expected_score = self.action_selector.expected_score(state, trace = False)
+		expected_score = self.action_selector.expected_score(state)
 
 	def testExpectedScoreOfFourDie(self):
 		state = SearchState(5, 4, 0, 0)
 		# Should not fail any assert built-in asserts
-		expected_score = self.action_selector.expected_score(state, trace = False)
+		expected_score = self.action_selector.expected_score(state)
 
 	def testExpectedScoreOfFiveDie(self):
 		state = SearchState(5, 0, 3, 2)
 		# Should not fail any assert built-in asserts
-		expected_score = self.action_selector.expected_score(state, trace = False)
+		expected_score = self.action_selector.expected_score(state)
 
 	def testExpectedScoreOfThreeDieThrow(self):
 		state = SearchState(0, 8, 2, 1)

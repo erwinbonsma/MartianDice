@@ -190,22 +190,16 @@ class OptimalActionSelector:
 
 		return SearchThrow(tanks, rays, reduced_earthling_choices), multiplier
 
-	def expected_score(self, state, depth = 0, trace = False, check_throws = False):
+	def expected_score(self, state):
 		current_score = score(state)
 		if state.earthling_types == 3 and current_score > 0:
-			if trace:
-				print("  " * depth, state, current_score, "Cannot improve score")
 			return current_score
 		rem_dice = NUM_DICE - state.tanks - state.rays - state.earthlings
 		if rem_dice == 0:
-			if trace:
-				print("  " * depth, state, current_score, "No more dice")
 			return current_score
 		assert(rem_dice > 0)
 
 		if state in self.lookup:
-			if trace:
-				print("  " * depth, state, self.lookup[state], "From lookup")
 			return self.lookup[state]
 
 		sum_score = 0
@@ -217,38 +211,21 @@ class OptimalActionSelector:
 			die_options.append((DieResult.UnselectableEarthling, 1))
 		num_die_options = 5 - max(0, state.earthling_types - 1)
 
-		if check_throws:
-			counts1 = count_throws(rem_dice, state.earthling_types)
-			print("Total:", sum(x for x in counts1.values()))
-			counts2 = {}
-
 		for group in groups_generator(rem_dice, max_num_groups = num_die_options):
 			num_perms = num_permutations(group)
 
 			for allocation in allocation_generator(classify_group(group), die_options):
 				throw, multiplier = self.throw_for_allocation(state, group, allocation)
 				assert(len(throw.earthling_choices) + state.earthling_types <= 3)
-				_, expected_score = self.maximise_score(state, throw, depth + 1)
-				if depth == 0 and trace:
-					print(group, allocation, throw, expected_score, num_perms, multiplier, num_perms * multiplier)
-				if check_throws:
-					counts2[throw] = counts2.setdefault(throw, 0) + num_perms * multiplier
+				_, expected_score = self.maximise_score(state, throw)
 				sum_score += expected_score * num_perms * multiplier
 				num_outcomes += num_perms * multiplier
-
-		if check_throws:
-			for key in counts1:
-				if not key in counts2:
-					print("Missing throw", key, counts1[key])
-				elif counts1[key] != counts2[key]:
-					print("Mismatch", key, counts1[key], counts2[key])
 
 		assert(num_outcomes == 6**rem_dice)
 
 		expected_score = sum_score / num_outcomes
 		self.lookup[state] = expected_score if expected_score > current_score else current_score
-		if trace:
-			print("  " * depth, state, self.lookup[state], "Weighted score")
+
 		return self.lookup[state]
 
 	def bust(self, state, throw):
@@ -256,7 +233,7 @@ class OptimalActionSelector:
 		forced_earthling = min(throw.earthling_choices) if throw.rays == 0 else 0
 		return tanks > NUM_DICE - state.earthlings - forced_earthling - tanks
 
-	def maximise_score(self, state, throw, depth = 0):
+	def maximise_score(self, state, throw):
 		possible_actions = actions_for_throw(throw)
 		if len(possible_actions) == 0 or self.bust(state, throw):
 			action = -1
@@ -265,7 +242,7 @@ class OptimalActionSelector:
 
 		evals = ((action, self.expected_score(update_state(
 			state, throw, action
-		), depth)) for action in possible_actions)
+		))) for action in possible_actions)
 
 		return max(evals, key = lambda x: x[1])
 
