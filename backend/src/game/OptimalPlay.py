@@ -44,6 +44,14 @@ def actions_for_throw(throw):
 	else:
 		return list(throw.earthling_choices) + [0]
 
+def state_from_side_dice(side_dice):
+	return SearchState(
+		side_dice[DieFace.Tank],
+		side_dice[DieFace.Ray],
+		side_dice.num_earthlings,
+		len(side_dice.collected_earthlings)
+	)
+
 def update_state(state, throw, action):
 	tanks = state.tanks + throw.tanks
 	if action == 0:
@@ -247,18 +255,13 @@ class OptimalActionSelector:
 		return max(evals, key = lambda x: x[1])
 
 	def select_die(self, state: TurnState):
-		search_state = SearchState(
-			state.side_dice[DieFace.Tank],
-			state.side_dice[DieFace.Ray],
-			state.side_dice.num_earthlings,
-			len(state.side_dice.collected_earthlings)
-		)
+		search_state = state_from_side_dice(state.side_dice)
 		search_throw = SearchThrow(
 			state.throw[DieFace.Tank], state.throw[DieFace.Ray],
 			tuple(set(state.throw[key] for key in state.selectable_earthlings))
 		)
 
-		action, self.__expected_score = self.maximise_score(search_state, search_throw)
+		action, _ = self.maximise_score(search_state, search_throw)
 
 		if action == 0:
 			return DieFace.Ray
@@ -268,7 +271,11 @@ class OptimalActionSelector:
 				return key
 
 	def should_stop(self, state: TurnState):
-		return state.score == self.__expected_score
+		expected_score = self.expected_score(state_from_side_dice(state.side_dice))
+		# Note: floating point inaccuracies should never be an issue due to nature of calculation.
+		# When passing is the best option, the expected score is always an integer number.
+		assert(expected_score >= state.score)
+		return state.score == expected_score
 
 if __name__ == '__main__':
 	import doctest
