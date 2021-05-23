@@ -419,7 +419,7 @@ function joinRoom() {
 	md_socket.addEventListener('message', handleResponseMessage);
 
 	const roomId = gpioGetStr(gpio_Room, 4);
-	md_myName = gpioGetStr(gpio_MyName, 6);
+	md_myName = gpioGetStr(gpio_MyName, 6).trim();
 
 	md_bots = {}
 	md_nextBotId = 0;

@@ -105,6 +105,12 @@ class MetaGameHandler(GameHandler):
 				ErrorCode.InvalidClientName
 			)
 
+		if client_id != client_id.strip():
+			raise HandlerException(
+				"Client contains leading or trailing whitespace",
+				ErrorCode.InvalidClientName
+			)
+
 		if client_id in self.clients.values():
 			raise HandlerException(
 				f"Name {client_id} already present in Room {room_id}",
