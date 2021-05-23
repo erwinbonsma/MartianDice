@@ -131,20 +131,19 @@ v0.9.3
 	-	Fix: Occassional wrong room join message was shown
 	-	Fix: Rejoin room with ghost client fails
 	-	Fix: Ranking fails when number of clients is one
+v0.9.4
+	-	Fix (backend): OptimalPlay.should_stop() is not stateless
+	-	Make handling of delayed/dropped moves more robust
+	-	Add "chop" to chat message vocabulary
+	-	Add basic chat-spam restrictions
+	-	Do not allow leading/trailing whitespace in client ID
 
 ISSUES:
-	-	OptimalPlay.should_stop() is not stateless. It fails on new service instance
 	-	Single turn defeat caused "UB" assert failure??
 
 TODO:
--	Add "chop" to chat message repetoire
+-	Check: When closing tab, can rejoin room and resume game play.
 -	Add public rooms
 	-	Add public/private toggle
 	-	Show available public rooms
 	-	Limit chat in public rooms
--	Extend PICO-8 client
-	-	Limit chat spamming
-		-	PICO-8 cooldown
--	Remove memcache dependency
-	-	From Dockerfile
-	-	From layer
