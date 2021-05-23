@@ -63,7 +63,7 @@ class BaseMessageHandler(BaseHandler):
 
 	async def handle_message(self, message):
 		try:
-			self.logger.info("Handling message %s", message)
+			self.logger.info("Handling message %s from connection %s", message, self.connection)
 			await self._handle_message(message)
 			self.logger.info("Handled message")
 		except HandlerException as e:
