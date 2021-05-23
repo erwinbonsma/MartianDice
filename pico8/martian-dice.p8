@@ -2398,17 +2398,21 @@ function edittext(s)
   max_xpos=min(#s+1,t.editlen)
  end
 
+ local ch=sub(s,t.xpos,t.xpos)
  if btnp(➡️) then
   t.xpos=t.xpos%max_xpos+1
   t.blink=0
  elseif btnp(⬅️) then
+  if t.xpos==#s and ch==" " then
+   s=sub(s,1,#s-1)
+  end
   t.xpos=(
    t.xpos+max_xpos-2
   )%max_xpos+1
   t.blink=0
  elseif btnp(⬆️)
  and t.xpos<=t.editlen then
-  t.oldchar=sub(s,t.xpos,t.xpos)
+  t.oldchar=ch
   s=modchar(
    s,t.xpos,⬆️,allowspace
   )
@@ -2416,7 +2420,7 @@ function edittext(s)
   t.blink=0.5
  elseif btnp(⬇️)
  and t.xpos<=t.editlen then
-  t.oldchar=sub(s,t.xpos,t.xpos)
+  t.oldchar=ch
   s=modchar(
    s,t.xpos,⬇️,allowspace
   )
@@ -2796,6 +2800,7 @@ function _init()
  --show_qr()
 
  --poke(a_room_mgmt,0)
+ --menu.name="xxxx"
  --show_menu()
 
  --dev_init_game()
