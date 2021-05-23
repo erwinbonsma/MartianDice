@@ -1,4 +1,5 @@
 const serviceEndpoint = "ws://127.0.0.1:8765";
+//const serviceEndpoint = "wss://gv9b6yzx3j.execute-api.eu-west-1.amazonaws.com/dev";
 const namePrefix = "pico";
 
 const gpio_GameControl = 0;
@@ -79,7 +80,7 @@ var md_bots = {}; // key=name, value=behaviour (string)
 var md_nextBotId = 0;
 
 var md_gpioRoomBatch = null;
-var md_gpioRoomUpdates = [];
+var md_gpioRoomUpdates;
 var md_gpioChats = [];
 
 // Game status
@@ -438,9 +439,18 @@ function createRoom() {
 function clearRoomState() {
 	pico8_gpio[gpio_RoomStatus] = 0;
 
+	// Reset so that any unread/pending data is not read on next room entry
+	pico8_gpio[gpio_GameControl] = 0;
+	pico8_gpio[gpio_RoomControl] = 0;
+
 	md_game = null;
 	md_turnStates = [];
 	md_gameNext = null;
+
+	md_gpioChats = [];
+
+	md_gpioRoomBatch = null;
+	md_gpioRoomUpdates = null;
 }
 
 function leaveRoom() {
@@ -755,7 +765,7 @@ function gpioUpdate() {
 			md_gpioRoomBatch = null;
 
 			pico8_gpio[gpio_RoomControl] = 4; // Signal start of batch
-		} else if (md_gpioRoomUpdates.length > 0) {
+		} else if (md_gpioRoomUpdates?.length) {
 			gpioRoomBatchUpdate(md_gpioRoomUpdates[0]);
 			md_gpioRoomUpdates = md_gpioRoomUpdates.slice(1);
 
