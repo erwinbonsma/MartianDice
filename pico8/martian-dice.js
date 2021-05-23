@@ -1,4 +1,5 @@
 const serviceEndpoint = "ws://127.0.0.1:8765";
+const namePrefix = "pico";
 
 const gpio_GameControl = 0;
 const gpio_RoomControl = 1;
@@ -703,6 +704,7 @@ function gpioHandleChat() {
 function gpioUpdate() {
 	if (pico8_gpio[gpio_Handshake] === 7) {
 		console.log("Pico-8 client started");
+		gpioSetStr(gpio_MyName, 4, namePrefix);
 		pico8_gpio[gpio_Handshake] = 8;
 	}
 

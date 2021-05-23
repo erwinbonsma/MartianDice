@@ -130,9 +130,6 @@ title={
 menu={
  ypos=1, --menu-item
  room="****",
- name="p8-"..chr(
-  ord("a")+flr(rnd(26))
- )
 }
 
 room={}
@@ -142,7 +139,7 @@ stats={}
 
 function shuffle(l)
  for i=1,#l do
-  local j=flr(rnd(#l-i+1))+i
+  local j=rnd(#l-i+1)\1+i
   if i!=j then
    local tmp=l[i]
    l[i]=l[j]
@@ -2608,6 +2605,11 @@ end
 function qr_update()
  title_update()
  if peek(a_handshke)==8 then
+  menu.name=gpio_gets(
+   a_name,4
+  ).."-"..chr(
+   ord("a")+rnd(26)\1
+  )
   show_menu()
  end
 end
