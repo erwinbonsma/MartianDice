@@ -1092,7 +1092,7 @@ function room_draw()
  ].disabled=not room.is_host
  room_buttons[
   3
- ].disabled=room.chatidx==0
+ ].disabled=not can_send_chat()
 
  rectfill(0,91,127,101,5)
  for i,b in pairs(room_buttons) do
@@ -2050,23 +2050,58 @@ function chkresign_handler(
  end 
 end
 
-function game_chat()
- if btnp(⬅️) or btnp(➡️) then
-  room.chatidx=0
- elseif btnp(⬆️) then
-  room.chatidx=(
-   room.chatidx+#chatmsg-2
-  )%#chatmsg+1
- elseif btnp(⬇️) then
-  room.chatidx=(
-   room.chatidx%#chatmsg+1
-  )
- elseif room.chatidx!=0
- and actionbtnp() then
+function chat_switch(delta)
+ room.chatidx=(
+  room.chatidx+#chatmsg+delta-1
+ )%#chatmsg+1
+end
+
+function can_send_chat()
+ if (room.chatidx==0) return false
+
+ --require 3 seconds between
+ --subsequent chats
+ local dt=time()-room.lastchat
+ if (abs(dt)<3) return false
+
+ --allow on average one chat per
+ --10 seconds
+ local tt=time()-room.entrytime
+ --make check robust when time
+ --wraps after 9 hours. also
+ --bound time to limit number of
+ --chats
+ if (tt<0 or tt>1000) tt=1000
+ --initial budget for extra
+ --greeting chats
+ tt+=60 
+
+ return (tt/room.numchats)>=10
+end
+
+function send_chat()
+ if can_send_chat() then
   poke(
    a_chat_out_msg,room.chatidx
   )
   room.chatidx=0
+  room.lastchat=time()
+  room.numchats+=1
+ else
+  show_popup_msg("not too fast")
+ end
+end
+
+function game_chat()
+ if btnp(⬅️) or btnp(➡️) then
+  room.chatidx=0
+ elseif btnp(⬆️) then
+  chat_switch(-1)
+ elseif btnp(⬇️) then
+  chat_switch(1)
+ elseif room.chatidx!=0
+ and actionbtnp() then
+  send_chat()
   
   --signal that action button
   --was handled by chat to
@@ -2184,9 +2219,7 @@ function room_update()
   if room.help!=nil then
    room.helpdelta-=helpscroll*5
   else
-   room.chatidx=(
-    room.chatidx+#chatmsg-2
-   )%#chatmsg+1
+   chat_switch(-1)
    room.chatscroll=-6
    room.ypos=3
   end
@@ -2194,9 +2227,7 @@ function room_update()
   if room.help!=nil then
    room.helpdelta+=helpscroll*5
   else
-   room.chatidx=(
-    room.chatidx%#chatmsg+1
-   )
+   chat_switch(1)
    room.chatscroll=6
    room.ypos=3
   end
@@ -2255,10 +2286,7 @@ function room_update()
    press=true
   elseif room.ypos==3 then
    if room.chatidx!=0 then
-    poke(
-     a_chat_out_msg,room.chatidx
-    )
-    room.chatidx=0
+    send_chat()
     press=true
    else
     show_popup_msg(
@@ -2325,7 +2353,10 @@ function clear_room_status()
  room={
   bots={},
   clients={},
-  chatlog={}
+  chatlog={},
+  lastchat=0,
+  numchats=0,
+  entrytime=time()
  }
  poke(a_ctrl_in_room,0)
 end
