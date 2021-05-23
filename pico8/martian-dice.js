@@ -207,8 +207,16 @@ function updateClients(clients) {
 }
 
 function updateGameState(gameState, turnStates, gameCount) {
-	if (md_gameNext?.id === gameState.id) {
-		console.warn(`Ignoring duplicate game state update: ${md_gameNext.id}`);
+	if (gameState.prev_id && md_gameNext?.prev_id === gameState.prev_id) {
+		// This may happen due to resends when a message was delayed (yet still delivered).
+		// It could also happen when two different clients nearly instantaneously act on a slow
+		// player.
+		//
+		// Note: Detection is based on prev_id instead of id for two reasons.
+		// 1. Even when the exact move is resent, the id will differ, as the game state includes
+		//    a time stamp.
+		// 2. Two players may choose a different action (skip vs remove) on a slow player.
+		console.warn(`Ignoring duplicate game state update: ${gameState.prev_id}`);
 		return;
 	}
 	if (md_gameNext && md_gameNext.id !== gameState.prev_id) {
