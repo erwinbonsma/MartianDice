@@ -2021,6 +2021,7 @@ function game_pickdie()
   )
   poke(a_ctrl_out,1)
   game.inputhandler=nil
+  game.inputwait=nil
  end
 end
 
@@ -2035,7 +2036,7 @@ function chkpass_handler(
    a_move,pass and 6 or 7
   )
   poke(a_ctrl_out,1)
-  game.inputwait=150
+  game.inputwait=nil
  end
 end
 
@@ -2045,6 +2046,7 @@ function chkresign_handler(
  if button_idx==2 then
   poke(a_move,10) --resign
   poke(a_ctrl_out,1)
+  game.inputwait=nil
  else
   show_chkpass_dialog(game)
  end 
@@ -2151,12 +2153,7 @@ function game_update()
   game.inputwait+=1
   if game.inputwait%300==0 then
    if game.mymove then
-    if not game.inputhandler then
-     --player made a move but it
-     --was not handled. should
-     --not really happen.
-     game.mymove(game)
-    elseif not is_botgame() then
+    if not is_botgame() then
      --remind slow player
      show_popup_msg(
       "please make a move"

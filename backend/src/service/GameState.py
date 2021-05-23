@@ -36,6 +36,7 @@ class GameState:
 		self.last_update = time.time()
 		self.prev_id = None
 		self.id = None
+		self.num_updates = 0
 
 	@property
 	def done(self):
@@ -73,6 +74,8 @@ class GameState:
 			self.turn_state = self.turn_state.next(input)
 		else:
 			self._end_turn()
+		
+		self.num_updates += 1
 		self.last_update = time.time()
 
 	def remove_player(self):
@@ -120,10 +123,11 @@ class GameState:
 
 	def __getstate__(self):
 		state = {
-			"players": self.players,
 			"round": self.round,
+			"num_updates": self.num_updates,
+			"last_update": int(self.last_update),
+			"players": self.players,
 			"scores": self.scores,
-			"last_update": int(self.last_update)
 		}
 		if not self.done:
 			state["turn_state"] = self.turn_state.to_dict()

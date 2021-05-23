@@ -89,7 +89,7 @@ var md_game;
 var md_gameNext;
 var md_turnStates = [];
 var md_botMoveTriggered;
-var md_botMoveWatchdog;
+var md_moveWatchdog;
 var md_gameEnded;
 
 function sizeOfDict(d) {
@@ -143,11 +143,24 @@ function isMyMove() {
 	return isAwaitingMove() && md_game.active_player === md_myName;
 }
 
-function clearBotMoveWatchdog() {
-	if (md_botMoveWatchdog) {
-		window.clearTimeout(md_botMoveWatchdog);
-		md_botMoveWatchdog = null;
+function clearMoveWatchdog() {
+	if (md_moveWatchdog) {
+		window.clearTimeout(md_moveWatchdog);
+		md_moveWatchdog = null;
 	}
+}
+
+function sendMoveWithRetry(message, attempt = 0) {
+	md_socket.send(JSON.stringify(message));
+
+	clearMoveWatchdog();
+	md_moveWatchdog = window.setTimeout(() => {
+		console.log("Move watchdog awoken.");
+		if (attempt < 3 && md_socket) {
+			console.log("Resending message");
+			sendMoveWithRetry(message, attempt + 1);
+		}
+	}, 3000);
 }
 
 // Updates md_clients so that it contains all clients in clients list. It ensures that:
@@ -194,8 +207,20 @@ function updateClients(clients) {
 }
 
 function updateGameState(gameState, turnStates, gameCount) {
+	if (md_gameNext?.id === gameState.id) {
+		console.warn(`Ignoring duplicate game state update: ${md_gameNext.id}`);
+		return;
+	}
 	if (md_gameNext && md_gameNext.id !== gameState.prev_id) {
+		// This could mean that some updates have been missed (which should never happen), or that
+		// a client tried to cheat (by making a move on top of a faked game state)
 		console.warn(`Unexpected state transition: ${md_gameNext.id} != ${gameState.prev_id}`);
+
+		if (md_gameNext.num_updates >= gameState.num_updates) {
+			// This should never happen and could cause client assertion failures if passed on
+			console.warn(`Number of updates did not increase: ${md_gameNext.num_updates} >= ${gameState.num_updates}`);
+			return;
+		}
 	}
 
 	if (md_game !== md_gameNext) {
@@ -221,7 +246,7 @@ function updateGameState(gameState, turnStates, gameCount) {
 	md_gameEnded = false;
 	md_gameCount = gameCount;
 
-	clearBotMoveWatchdog();
+	clearMoveWatchdog();
 }
 
 function welcomeNewClients(newClients) {
@@ -266,7 +291,7 @@ function handleClientsUpdate(clients, host) {
 		}
 
 		// Ensure that a bot move will be triggered immediately after a host switch
-		clearBotMoveWatchdog();
+		clearMoveWatchdog();
 	}
 
 	gpioPrepareRoomUpdateBatch();
@@ -297,15 +322,15 @@ function changeGameConfig(newBots) {
 }
 
 function triggerBotMove() {
-	if (md_botMoveTriggered || md_botMoveWatchdog || !isBotMove()) {
+	if (md_botMoveTriggered || md_moveWatchdog || !isBotMove()) {
 		return
 	}
 
 	if (!isHost()) {
-		clearBotMoveWatchdog();
+		clearMoveWatchdog();
 
 		console.log("Scheduling bot watchdog");
-		md_botMoveWatchdog = window.setTimeout(() => {
+		md_moveWatchdog = window.setTimeout(() => {
 			console.log("Bot watchdog awoken");
 			md_socket.send(JSON.stringify({
 				action: "switch-host",
@@ -313,7 +338,7 @@ function triggerBotMove() {
 				game_state: md_game
 			}));
 
-			md_botMoveWatchdog = null;
+			md_moveWatchdog = null;
 		}, 20000);
 
 		return;
@@ -653,35 +678,35 @@ function gpioHandleMove() {
 		assert(isMyMove());
 		// Pick dice
 		assert(move != 2);
-		md_socket.send(JSON.stringify({
+		sendMoveWithRetry({
 			action: "move",
 			game_id: md_roomId,
 			pick_die: DIE_NAMES[move],
 			game_state: md_game
-		}));
+		});
 	} else if (move >= 6 && move <= 7) {
 		assert(isMyMove());
 		// Check pass
-		md_socket.send(JSON.stringify({
+		sendMoveWithRetry({
 			action: "move",
 			game_id: md_roomId,
 			pass: move == 6,
 			game_state: md_game
-		}));
+		});
 	} else if (move == 9) {
 		// Skip turn
-		md_socket.send(JSON.stringify({
+		sendMoveWithRetry({
 			action: "end-turn",
 			game_id: md_roomId,
 			game_state: md_game
-		}));
+		});
 	} else if (move == 10) {
 		// Remove from game
-		md_socket.send(JSON.stringify({
+		sendMoveWithRetry({
 			action: "remove-player",
 			game_id: md_roomId,
 			game_state: md_game
-		}));
+		});
 	}
 
 	pico8_gpio[gpio_OutControl] = 2;
