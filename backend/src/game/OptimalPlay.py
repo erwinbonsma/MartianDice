@@ -25,9 +25,12 @@ Actions:
 from enum import IntEnum
 from functools import reduce
 from itertools import chain, combinations, groupby
+import logging
 from math import factorial
 from collections import namedtuple
 from game.DataTypes import *
+
+logger = logging.getLogger('game.OptimalPlay')
 
 SearchState = namedtuple('State', ['tanks', 'rays', 'earthlings', 'earthling_types'])
 SearchThrow = namedtuple('Throw', ['tanks', 'rays', 'earthling_choices'])
@@ -261,7 +264,10 @@ class OptimalActionSelector:
 			tuple(set(state.throw[key] for key in state.selectable_earthlings))
 		)
 
+		lookup_size_ini = len(self.lookup)
 		action, _ = self.maximise_score(search_state, search_throw)
+		if len(self.lookup) != lookup_size_ini:
+			logger.info("Lookup expanded from %d to %d", lookup_size_ini, len(self.lookup))
 
 		if action == 0:
 			return DieFace.Ray

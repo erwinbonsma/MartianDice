@@ -19,9 +19,9 @@ def build_pvp_matrix(players, num_runs):
 	return wins
 
 if __name__ == '__main__':
-	logger.setLevel(logging.INFO)
-	logger.addHandler(logging.StreamHandler())
+	logging.getLogger('game').setLevel(logging.INFO)
+	logging.getLogger('game').addHandler(logging.StreamHandler())
 
 	players = [RandomPlayer(), AggressivePlayer(), DefensivePlayer(), OptimalActionSelector()]
-	m = build_pvp_matrix(players, 1000)
+	m = build_pvp_matrix(players, 10)
 	print(m)
