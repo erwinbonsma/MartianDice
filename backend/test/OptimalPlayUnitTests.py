@@ -1,10 +1,11 @@
-from game.DataTypes import DieFace, SideDiceState, TurnState
+from game.DataTypes import DiceThrow, DieFace, SideDiceState, TurnState
 from game.OptimalPlay import OptimalActionSelector, SearchState
 import unittest
 
 class OptimalPlayUnitTests(unittest.TestCase):
 	def setUp(self):
 		self.action_selector = OptimalActionSelector(consider_win_score = True)
+
 	def tearDown(self):
 		pass
 
@@ -79,6 +80,45 @@ class OptimalPlayUnitTests(unittest.TestCase):
 		self.assertFalse(self.action_selector.should_stop(state, 3))
 		self.assertFalse(self.action_selector.should_stop(state))
 
+	def testDieChoiceDependsOnWinScore1(self):
+		# State with four different choices depending on win score
+		state = TurnState(
+			side_dice = SideDiceState({ DieFace.Tank: 2 }),
+			throw = DiceThrow({
+				DieFace.Ray: 2, DieFace.Cow: 2, DieFace.Human: 3, DieFace.Chicken: 4
+			})
+		)
+
+		self.assertEqual(DieFace.Chicken, self.action_selector.select_die(state))
+		self.assertEqual(DieFace.Ray, self.action_selector.select_die(state, 1))
+		self.assertEqual(DieFace.Cow, self.action_selector.select_die(state, 2))
+		self.assertEqual(DieFace.Human, self.action_selector.select_die(state, 3))
+
+	def testDieChoiceDependsOnWinScore2(self):
+		# State where choice deviates only for a couple of higher win scores.
+		# It is more typical that there is a deviation for lower win scores up until a limit.
+		state = TurnState(
+			side_dice = SideDiceState({ DieFace.Tank: 1 }),
+			throw = DiceThrow({
+				DieFace.Ray: 4, DieFace.Cow: 1, DieFace.Human: 3, DieFace.Chicken: 4
+			})
+		)
+
+		self.assertEqual(DieFace.Ray, self.action_selector.select_die(state))
+		self.assertEqual(DieFace.Ray, self.action_selector.select_die(state, 3))
+
+		self.assertEqual(DieFace.Chicken, self.action_selector.select_die(state, 4))
+		self.assertEqual(DieFace.Chicken, self.action_selector.select_die(state, 5))
+
+		score_ray0 = self.action_selector.expected_score(SearchState(1, 4, 0, 0, 0))
+		score_ray4 = self.action_selector.expected_score(SearchState(1, 4, 0, 0, 4))
+		score_kip0 = self.action_selector.expected_score(SearchState(1, 0, 4, 1, 0))
+		score_kip4 = self.action_selector.expected_score(SearchState(1, 0, 4, 1, 4))
+
+		self.assertGreater(score_ray0, score_kip0)
+		self.assertGreater(score_kip4, score_ray4)
+		self.assertGreaterEqual(score_ray0, score_ray4)
+		self.assertGreaterEqual(score_kip0, score_kip4)
+
 if __name__ == '__main__':
 	unittest.main()
-
