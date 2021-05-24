@@ -3,7 +3,7 @@ import json
 from service.BaseHandler import GameHandler, HandlerException, ok_message, error_message
 from service.Common import is_bot_name, Config
 from service.GameState import GameState
-from game.DataTypes import TurnState, TurnPhase, DieFace
+from game.DataTypes import TurnState, TurnPhase, DieFace, TARGET_SCORE
 from game.Game import RandomPlayer, AggressivePlayer, DefensivePlayer
 from game.OptimalPlay import OptimalActionSelector
 
@@ -11,7 +11,7 @@ bot_behaviours = {
 	"random": RandomPlayer(),
 	"aggressive": AggressivePlayer(),
 	"defensive": DefensivePlayer(),
-	"smart": OptimalActionSelector()
+	"smart": OptimalActionSelector(consider_win_score = True)
 }
 
 str2die = {
@@ -99,10 +99,12 @@ class GamePlayHandler(GameHandler):
 		action_selector = bot_behaviours[bot_behaviour]
 
 		turn_state = game_state.turn_state
+		win_score = TARGET_SCORE - game_state.scores[game_state.active_player]
+
 		if turn_state.phase == TurnPhase.PickDice:
-			bot_move = action_selector.select_die(turn_state)
+			bot_move = action_selector.select_die(turn_state, win_score)
 		else:
-			bot_move = action_selector.should_stop(turn_state)
+			bot_move = action_selector.should_stop(turn_state, win_score)
 
 		await self.handle_move(game_state, bot_move)
 

@@ -4,9 +4,7 @@ import json
 import random
 import time
 import traceback
-from game.DataTypes import TurnState, TurnPhase
-
-TARGET_SCORE = 25
+from game.DataTypes import TurnState, TurnPhase, TARGET_SCORE
 
 class ChecksumMismatchException(Exception):
 	def __init__(self, message):
