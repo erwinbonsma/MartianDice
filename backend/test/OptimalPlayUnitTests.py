@@ -120,5 +120,25 @@ class OptimalPlayUnitTests(unittest.TestCase):
 		self.assertGreaterEqual(score_ray0, score_ray4)
 		self.assertGreaterEqual(score_kip0, score_kip4)
 
+	def testDieChoiceDependsOnWinScore3(self):
+		# State where choice deviates for low and high, but not medium scores
+		state = TurnState(
+			side_dice = SideDiceState({ DieFace.Tank: 1 }),
+			throw = DiceThrow({
+				DieFace.Ray: 5, DieFace.Cow: 1, DieFace.Human: 2, DieFace.Chicken: 4
+			})
+		)
+
+		self.assertEqual(DieFace.Chicken, self.action_selector.select_die(state))
+		self.assertEqual(DieFace.Chicken, self.action_selector.select_die(state, 4))
+		self.assertEqual(DieFace.Chicken, self.action_selector.select_die(state, 5))
+		self.assertEqual(DieFace.Chicken, self.action_selector.select_die(state, 6))
+
+		self.assertEqual(DieFace.Ray, self.action_selector.select_die(state, 1))
+		self.assertEqual(DieFace.Ray, self.action_selector.select_die(state, 2))
+		self.assertEqual(DieFace.Ray, self.action_selector.select_die(state, 3))
+		self.assertEqual(DieFace.Ray, self.action_selector.select_die(state, 7))
+		self.assertEqual(DieFace.Ray, self.action_selector.select_die(state, 8))
+
 if __name__ == '__main__':
 	unittest.main()
