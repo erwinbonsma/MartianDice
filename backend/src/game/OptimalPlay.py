@@ -314,15 +314,35 @@ class OptimalActionSelector(AbstractPlayer):
 		# When passing is the best option, the expected score is always an integer number.
 		return state.score >= expected_score
 
+def test_deviations(action_selector, num_turns = 100, max_win_score = 13):
+	counts = [0] * (max_win_score + 1)
+	def state_listener(state):
+		global num_choices
+		if state.phase == TurnPhase.PickDice:
+			ref_choice = action_selector.select_die(state)
+			counts[0] += 1
+			for win_score in range(1, max_win_score + 1):
+				win_choice = action_selector.select_die(state, win_score)
+				if win_choice != ref_choice:
+					counts[win_score] += 1
+					print("Diff for %s @ %d: %s vs %s" % (str(state), win_score, ref_choice, win_choice))
+
+	for _ in range(num_turns):
+		play_turn(action_selector, state_listener = state_listener)
+	print(counts)
+
 if __name__ == '__main__':
 	import doctest
 	doctest.testmod()
 
-	action_selector = OptimalActionSelector()
+	from game.Game import play_turn, play_game
+
+	action_selector = OptimalActionSelector(consider_win_score = True)
 	print("Expected average score:", action_selector.expected_score(SearchState(0, 0, 0, 0, 0)))
 	print(len(action_selector.lookup))
 
-	from game.Game import play_turn
+	test_deviations(action_selector)
+
 	num_turns = 100000
 	summed_scores = sum(play_turn(action_selector) for _ in range(num_turns))
 	print("Avg score:", summed_scores / num_turns)
