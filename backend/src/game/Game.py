@@ -159,13 +159,15 @@ def play_turn(
 
 	return state.score
 
-def play_game(players, target_score = TARGET_SCORE):
+def play_game(players, target_score = TARGET_SCORE, state_listener = None):
 	scores = [0] * len(players)
 	turn = 0
 	while True:
 		player_index = turn % len(players)
 		win_score = target_score - scores[player_index]
-		scores[player_index] += play_turn(players[player_index], win_score)
+		scores[player_index] += play_turn(
+			players[player_index], win_score, state_listener = state_listener
+		)
 		if scores[player_index] >= target_score:
 			return player_index
 		turn += 1
