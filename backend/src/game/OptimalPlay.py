@@ -8,13 +8,11 @@ State:
 Throw:
 	T: Number of tanks
 	D: Number of deathrays
-	Q: Number of non-selectable point dice
-		- Can be omitted?
 	P[]: Number of points that can be selected
 		- Ignores duplicates
 
 Constraints:
-	Len(State.P) + Len(Throw.P) <= 3
+	State.N + Len(Throw.P) <= 3
 
 Actions:
 	-1: No selection (bust or cannot select any dice)
