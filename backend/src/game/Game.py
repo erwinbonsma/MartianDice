@@ -127,6 +127,16 @@ def play_turn(action_selector, throw_fun = random_throw, ini_side_dice = None, s
 
 	return state.score
 
+def play_game(players, target_score = 25):
+	scores = [0] * len(players)
+	turn = 0
+	while True:
+		player_index = turn % len(players)
+		scores[player_index] += play_turn(players[player_index])
+		if scores[player_index] >= target_score:
+			return player_index
+		turn += 1
+
 if __name__ == '__main__':
 	action_selector = DefensivePlayer()
 

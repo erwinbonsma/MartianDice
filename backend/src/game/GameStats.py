@@ -1,0 +1,27 @@
+import itertools
+import logging
+import numpy as np
+from game.Game import play_game, AggressivePlayer, DefensivePlayer, RandomPlayer
+from game.OptimalPlay import OptimalActionSelector
+
+logger = logging.getLogger('game.GameStats')
+
+def build_pvp_matrix(players, num_runs):
+	n = len(players)
+	wins = np.zeros((n, n))
+	for run in range(num_runs):
+		logger.info("Run %d", run)
+		for p1, p2 in itertools.product(range(n), range(n)):
+			p1_wins = play_game([players[p1], players[p2]]) == 0
+			if p1_wins:
+				wins[p1, p2] += 1
+	wins /= num_runs 
+	return wins
+
+if __name__ == '__main__':
+	logger.setLevel(logging.INFO)
+	logger.addHandler(logging.StreamHandler())
+
+	players = [RandomPlayer(), AggressivePlayer(), DefensivePlayer(), OptimalActionSelector()]
+	m = build_pvp_matrix(players, 1000)
+	print(m)
