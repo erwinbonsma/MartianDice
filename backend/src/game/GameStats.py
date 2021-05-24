@@ -22,6 +22,8 @@ if __name__ == '__main__':
 	logging.getLogger('game').setLevel(logging.INFO)
 	logging.getLogger('game').addHandler(logging.StreamHandler())
 
-	players = [RandomPlayer(), AggressivePlayer(), DefensivePlayer(), OptimalActionSelector()]
-	m = build_pvp_matrix(players, 10)
+	op1 = OptimalActionSelector(consider_win_score = False)
+	op2 = OptimalActionSelector(consider_win_score = True)
+	players = [RandomPlayer(), AggressivePlayer(), DefensivePlayer(), op1, op2]
+	m = build_pvp_matrix(players, 1000)
 	print(m)

@@ -11,7 +11,7 @@ class OptimalPlaySimulationTests(unittest.TestCase):
 		pass
 
 	def testExpectedScoreOfThreeDieThrow(self):
-		state = SearchState(0, 8, 2, 1)
+		state = SearchState(0, 8, 2, 1, 0)
 		expected_score = self.action_selector.expected_score(state)
 
 		state = SideDiceState({DieFace.Ray: 8, DieFace.Cow: 2})
@@ -28,7 +28,7 @@ class OptimalPlaySimulationTests(unittest.TestCase):
 		self.assertAlmostEqual(expected_score, simulated_score, delta = 0.01)
 
 	def testExpectedScoreOfThreeDieThrow2(self):
-		state = SearchState(4, 4, 2, 1)
+		state = SearchState(4, 4, 2, 1, 0)
 		expected_score = self.action_selector.expected_score(state)
 
 		state = SideDiceState({ DieFace.Tank: 4, DieFace.Ray: 4, DieFace.Chicken: 2 })

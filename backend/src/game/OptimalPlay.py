@@ -4,6 +4,9 @@ State:
 	D: Number of deathrays
 	S: Total points collected sofar
 	N: Total of point-groups selected (0 <= N <= 3)
+	M: Maximum score. When non-zero, the score is bounded by this limit. It is used to take into
+	   account how many points are needed to win the game. In order to reduce the state space, it
+	   is also bounded by the maximum score that is achievable from the current state.
 
 Throw:
 	T: Number of tanks
@@ -27,10 +30,11 @@ import logging
 from math import factorial
 from collections import namedtuple
 from game.DataTypes import *
+from game.Game import AbstractPlayer
 
 logger = logging.getLogger('game.OptimalPlay')
 
-SearchState = namedtuple('State', ['tanks', 'rays', 'earthlings', 'earthling_types'])
+SearchState = namedtuple('State', ['tanks', 'rays', 'earthlings', 'earthling_types', 'max_score'])
 SearchThrow = namedtuple('Throw', ['tanks', 'rays', 'earthling_choices'])
 
 class DieResult(IntEnum):
@@ -45,12 +49,19 @@ def actions_for_throw(throw):
 	else:
 		return list(throw.earthling_choices) + [0]
 
-def state_from_side_dice(side_dice):
+def max_score(num_combatants, num_earthlings, num_earthling_types):
+	throw_size = NUM_DICE - num_combatants - num_earthlings
+	bonus = ALL_EARTHLING_BONUS if throw_size + num_earthling_types >= NUM_EARTHLING_TYPES else 0
+	max_extra_earthlings = throw_size if num_earthling_types < NUM_EARTHLING_TYPES else 0
+	return num_earthlings + max_extra_earthlings + bonus
+
+def update_max_score(state):
 	return SearchState(
-		side_dice[DieFace.Tank],
-		side_dice[DieFace.Ray],
-		side_dice.num_earthlings,
-		len(side_dice.collected_earthlings)
+		state.tanks, state.rays, state.earthlings, state.earthling_types,
+		min(
+			state.max_score,
+			max_score(state.tanks + state.rays, state.earthlings, state.earthling_types)
+		)
 	)
 
 def update_state(state, throw, action):
@@ -58,17 +69,19 @@ def update_state(state, throw, action):
 	if action == 0:
 		assert(throw.rays > 0)
 		state = SearchState(
-			tanks, state.rays + throw.rays, state.earthlings, state.earthling_types
+			tanks, state.rays + throw.rays, state.earthlings, state.earthling_types, state.max_score
 		)
 	elif action > 0:
 		assert(action in throw.earthling_choices)
 		state = SearchState(
-			tanks, state.rays, state.earthlings + action, state.earthling_types + 1
+			tanks, state.rays, state.earthlings + action, state.earthling_types + 1, state.max_score
 		)
 	else:
 		state = SearchState(
-			tanks, state.rays, state.earthlings, state.earthling_types
+			tanks, state.rays, state.earthlings, state.earthling_types, state.max_score
 		)
+	if state.max_score > 0:
+		state = update_max_score(state)
 	assert(state.earthling_types <= 3)
 	assert(state.tanks + state.rays + state.earthlings <= NUM_DICE)
 	return state
@@ -76,8 +89,9 @@ def update_state(state, throw, action):
 def score(state):
 	if state.tanks > state.rays:
 		return 0
-	bonus = 3 if state.earthling_types == 3 else 0
-	return state.earthlings + bonus
+	bonus = ALL_EARTHLING_BONUS if state.earthling_types == NUM_EARTHLING_TYPES else 0
+	total = state.earthlings + bonus
+	return (total if state.max_score == 0 else min(total, state.max_score))
 
 def groups_generator(n, max_num_groups = None, max_size = None, l = []):
 	if max_size is None:
@@ -125,6 +139,10 @@ def product(a, b):
 	return a * b
 
 def classify_group(group):
+	"""
+	>>> classify_group('abbccccdd')
+	[1, 2, 4, 2]
+	"""
 	return list(sum(1 for x in g) for _, g in groupby(group))
 
 def num_permutations(group):
@@ -146,7 +164,7 @@ def count_throws(num_dice, selected_earthling_types, throws = [], counts = None)
 	if num_dice == 0:
 		tanks = 0
 		rays = 0
-		earthlings = [0] * (3 - selected_earthling_types)
+		earthlings = [0] * (NUM_EARTHLING_TYPES - selected_earthling_types)
 		for die in throws:
 			if die == 0:
 				tanks += 1
@@ -163,10 +181,24 @@ def count_throws(num_dice, selected_earthling_types, throws = [], counts = None)
 
 	return counts
 
-class OptimalActionSelector:
+class OptimalActionSelector(AbstractPlayer):
 
-	def __init__(self):
+	def __init__(self, consider_win_score = False):
 		self.lookup = {}
+		self.consider_win_score = consider_win_score
+
+	def state_from_side_dice(self, side_dice, win_score = 0):
+		max_score = win_score if self.consider_win_score else 0
+
+		state = SearchState(
+			side_dice[DieFace.Tank],
+			side_dice[DieFace.Ray],
+			side_dice.num_earthlings,
+			len(side_dice.collected_earthlings),
+			max_score
+		)
+
+		return (state if max_score == 0 else update_max_score(state))
 
 	def throw_for_allocation(self, state, group, allocation):
 		assert(len(group) == len(allocation))
@@ -214,18 +246,19 @@ class OptimalActionSelector:
 		sum_score = 0
 		num_outcomes = 0
 
+		# die_option is tuple ("result type", "number of sub-types within result type")
 		die_options = [(DieResult.Tank, 1), (DieResult.Ray, 1)]
-		die_options.append((DieResult.SelectableEarthling, 3 - state.earthling_types))
+		die_options.append((DieResult.SelectableEarthling, NUM_EARTHLING_TYPES - state.earthling_types))
 		if state.earthling_types > 0:
 			die_options.append((DieResult.UnselectableEarthling, 1))
-		num_die_options = 5 - max(0, state.earthling_types - 1)
+		num_die_options = NUM_DIE_FACE_TYPES - max(0, state.earthling_types - 1)
 
 		for group in groups_generator(rem_dice, max_num_groups = num_die_options):
 			num_perms = num_permutations(group)
 
 			for allocation in allocation_generator(classify_group(group), die_options):
 				throw, multiplier = self.throw_for_allocation(state, group, allocation)
-				assert(len(throw.earthling_choices) + state.earthling_types <= 3)
+				assert(len(throw.earthling_choices) + state.earthling_types <= NUM_EARTHLING_TYPES)
 				_, expected_score = self.maximise_score(state, throw)
 				sum_score += expected_score * num_perms * multiplier
 				num_outcomes += num_perms * multiplier
@@ -255,8 +288,8 @@ class OptimalActionSelector:
 
 		return max(evals, key = lambda x: x[1])
 
-	def select_die(self, state: TurnState):
-		search_state = state_from_side_dice(state.side_dice)
+	def select_die(self, state: TurnState, win_score = 0):
+		search_state = self.state_from_side_dice(state.side_dice, win_score)
 		search_throw = SearchThrow(
 			state.throw[DieFace.Tank], state.throw[DieFace.Ray],
 			tuple(set(state.throw[key] for key in state.selectable_earthlings))
@@ -274,19 +307,20 @@ class OptimalActionSelector:
 			if state.throw[key] == action and state.side_dice[key] == 0:
 				return key
 
-	def should_stop(self, state: TurnState):
-		expected_score = self.expected_score(state_from_side_dice(state.side_dice))
+	def should_stop(self, state: TurnState, win_score = 0):
+		search_state = self.state_from_side_dice(state.side_dice, win_score)
+		expected_score = self.expected_score(search_state)
 		# Note: floating point inaccuracies should never be an issue due to nature of calculation.
 		# When passing is the best option, the expected score is always an integer number.
-		assert(expected_score >= state.score)
-		return state.score == expected_score
+		return state.score >= expected_score
 
 if __name__ == '__main__':
 	import doctest
 	doctest.testmod()
 
 	action_selector = OptimalActionSelector()
-	print("Expected average score:", action_selector.expected_score(SearchState(0, 0, 0, 0)))
+	print("Expected average score:", action_selector.expected_score(SearchState(0, 0, 0, 0, 0)))
+	print(len(action_selector.lookup))
 
 	from game.Game import play_turn
 	num_turns = 100000

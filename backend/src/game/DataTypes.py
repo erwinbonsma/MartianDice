@@ -3,6 +3,9 @@ from random import randint
 
 NUM_DICE = 13
 
+ALL_EARTHLING_BONUS = 3
+TARGET_SCORE = 25
+
 class DieFace(IntEnum):
 	Tank = 0
 	Ray = 1
@@ -11,6 +14,7 @@ class DieFace(IntEnum):
 	Human = 4
 
 EARTHLINGS = (DieFace.Chicken, DieFace.Cow, DieFace.Human)
+NUM_EARTHLING_TYPES = 3
 
 NUM_DIE_FACE_TYPES = 5
 

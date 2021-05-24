@@ -1,23 +1,44 @@
+from abc import ABCMeta, abstractmethod
 from random import choice, random
 from game.DataTypes import *
 
-class RandomPlayer:
+class AbstractPlayer(metaclass=ABCMeta):
 
-	def select_die(self, state: TurnState):
+	@abstractmethod
+	def select_die(self, state: TurnState, win_score = 0) -> DieFace:
+		"""
+		Returns the (type of) die to select from the given throw. It must be a valid move.
+
+		When win_score is non-zero, this is the number of points to win the game. A player can use
+		this when making a choice, for example, switch to a less ambitious choice that is less
+		risky
+		"""
+		pass
+
+	@abstractmethod
+	def should_stop(self, state: TurnState, win_score = 0) -> bool:
+		"""
+		Return true iff the player should stop their turn.
+		"""
+		pass
+
+class RandomPlayer(AbstractPlayer):
+
+	def select_die(self, state: TurnState, win_score = 0):
 		options = state.selectable_earthlings
 		if state.throw[DieFace.Ray] > 0:
 			options.append(DieFace.Ray)
 		return choice(options)
 
-	def should_stop(self, state: TurnState):
+	def should_stop(self, state: TurnState, win_score = 0):
 		return state.score > 0 and random() > 0.5
 
 	def __str__(self):
 		return "RandomPlayer"
 
-class AggressivePlayer:
+class AggressivePlayer(AbstractPlayer):
 
-	def select_die(self, state: TurnState):
+	def select_die(self, state: TurnState, win_score = 0):
 		"""
 		Always select the maximum number of earthlings possible that does not lead to inevitable
 		defeat.
@@ -32,16 +53,16 @@ class AggressivePlayer:
 		max_size = max(state.throw[e] for e in options)
 		return choice([e for e in options if state.throw[e] == max_size])
 
-	def should_stop(self, state: TurnState):
+	def should_stop(self, state: TurnState, win_score = 0):
 		"""Only stop when no more move is possible"""
 		return False
 
 	def __str__(self):
 		return "AggressivePlayer"
 
-class DefensivePlayer:
+class DefensivePlayer(AbstractPlayer):
 
-	def select_die(self, state: TurnState):
+	def select_die(self, state: TurnState, win_score = 0):
 		"""
 		Always select a ray when there are more tanks than rays. Otherwise, collect the most earthlings.
 		"""
@@ -53,9 +74,15 @@ class DefensivePlayer:
 		max_size = max(state.throw[earthling] for earthling in options)
 		return choice([earthling for earthling in options if state.throw[earthling] == max_size])
 
-	def should_stop(self, state: TurnState):
+	def should_stop(self, state: TurnState, win_score = 0):
 		buffer = state.side_dice[DieFace.Ray] - state.side_dice[DieFace.Tank]
-		return state.score > 0 and (buffer < 2 or len(state.side_dice.collected_earthlings) == 3)
+		return state.score > 0 and (
+			# Stop if doing so would win the game
+			(win_score > 0 and state.score >= win_score) or
+			# Or if a throw is considered too risky, given the battle state
+			# TODO: Also take into account the number of dice to be thrown
+			buffer < 2
+		)
 
 	def __str__(self):
 		return "DefensivePlayer"
@@ -102,7 +129,12 @@ def show_state(state: TurnState):
 def dev_null(state):
 	pass
 
-def play_turn(action_selector, throw_fun = random_throw, ini_side_dice = None, state_listener = None):
+def play_turn(
+	action_selector,
+	win_score = 0,
+	throw_fun = random_throw, ini_side_dice = None,
+	state_listener = None
+):
 	if state_listener is None:
 		state_listener = dev_null
 
@@ -114,10 +146,10 @@ def play_turn(action_selector, throw_fun = random_throw, ini_side_dice = None, s
 	while not state.done:
 		if state.awaits_input:
 			if state.phase == TurnPhase.PickDice:
-				selected_die = action_selector.select_die(state)
+				selected_die = action_selector.select_die(state, win_score)
 				state = state.next(selected_die)
 			elif state.phase == TurnPhase.CheckPass:
-				should_stop = action_selector.should_stop(state)
+				should_stop = action_selector.should_stop(state, win_score)
 				state = state.next(should_stop)
 			else:
 				assert(False)
@@ -127,12 +159,13 @@ def play_turn(action_selector, throw_fun = random_throw, ini_side_dice = None, s
 
 	return state.score
 
-def play_game(players, target_score = 25):
+def play_game(players, target_score = TARGET_SCORE):
 	scores = [0] * len(players)
 	turn = 0
 	while True:
 		player_index = turn % len(players)
-		scores[player_index] += play_turn(players[player_index])
+		win_score = target_score - scores[player_index]
+		scores[player_index] += play_turn(players[player_index], win_score)
 		if scores[player_index] >= target_score:
 			return player_index
 		turn += 1
