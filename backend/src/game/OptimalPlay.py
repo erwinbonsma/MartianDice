@@ -24,10 +24,9 @@ Actions:
 """
 
 from enum import IntEnum
-from functools import reduce
 from itertools import chain, combinations, groupby
 import logging
-from math import factorial
+from math import factorial, prod
 from collections import defaultdict, namedtuple
 from game.DataTypes import *
 from game.Game import AbstractPlayer
@@ -135,9 +134,6 @@ def allocation_generator(group_counts, elems, allocation = []):
 		if valid:
 			yield from allocation_generator(group_counts[1:], rem_elems, allocation + picked)
 
-def product(a, b):
-	return a * b
-
 def classify_group(group):
 	"""
 	>>> classify_group('abbccccdd')
@@ -146,11 +142,11 @@ def classify_group(group):
 	return list(sum(1 for x in g) for _, g in groupby(group))
 
 def num_permutations(group):
-	return factorial(sum(group)) // reduce(product, (factorial(n) for n in group))
+	return factorial(sum(group)) // prod(factorial(n) for n in group)
 
 def num_allocations(group, num_elems):
 	classified = classify_group(group)
-	dups = reduce(product, (factorial(n) for n in classified))
+	dups = prod(factorial(n) for n in classified)
 	return factorial(num_elems) // (factorial(num_elems - len(group)) * dups)
 
 def count_throws(num_dice, selected_earthling_types, throws = None, counts = None):
@@ -337,7 +333,7 @@ if __name__ == '__main__':
 	import doctest
 	doctest.testmod()
 
-	from game.Game import play_turn, play_game
+	from game.Game import play_turn
 
 	action_selector = OptimalActionSelector(consider_win_score = True)
 	print("Expected average score:", action_selector.expected_score(SearchState(0, 0, 0, 0, 0)))
