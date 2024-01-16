@@ -19,7 +19,7 @@ def enter_throw(state):
 	while throw.num_dice != target_num_dice:
 		if throw.num_dice > 0:
 			show_throw(throw)
-		
+
 		try:
 			s = input("Add dice to throw (%d/%d): " % (throw.num_dice, target_num_dice)).upper()
 			if len(s) < 2:
@@ -47,7 +47,7 @@ class HumanPlayer:
 
 		print(" ".join(items))
 
-	def show_hint(self, state: TurnState):
+	def show_hint(self, state: TurnState, win_score):
 		num_earthling_types = len(state.side_dice.collected_earthlings)
 		scores = [
 			(self.hint_generator.expected_score(
@@ -55,7 +55,8 @@ class HumanPlayer:
 					state.side_dice[DieFace.Tank],
 					state.side_dice[DieFace.Ray],
 					state.side_dice.num_earthlings + action,
-					num_earthling_types + 1
+					num_earthling_types + 1,
+					win_score
 				)
 			), action)
 			for action in list(set(state.throw[x] for x in state.selectable_earthlings))
@@ -67,7 +68,8 @@ class HumanPlayer:
 						state.side_dice[DieFace.Tank],
 						state.side_dice[DieFace.Ray] + state.throw[DieFace.Ray],
 						state.side_dice.num_earthlings,
-						num_earthling_types
+						num_earthling_types,
+						win_score
 					)
 				), 0
 			))
@@ -80,13 +82,13 @@ class HumanPlayer:
 				choice = "%d [R] Ray%s" % (state.throw[DieFace.Ray], "s" if state.throw[DieFace.Ray] > 1 else "")
 			print("%.3f %s" % (score, choice))
 
-	def select_die(self, state: TurnState):
+	def select_die(self, state: TurnState, win_score = 0):
 		options = state.selectable_earthlings
 		if state.throw[DieFace.Ray] > 0:
 			options.append(DieFace.Ray)
 
 		if self.hint_generator is not None:
-			self.show_hint(state)
+			self.show_hint(state, win_score)
 		else:
 			self.show_options(options)
 
@@ -95,7 +97,7 @@ class HumanPlayer:
 			if key in key2die:
 				return key2die[key]
 
-	def should_stop(self, state: TurnState):
+	def should_stop(self, state: TurnState, win_score = 0):
 		while True:
 			choice = input("Continue (Y/N)? : ").upper()
 			if choice == "Y" or choice == "N":

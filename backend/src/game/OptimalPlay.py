@@ -28,7 +28,7 @@ from functools import reduce
 from itertools import chain, combinations, groupby
 import logging
 from math import factorial
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from game.DataTypes import *
 from game.Game import AbstractPlayer
 
@@ -153,13 +153,15 @@ def num_allocations(group, num_elems):
 	dups = reduce(product, (factorial(n) for n in classified))
 	return factorial(num_elems) // (factorial(num_elems - len(group)) * dups)
 
-def count_throws(num_dice, selected_earthling_types, throws = [], counts = None):
+def count_throws(num_dice, selected_earthling_types, throws = None, counts = None):
 	"""
 	Counts the occurencess of each possible throw for the given number of dice and number of
 	selected earthling types. It can be used for debugging.
 	"""
-	if counts == None:
-		counts = {}
+	if throws is None:
+		throws = []
+	if counts is None:
+		counts = defaultdict(lambda: 0)
 
 	if num_dice == 0:
 		tanks = 0
@@ -172,8 +174,8 @@ def count_throws(num_dice, selected_earthling_types, throws = [], counts = None)
 				rays += 1
 			elif die < 6 - selected_earthling_types:
 				earthlings[die - 3] += 1
-		throw = Throw(tanks, rays, tuple(set(x for x in earthlings if x > 0)))
-		counts[throw] = counts.setdefault(throw, 0) + 1
+		throw = SearchThrow(tanks, rays, tuple(set(x for x in earthlings if x > 0)))
+		counts[throw] += 1
 		return
 
 	for die in range(6):

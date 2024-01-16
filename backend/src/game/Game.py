@@ -108,7 +108,7 @@ def show_state(state: TurnState):
 	if state.phase == TurnPhase.Thrown:
 		show_throw(state.throw_count, state.throw)
 		return
-	
+
 	if state.phase == TurnPhase.PickDice:
 		return
 
