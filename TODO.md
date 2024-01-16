@@ -137,6 +137,7 @@ v0.9.4
 	-	Add "chop" to chat message vocabulary
 	-	Add basic chat-spam restrictions
 	-	Do not allow leading/trailing whitespace in client ID
+	-	Let bot player consider what to score to win
 
 ISSUES:
 	-	Single turn defeat caused "UB" assert failure??
