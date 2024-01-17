@@ -88,7 +88,7 @@ class GameHandler(BaseMessageHandler):
 	async def broadcast(self, message):
 		if self.clients:
 			self.logger.info("broadcasting %s to %d clients", message, len(self.clients))
-			await asyncio.wait([self.comms.send(ws, message) for ws in self.clients])
+			await asyncio.wait(asyncio.create_task(self.comms.send(ws, message)) for ws in self.clients)
 
 	def check_is_host(self, action):
 		host = self.room.host()
