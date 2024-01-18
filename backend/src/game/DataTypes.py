@@ -49,7 +49,7 @@ class Dice:
 	def __init__(self, counts = {}):
 		self._counts = counts
 
-	@classmethod 
+	@classmethod
 	def from_dict(cls, dict):
 		self = cls.__new__(cls)
 		self.__setstate__(dict)
@@ -145,8 +145,9 @@ class TurnState:
 		self.phase = phase
 		self.throw = throw
 		self.throw_count = throw_count
+		self.metadata = {}
 
-	@classmethod 
+	@classmethod
 	def from_dict(cls, dict):
 		self = cls.__new__(cls)
 		self.__setstate__(dict)
@@ -326,8 +327,10 @@ class TurnState:
 			state["score"] = self.score
 			state["end_cause_id"] = int(self.end_cause)
 			state["end_cause"] = END_TURN_MESSAGES[self.end_cause]
-		if self.phase == TurnPhase.PickedDice:
+		elif self.phase == TurnPhase.PickedDice:
 			state['picked'] = self.picked.name
+
+		state.update(self.metadata)
 
 		return state
 

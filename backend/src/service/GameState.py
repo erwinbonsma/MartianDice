@@ -1,10 +1,8 @@
-from enum import IntEnum
 import hashlib
 import json
 import random
 import time
-import traceback
-from game.DataTypes import TurnState, TurnPhase, TARGET_SCORE
+from game.DataTypes import TurnState, TARGET_SCORE
 
 class ChecksumMismatchException(Exception):
 	def __init__(self, message):
@@ -28,8 +26,8 @@ class GameState:
 
 		self.round = 1
 		self.active_player_index = 0
-		self.scores = dict((id, 0) for id in self.players)
-		self.turn_state = TurnState()
+		self._init_turn_state()
+		self.scores = {id: 0 for id in self.players}
 		self.winner = None
 		self.last_update = time.time()
 		self.prev_id = None
@@ -72,13 +70,24 @@ class GameState:
 			self.turn_state = self.turn_state.next(input)
 		else:
 			self._end_turn()
-		
+
 		self.num_updates += 1
 		self.last_update = time.time()
 
 	def remove_player(self):
 		del self.scores[self.active_player]
 		self.players[self.active_player_index] = ""
+
+	def _init_turn_state(self):
+		self.turn_state = TurnState()
+		# In first turn for new player, include metadata. This lets
+		# clients that replay old turn transitions to signals changes
+		# of player and rounds before they reach the latest game
+		# state (typically one that requires input from a player)
+		self.turn_state.metadata.update({
+			"active_player": self.active_player,
+			"round": self.round
+		})
 
 	def _next_turn(self):
 		start_index = self.active_player_index
@@ -96,7 +105,7 @@ class GameState:
 			# Guard against endless loop
 			assert(self.active_player_index != start_index)
 
-		self.turn_state = TurnState()
+		self._init_turn_state()
 
 	def _active_player_wins(self):
 		self.winner = self.active_player
@@ -164,11 +173,11 @@ class GameState:
 	def as_json(self):
 		return json.dumps(self.__getstate__())
 
-	@classmethod 
+	@classmethod
 	def from_json(cls, json_string):
 		return cls.from_dict(json.loads(json_string))
 
-	@classmethod 
+	@classmethod
 	def from_dict(cls, dict):
 		self = cls.__new__(cls)
 		self.__setstate__(dict)

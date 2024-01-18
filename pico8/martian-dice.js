@@ -85,6 +85,8 @@ var md_gpioChats = [];
 
 // Game status
 var md_gameCount;
+var md_gameRound;
+var md_activePlayer;
 var md_game;
 var md_gameNext;
 var md_turnStates = [];
@@ -119,7 +121,7 @@ function playerNameToId(playerName) {
 	}
 	const botBehaviour = md_bots[playerName];
 	if (botBehaviour) {
-		return 6 + BEHAVIOUR_IDS[botBehaviour]; 
+		return 6 + BEHAVIOUR_IDS[botBehaviour];
 	}
 
 	// Unknown player or player not present in room.
@@ -136,11 +138,11 @@ function isAwaitingMove() {
 }
 
 function isBotMove() {
-	return isAwaitingMove() && md_bots[md_game.active_player];
+	return isAwaitingMove() && md_bots[md_activePlayer];
 }
 
 function isMyMove() {
-	return isAwaitingMove() && md_game.active_player === md_myName;
+	return isAwaitingMove() && md_activePlayer === md_myName;
 }
 
 function clearMoveWatchdog() {
@@ -181,7 +183,7 @@ function updateClients(clients) {
 
 		// Note: Excluding ID 1 to enable rejoining a room under a different name, where there's
 		// still a ghost-client for the local player from a previous session. If so, it will be
-		// assigned a different ID to ensure all IDs are unique. 
+		// assigned a different ID to ensure all IDs are unique.
 		if (id && id!==1) {
 			md_clients[name] = id;
 			availableIds.delete(id);
@@ -199,7 +201,7 @@ function updateClients(clients) {
 			for (id of availableIds) { break; }
 			md_clients[name] = id;
 			availableIds.delete(id);
-			addedClients.push(name);	
+			addedClients.push(name);
 		}
 	});
 
@@ -234,7 +236,7 @@ function updateGameState(gameState, turnStates, gameCount) {
 	if (md_game !== md_gameNext) {
 		if (md_gameNext) {
 			// This may happen when PICO-8 client does not consume all updates (e.g. when it is
-			// paused due to lack of focus) 
+			// paused due to lack of focus)
 			console.warn("Force updating game state. Some moves may have been skipped.");
 		}
 		md_game = md_gameNext;
@@ -253,6 +255,8 @@ function updateGameState(gameState, turnStates, gameCount) {
 	md_botMoveTriggered = false;
 	md_gameEnded = false;
 	md_gameCount = gameCount;
+	md_gameRound = md_game.round;
+	md_activePlayer = md_game.active_player;
 
 	clearMoveWatchdog();
 }
@@ -352,9 +356,7 @@ function triggerBotMove() {
 		return;
 	}
 
-	const activePlayer = md_game.active_player;
-	const behaviour = md_bots[activePlayer];
-
+	const behaviour = md_bots[md_activePlayer];
 	md_socket.send(JSON.stringify({
 		action: "bot-move",
 		game_id: md_roomId,
@@ -520,7 +522,7 @@ function connectToServer(callback) {
 		if (md_socket) {
 			console.error("Websocket closed");
 			md_socket = undefined;
-	
+
 			clearRoomState();
 		}
 	});
@@ -620,8 +622,9 @@ function gpioUpdateScores() {
 }
 
 function gpioUpdateCounters(phaseId, playerName) {
+	console.log(`gpioUpdateCounters: round = ${md_gameRound}, player = ${playerName}, turn = ${playerTurnOrder(playerName)}`)
 	pico8_gpio[gpio_GameCounter] = md_gameCount;
-	pico8_gpio[gpio_RoundCounter] = md_game.round;
+	pico8_gpio[gpio_RoundCounter] = md_gameRound;
 	pico8_gpio[gpio_TurnCounter] = playerTurnOrder(playerName);
 	pico8_gpio[gpio_PhaseCounter] = phaseId;
 	gpioSetStr(gpio_ActivePlayerName, maxPlayerNameLength, playerName);
@@ -643,11 +646,19 @@ function gpioGameEnd() {
 }
 
 function gpioUpdateTurn(turn) {
+	// Handle optional fields that signal changes
+	if (turn.round) {
+		md_gameRound = turn.round;
+	}
+	if (turn.active_player) {
+		md_activePlayer = turn.active_player;
+	}
+
 	gpioUpdateDice(turn.throw || {}, gpio_Throw);
 	gpioUpdateDice(turn.side_dice || {}, gpio_SideDice);
 	gpioUpdateTurnScore(turn);
 	gpioUpdateScores();
-	gpioUpdateCounters(PHASE_IDS[turn.phase], md_game.active_player);
+	gpioUpdateCounters(PHASE_IDS[turn.phase], md_activePlayer);
 	pico8_gpio[gpio_ThrowCounter] = turn.throw_count;
 
 	// Signal when move is expected
@@ -660,7 +671,7 @@ function gpioHandleRoomCommands() {
 	if (pico8_gpio[gpio_RoomStatus] == 1) {
 		// Fresh attempt to join room
 		console.log("Initiating room join");
-		
+
 		pico8_gpio[gpio_RoomStatus] = 2;
 		connectToServer(joinRoom);
 	}
@@ -762,10 +773,8 @@ function gpioUpdate() {
 			md_turnStates = md_turnStates.slice(1);
 			console.log("turnState =", turnState);
 
-			if (
-				(turnState?.phase === "Throwing" && turnState?.throw_count === 0) ||
-				md_turnStates.length === 0
-			) {
+			if (md_turnStates.length === 0) {
+				// We've fully caught up with the replay, so switch game state
 				md_game = md_gameNext;
 			}
 

@@ -1,9 +1,8 @@
 import itertools
-import json
 from service.BaseHandler import GameHandler, HandlerException, ok_message, error_message
 from service.Common import is_bot_name, Config
 from service.GameState import GameState
-from game.DataTypes import TurnState, TurnPhase, DieFace, TARGET_SCORE
+from game.DataTypes import TurnPhase, DieFace, TARGET_SCORE
 from game.Game import RandomPlayer, AggressivePlayer, DefensivePlayer
 from game.OptimalPlay import OptimalActionSelector
 
@@ -95,7 +94,7 @@ class GamePlayHandler(GameHandler):
 	async def bot_move(self, game_state, bot_behaviour):
 		self.check_is_host("initiate bot move")
 		self.check_bot_move(game_state)
-		
+
 		action_selector = bot_behaviours[bot_behaviour]
 
 		turn_state = game_state.turn_state
