@@ -653,6 +653,9 @@ function gpioUpdateTurn(turn) {
 	if (turn.active_player) {
 		md_activePlayer = turn.active_player;
 	}
+	if (turn.total_score) {
+		md_game.scores[md_activePlayer] = turn.total_score;
+	}
 
 	gpioUpdateDice(turn.throw || {}, gpio_Throw);
 	gpioUpdateDice(turn.side_dice || {}, gpio_SideDice);

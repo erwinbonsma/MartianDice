@@ -119,6 +119,7 @@ class GameState:
 		if self.active_player != "":
 			# Only update score when player was not just removed
 			self.scores[self.active_player] += self.turn_state.score
+			self.turn_state.metadata["total_score"] = self.scores[self.active_player]
 			if self.scores[self.active_player] >= TARGET_SCORE:
 				return self._active_player_wins()
 
