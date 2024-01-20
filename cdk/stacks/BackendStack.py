@@ -44,18 +44,18 @@ class BackendStack(core.Stack):
 		main_layer = _lambda.LayerVersion(
 			self, 'MainLayer',
 			code = _lambda.AssetCode('../backend/layers/main_layer'),
-			compatible_runtimes = [_lambda.Runtime.PYTHON_3_7]
+			compatible_runtimes = [_lambda.Runtime.PYTHON_3_9]
 		)
 
 		shared_lambda_cfg = {
-			"runtime": _lambda.Runtime.PYTHON_3_7,
+			"runtime": _lambda.Runtime.PYTHON_3_9,
 			"layers": [main_layer],
 		}
 
 		registration_handler = _lambda.Function(
 			self, 'RegistrationLambda',
 			**shared_lambda_cfg,
-			code = _lambda.Code.asset('../backend/src'),
+			code = _lambda.Code.from_asset('../backend/src'),
 			handler = 'WebsocketHandlers.handle_registration',
 		)
 		rooms_table.grant_read_write_data(registration_handler)
@@ -63,7 +63,7 @@ class BackendStack(core.Stack):
 		meta_game_handler = _lambda.Function(
 			self, 'MetaGameLambda',
 			**shared_lambda_cfg,
-			code = _lambda.Code.asset('../backend/src'),
+			code = _lambda.Code.from_asset('../backend/src'),
 			handler = 'WebsocketHandlers.handle_meta_game',
 		)
 		rooms_table.grant_read_write_data(meta_game_handler)
@@ -72,7 +72,7 @@ class BackendStack(core.Stack):
 		game_play_handler = _lambda.Function(
 			self, 'GamePlayLambda',
 			**shared_lambda_cfg,
-			code = _lambda.Code.asset('../backend/src'),
+			code = _lambda.Code.from_asset('../backend/src'),
 			handler = 'WebsocketHandlers.handle_game_play',
 			timeout = core.Duration.seconds(10)
 		)
@@ -82,7 +82,7 @@ class BackendStack(core.Stack):
 		disconnect_handler = _lambda.Function(
 			self, 'DisconnectLambda',
 			**shared_lambda_cfg,
-			code = _lambda.Code.asset('../backend/src'),
+			code = _lambda.Code.from_asset('../backend/src'),
 			handler = 'WebsocketHandlers.handle_disconnect',
 		)
 		rooms_table.grant_read_write_data(disconnect_handler)
@@ -90,24 +90,28 @@ class BackendStack(core.Stack):
 		api = apigateway.WebSocketApi(
 			self, 'MartianDiceApi',
 			default_route_options = apigateway.WebSocketRouteOptions(
-				integration = apigateway_integrations.LambdaWebSocketIntegration(
+				integration = apigateway_integrations.WebSocketLambdaIntegration(
+					'MetaGameHandler',
 					handler = meta_game_handler
 				)
 			),
 			disconnect_route_options = apigateway.WebSocketRouteOptions(
-				integration = apigateway_integrations.LambdaWebSocketIntegration(
+				integration = apigateway_integrations.WebSocketLambdaIntegration(
+					'DisconnectHandler',
 					handler = disconnect_handler
 				)
 			),
 			#route_selection_expression = ‘request.body.action’
 		)
 
-		registration_integration = apigateway_integrations.LambdaWebSocketIntegration(
+		registration_integration = apigateway_integrations.WebSocketLambdaIntegration(
+			'RegistrationHandler',
 			handler = registration_handler
 		)
 		api.add_route('create-room', integration = registration_integration)
 
-		game_play_integration = apigateway_integrations.LambdaWebSocketIntegration(
+		game_play_integration = apigateway_integrations.WebSocketLambdaIntegration(
+			'GamePlayHandler',
 			handler = game_play_handler
 		)
 		for game_cmd in ["start-game", "move", "bot-move", "end-turn", "remove-player"]:
@@ -115,8 +119,8 @@ class BackendStack(core.Stack):
 
 		websocket_send_statement = iam.PolicyStatement(
 			effect = iam.Effect.ALLOW,
-			actions = [ "execute-api:ManageConnections" ],
-			resources = [ f"arn:aws:execute-api:{core.Aws.REGION}:{core.Aws.ACCOUNT_ID}:{api.api_id}/{stage_name}/*" ],
+			actions = ["execute-api:ManageConnections"],
+			resources = [f"arn:aws:execute-api:{core.Aws.REGION}:{core.Aws.ACCOUNT_ID}:{api.api_id}/{stage_name}/*"],
 		)
 
 		registration_handler.add_to_role_policy(websocket_send_statement)

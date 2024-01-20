@@ -15,13 +15,13 @@ setuptools.setup(
     packages=setuptools.find_packages(where="stacks"),
 
     install_requires=[
-        "aws-cdk.core==1.92.0",
-		"aws-cdk.aws_apigatewayv2==1.92.0",
-		"aws-cdk.aws_apigatewayv2_integrations==1.92.0",
-        "aws-cdk.aws_dynamodb==1.92.0",
-        "aws-cdk.aws_lambda==1.92.0",
-		"aws-cdk.aws_elasticache==1.92.0"
+        "aws-cdk.core==1.204.0",
+		"aws-cdk.aws_apigatewayv2==1.204.0",
+		"aws-cdk.aws_apigatewayv2_integrations==1.204.0",
+        "aws-cdk.aws_dynamodb==1.204.0",
+        "aws-cdk.aws_lambda==1.204.0",
+		"aws-cdk.aws_elasticache==1.204.0"
     ],
 
-    python_requires=">=3.6",
+    python_requires=">=3.9",
 )
