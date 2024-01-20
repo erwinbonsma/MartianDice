@@ -1,15 +1,16 @@
 from aws_cdk import (
-    core,
+	Aws, Duration, Stack,
 	aws_iam as iam,
 	aws_apigatewayv2 as apigateway,
 	aws_apigatewayv2_integrations as apigateway_integrations,
 	aws_dynamodb as dynamodb,
 	aws_lambda as _lambda
 )
+from constructs import Construct
 
-class BackendStack(core.Stack):
+class BackendStack(Stack):
 
-	def __init__(self, scope: core.Construct, construct_id: str, **kwargs) -> None:
+	def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
 		super().__init__(scope, construct_id, **kwargs)
 
 		stage_name = 'dev'
@@ -74,7 +75,7 @@ class BackendStack(core.Stack):
 			**shared_lambda_cfg,
 			code = _lambda.Code.from_asset('../backend/src'),
 			handler = 'WebsocketHandlers.handle_game_play',
-			timeout = core.Duration.seconds(10)
+			timeout = Duration.seconds(10)
 		)
 		rooms_table.grant_read_write_data(game_play_handler)
 		games_table.grant_read_write_data(game_play_handler)
@@ -120,7 +121,7 @@ class BackendStack(core.Stack):
 		websocket_send_statement = iam.PolicyStatement(
 			effect = iam.Effect.ALLOW,
 			actions = ["execute-api:ManageConnections"],
-			resources = [f"arn:aws:execute-api:{core.Aws.REGION}:{core.Aws.ACCOUNT_ID}:{api.api_id}/{stage_name}/*"],
+			resources = [f"arn:aws:execute-api:{Aws.REGION}:{Aws.ACCOUNT_ID}:{api.api_id}/{stage_name}/*"],
 		)
 
 		registration_handler.add_to_role_policy(websocket_send_statement)
