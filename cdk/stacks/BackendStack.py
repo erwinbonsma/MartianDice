@@ -45,11 +45,11 @@ class BackendStack(Stack):
 		main_layer = _lambda.LayerVersion(
 			self, 'MainLayer',
 			code = _lambda.AssetCode('../backend/layers/main_layer'),
-			compatible_runtimes = [_lambda.Runtime.PYTHON_3_9]
+			compatible_runtimes = [_lambda.Runtime.PYTHON_3_11]
 		)
 
 		shared_lambda_cfg = {
-			"runtime": _lambda.Runtime.PYTHON_3_9,
+			"runtime": _lambda.Runtime.PYTHON_3_11,
 			"layers": [main_layer],
 		}
 

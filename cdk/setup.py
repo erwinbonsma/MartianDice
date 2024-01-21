@@ -19,5 +19,5 @@ setuptools.setup(
     	"constructs>=10.0.0",
     ],
 
-    python_requires=">=3.9",
+    python_requires=">=3.11",
 )
