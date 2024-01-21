@@ -118,16 +118,24 @@ class BackendStack(Stack):
 		for game_cmd in ["start-game", "move", "bot-move", "end-turn", "remove-player"]:
 			api.add_route(game_cmd, integration = game_play_integration)
 
+		handlers = [
+			registration_handler, meta_game_handler, game_play_handler, disconnect_handler
+		]
+
+		api_gateway_arn = f"arn:aws:execute-api:{Aws.REGION}:{Aws.ACCOUNT_ID}:{api.api_id}/{stage_name}/*"
 		websocket_send_statement = iam.PolicyStatement(
 			effect = iam.Effect.ALLOW,
 			actions = ["execute-api:ManageConnections"],
-			resources = [f"arn:aws:execute-api:{Aws.REGION}:{Aws.ACCOUNT_ID}:{api.api_id}/{stage_name}/*"],
+			resources = [api_gateway_arn],
 		)
 
-		registration_handler.add_to_role_policy(websocket_send_statement)
-		meta_game_handler.add_to_role_policy(websocket_send_statement)
-		game_play_handler.add_to_role_policy(websocket_send_statement)
-		disconnect_handler.add_to_role_policy(websocket_send_statement)
+		for handler in handlers:
+			handler.add_to_role_policy(websocket_send_statement)
+			handler.add_permission(
+				'LambdaInvokePermission',
+				principal = iam.ServicePrincipal('apigateway.amazonaws.com'),
+				source_arn = api_gateway_arn
+			)
 
 		api_stage = apigateway.WebSocketStage(
 			self, 'dev-stage',
