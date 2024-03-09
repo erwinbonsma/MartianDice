@@ -19,7 +19,7 @@ Play the game on [my website](https://erwinbonsma.nl/Games/MD-P8/index.html).
 
 * Play against friends in a private room
 * Play against other players in the public room
-* Play against a Smart bots when there is nobody else
+* Play against a Smart bot when there is nobody else
 * Fancy animations
 * In-game help
 * Basic chat function - select messages from a pre-configured list
@@ -32,8 +32,6 @@ Play the game on [my website](https://erwinbonsma.nl/Games/MD-P8/index.html).
 ## HTML5 Front End
 
 ![Martian Dice screenshot](MartianDice-Screenshot.png)
-
-Play the game on [my website](https://bonsma.home.xs4all.nl/Games/MartianDice/index.html).
 
 ### Features
 
