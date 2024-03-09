@@ -13,7 +13,7 @@ They use the same backend though and are compatible; you can use either to join 
 
 ![Martian Dice PICO-8 screenshots](MartianDice-P8-Screenshots.png)
 
-Play the game on [my website](https://bonsma.home.xs4all.nl/Games/MD-P8/index.html).
+Play the game on [my website](https://erwinbonsma.nl/Games/MD-P8/index.html).
 
 ### Features
 
